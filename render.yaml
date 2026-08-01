@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: luys-cloud
+    runtime: docker
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: luys-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: LUYS_USER
+        value: admin
+      - key: LUYS_PASSWORD
+        sync: false
+databases:
+  - name: luys-db
+    plan: basic-256mb
