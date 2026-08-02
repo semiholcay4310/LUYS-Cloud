@@ -89,6 +89,7 @@
     <label>Çalışılan Brüt Saat<input name="hours" type="number" step="0.25" value="10"></label>
     <label>Sağlam Adet<input name="good" type="number" min="0" required></label>
     <label>Hurda Adet<input name="scrap" type="number" min="0" value="0"></label>
+   <label>Mola (dk)<input name="breaktime" type="number" min="0" value="0"></label>
     <label>Duruş (dk)<input name="downtime" type="number" min="0" value="0"></label>
     <label>Duruş Nedeni<input name="reason"></label>
   <div class="card" style="margin:12px 0">
@@ -182,35 +183,167 @@ $('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=ne
 $('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
 Promise.all([loadMe(),load()]).then(()=>{if(canEdit())newOrderForm();if($('dailyForm')){$('dailyForm').date.value=ymd(new Date())}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
 setInterval(()=>load().catch(()=>{}),15000);
+function gunlukHesap(f){
+  const brut=n(f.hours.value);
+  const mola=n(f.breaktime ? f.breaktime.value : 0);
+  const durus=n(f.downtime.value);
+  const saglam=n(f.good.value);
+
+  const netSaat=Math.max(0,brut-((mola+durus)/60));
+
+  const o=order(f.orderId.value);
+  const op=opBy(o,f.opId.value);
+  const dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
+
+  const teorik=dakikaAdet>0 ? (netSaat*60)/dakikaAdet : 0;
+  const verim=teorik>0 ? (saglam/teorik)*100 : 0;
+
+  return {brut,mola,durus,saglam,netSaat,teorik,verim};
+}
+
 function hesaplaVerim(){
   const f=$('dailyForm');
   if(!f)return;
 
-  const brut=n(f.hours.value);
-  const durus=n(f.downtime.value);
-  const saglam=n(f.good.value);
+  const x=gunlukHesap(f);
 
-  const mola=1.5;
-  const netSaat=Math.max(0,brut-mola-(durus/60));
-
-  const o=order($('dailyOrder').value);
-  const op=opBy(o,$('dailyOp').value);
-
-  const dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
-  const teorik=dakikaAdet>0 ? (netSaat*60)/dakikaAdet : 0;
-  const verim=teorik>0 ? (saglam/teorik)*100 : 0;
-
-  $('netSure').textContent=netSaat.toFixed(2)+' saat';
-  $('teorikAdet').textContent=Math.floor(teorik)+' adet';
-  $('verimYuzde').textContent='%'+verim.toFixed(1);
+  $('netSure').textContent=x.netSaat.toFixed(2)+' saat';
+  $('teorikAdet').textContent=Math.floor(x.teorik)+' adet';
+  $('verimYuzde').textContent='%'+x.verim.toFixed(1);
 }
 
-['hours','good','downtime'].forEach(x=>{
-  $('dailyForm').elements[x].addEventListener('input',hesaplaVerim);
+['hours','breaktime','good','downtime'].forEach(k=>{
+  const el=$('dailyForm').elements[k];
+  if(el)el.addEventListener('input',hesaplaVerim);
 });
 
 $('dailyOrder').addEventListener('change',()=>setTimeout(hesaplaVerim,50));
 $('dailyOp').addEventListener('change',hesaplaVerim);
-</script>
+
+$('dailyForm').onsubmit=async e=>{
+  e.preventDefault();
+  if(typeof canEdit==='function' && !canEdit())return;
+
+  let f=new FormData(e.target);
+  let id=f.get('recId');
+  let key=r=>r.orderId===f.get('orderId') &&
+             r.opId===f.get('opId') &&
+             r.date===f.get('date');
+
+  let existing=state.daily.find(key);
+  let h=gunlukHesap(e.target);
+
+  let obj={
+    id:id||existing?.id||uid(),
+    orderId:f.get('orderId'),
+    opId:f.get('opId'),
+    date:f.get('date'),
+    hours:n(f.get('hours')),
+    breaktime:n(f.get('breaktime')),
+    good:n(f.get('good')),
+    scrap:n(f.get('scrap')),
+    downtime:n(f.get('downtime')),
+    reason:f.get('reason'),
+    netHours:h.netSaat,
+    targetQty:h.teorik,
+    efficiency:h.verim
+  };
+
+  if(existing&&!id){
+    if(!confirm('Bu tarih için kayıt var. Mevcut kayıt güncellensin mi?'))return;
+    Object.assign(existing,obj);
+  }else if(id){
+    let r=state.daily.find(x=>x.id===id);
+    Object.assign(r,obj);
+  }else{
+    state.daily.push(obj);
+  }
+
+  await save();
+
+  e.target.reset();
+  e.target.recId.value='';
+  e.target.date.value=ymd(new Date());
+  e.target.hours.value=10;
+  e.target.breaktime.value=0;
+  e.target.scrap.value=0;
+  e.target.downtime.value=0;
+
+  $('dailyTitle').textContent='Günlük Üretim Kaydı';
+  hesaplaVerim();
+};
+
+function renderDaily(){
+  $('dailyList').innerHTML=[...state.daily]
+  .sort((a,b)=>b.date.localeCompare(a.date))
+  .map(r=>{
+    let o=order(r.orderId);
+    let op=opBy(o,r.opId);
+
+    let net=r.netHours;
+    if(net===undefined){
+      net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
+    }
+
+    let dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
+
+    let hedef=r.targetQty;
+    if(hedef===undefined){
+      hedef=dakikaAdet>0 ? (net*60)/dakikaAdet : 0;
+    }
+
+    let verim=r.efficiency;
+    if(verim===undefined){
+      verim=hedef>0 ? n(r.good)/hedef*100 : 0;
+    }
+
+    return `<div class="row">
+      <b>${r.date} • ${esc(o?.part||'-')} • ${esc(op?.name||'-')}</b>
+
+      <div style="margin-top:8px;font-size:15px">
+        Hedef: <b>${Math.floor(hedef)} adet</b>
+        • Yapılan: <b>${n(r.good)} adet</b>
+        • Verim: <b>%${verim.toFixed(1)}</b>
+      </div>
+
+      <div class="small" style="margin-top:6px">
+        Net ${net.toFixed(2)} saat
+        • Brüt ${r.hours} saat
+        • Mola ${n(r.breaktime)} dk
+        • Duruş ${n(r.downtime)} dk
+        • Hurda ${n(r.scrap)}
+      </div>
+
+      <div class="inline">
+        <button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button>
+        <button class="btn red" onclick="delDaily('${r.id}')">Sil</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="small">Henüz günlük kayıt yok.</div>';
+}
+
+window.editDaily=id=>{
+  if(typeof canEdit==='function' && !canEdit())return;
+
+  let r=state.daily.find(x=>x.id===id);
+  let f=$('dailyForm');
+
+  f.recId.value=r.id;
+  f.orderId.value=r.orderId;
+  fillDailyOps();
+  f.opId.value=r.opId;
+  f.date.value=r.date;
+  f.hours.value=r.hours;
+  f.breaktime.value=r.breaktime||0;
+  f.good.value=r.good;
+  f.scrap.value=r.scrap||0;
+  f.downtime.value=r.downtime||0;
+  f.reason.value=r.reason||'';
+
+  $('dailyTitle').textContent='Günlük Kaydı Düzenle';
+  document.querySelector('[data-p="daily"]').click();
+  hesaplaVerim();
+  window.scrollTo(0,0);
+};</script>
 </body>
 </html>
