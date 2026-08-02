@@ -182,6 +182,35 @@ $('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=ne
 $('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
 Promise.all([loadMe(),load()]).then(()=>{if(canEdit())newOrderForm();if($('dailyForm')){$('dailyForm').date.value=ymd(new Date())}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
 setInterval(()=>load().catch(()=>{}),15000);
+function hesaplaVerim(){
+  const f=$('dailyForm');
+  if(!f)return;
+
+  const brut=n(f.hours.value);
+  const durus=n(f.downtime.value);
+  const saglam=n(f.good.value);
+
+  const mola=1.5;
+  const netSaat=Math.max(0,brut-mola-(durus/60));
+
+  const o=order($('dailyOrder').value);
+  const op=opBy(o,$('dailyOp').value);
+
+  const dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
+  const teorik=dakikaAdet>0 ? (netSaat*60)/dakikaAdet : 0;
+  const verim=teorik>0 ? (saglam/teorik)*100 : 0;
+
+  $('netSure').textContent=netSaat.toFixed(2)+' saat';
+  $('teorikAdet').textContent=Math.floor(teorik)+' adet';
+  $('verimYuzde').textContent='%'+verim.toFixed(1);
+}
+
+['hours','good','downtime'].forEach(x=>{
+  $('dailyForm').elements[x].addEventListener('input',hesaplaVerim);
+});
+
+$('dailyOrder').addEventListener('change',()=>setTimeout(hesaplaVerim,50));
+$('dailyOp').addEventListener('change',hesaplaVerim);
 </script>
 </body>
 </html>
