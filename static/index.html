@@ -157,7 +157,7 @@ function opProcessed(op){
 }
 function opWeight(o,op){let total=(o.ops||[]).reduce((a,x)=>a+n(o.produceQty)*(n(x.cycle)+n(x.handling))+n(x.setup)*60,0);let w=n(o.produceQty)*(n(op.cycle)+n(op.handling))+n(op.setup)*60;return total?100*w/total:0}
 function progress(o){return Math.min(100,(o.ops||[]).reduce((a,op)=>a+opWeight(o,op)*Math.min(1,n(op.done)/Math.max(1,n(o.produceQty))),0))}
-function currentOp(o){let run=(o.ops||[]).find(x=>x.runState==='running');if(run)return run;return (o.ops||[]).find(x=>n(x.done)<n(o.produceQty))||null}
+function currentOp(o){let run=(o.ops||[]).find(x=>x.runState==='running');if(run)return run;return (o.ops||[]).find(x=>opProcessed(x)<opTarget(o,x))||null}
 function status(o){let op=currentOp(o);if(op?.runState==='running')return 'Üretimde';if(op?.runState==='paused')return 'Durduruldu';if(o.cmm?.status&&o.cmm.status!=='Onay')return 'CMM';return progress(o)>=100?'Üretim tamamlandı':'Planlandı'}
 function cal(d){let c=state.calendar[new Date(d).getDay()]||{h:0,b:0};return {gross:n(c.h),br:n(c.b),net:Math.max(0,n(c.h)-n(c.b))}}
 function windows(day){let c=cal(day);if(c.net<=0)return[];let st=new Date(day+'T08:00'),en=new Date(st.getTime()+c.gross*3600000),bs=new Date(day+'T12:00'),be=new Date(bs.getTime()+c.br*3600000);if(c.br<=0)return[[st,en]];let a=[];if(bs>st)a.push([st,new Date(Math.min(bs,en))]);if(be<en)a.push([be,en]);return a}
