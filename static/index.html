@@ -367,6 +367,11 @@
   #dash .planCard .tinyBar{width:70px!important;height:7px!important}
 }
 
+
+.autoPdfCard{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid #dbe6ee}
+.autoPdfCard>b{font-size:15px}.autoPdfCard .btn{min-width:170px;padding:12px 16px}
+@media(max-width:650px){.autoPdfCard{align-items:stretch;flex-direction:column}.autoPdfCard .btn{width:100%}}
+
 </style>
 </head>
 <body>
@@ -377,9 +382,7 @@
   <div class="sync" id="sync">Bağlanıyor…</div>
 </header>
 <div class="wrap">
-  <div class="notice"><b>Ortak veri sürümü:</b> Telefon, ev ve iş yeri farklı internetlerde olsa bile aynı hesabın ortak verilerini görür.</div>
-  <div class="readonlyNotice" id="readonlyNotice"><b>Görüntüleme modu:</b> Bu kullanıcı verileri görebilir; kayıt ekleyemez, silemez veya değiştiremez.</div>
-  <div class="tabs" id="tabs">
+<div class="tabs" id="tabs">
     <button data-p="dash" class="active">Ana Panel</button>
     <button data-p="orders">İş Emri</button>
     <button data-p="ops">Operasyon</button>
@@ -408,6 +411,13 @@
   <div class="card planCard">
     <div class="dashCardHead"><b>ÜRÜN TERMİNLERİ <small id="totalOrders"></small></b><span class="dashAction" data-dash-action="products">Tümünü Listele ›</span></div>
     <div class="tablewrap"><table><thead><tr><th>İş Emri / Parça</th><th>Adet</th><th>Tahmini Başlangıç</th><th>Tahmini Ürün Bitişi</th><th>Müşteri Termini</th><th>Durum</th><th>İlerleme</th></tr></thead><tbody id="board"></tbody></table></div>
+  </div>
+  <div class="card autoPdfCard">
+    <div>
+      <b>📄 OTOMATİK PLANLAMA PDF</b>
+      <div class="small">Güncel iş emirleri, tezgâh sırası, operasyonlar ve terminlerle plan raporu oluşturur.</div>
+    </div>
+    <button class="btn" type="button" onclick="automaticPlanningPDF()">PDF OLUŞTUR</button>
   </div>
 </section>
 
@@ -608,7 +618,7 @@ function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate
 function localISO(d){return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function fmt(s){if(!s)return '-';let d=new Date(s);if(String(s).length===10)d=new Date(s+'T12:00');return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+(String(s).includes('T')?' '+pad(d.getHours())+':'+pad(d.getMinutes()):'')}
 function canEdit(){return me.can_edit===true}
-async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"]').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none'}
+async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');if($('readonlyNotice'))$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"]').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none'}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
 function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o)})}
@@ -660,6 +670,58 @@ function windows(day){let c=cal(day);if(c.net<=0)return[];let st=new Date(day+'T
 function nextMoment(v){let d=new Date(v);for(let g=0;g<60;g++){let day=ymd(d),ws=windows(day);for(let [a,b] of ws){if(d<=a)return new Date(a);if(d>=a&&d<b)return d}d.setDate(d.getDate()+1);d.setHours(8,0,0,0)}return d}
 function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<2000&&left>0;g++){d=nextMoment(d);let w=windows(ymd(d)).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(8,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
 function schedule(){let groups={};state.orders.filter(o=>o.stage!=='done').forEach(o=>(groups[o.machine]??=[]).push(o));Object.values(groups).forEach(a=>a.sort((x,y)=>n(x.queue)-n(y.queue)));for(let a of Object.values(groups)){let available=null;for(let o of a){let planned=nextMoment(available||new Date(o.start));o.planStart=localISO(planned);let cursor=planned;for(let op of o.ops){let start=nextMoment(cursor);if(op.actualStart)start=nextMoment(new Date(op.actualStart));op.planStart=localISO(start);let setupEnd=op.actualStart?start:addWork(start,n(op.setup)*60);op.setupEnd=localISO(setupEnd);let prodStart=nextMoment(setupEnd);op.prodStart=localISO(prodStart);let remaining=Math.max(0,n(o.produceQty)-n(op.done));let end=addWork(prodStart,remaining*(n(op.cycle)+n(op.handling)));op.planEnd=op.actualEnd||localISO(end);cursor=new Date(op.planEnd)}o.realStart=(o.ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');o.cncEnd=o.ops.length?o.ops[o.ops.length-1].planEnd:o.planStart;available=new Date(o.cncEnd);let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship)}}}
+
+function automaticPlanningPDF(){
+  syncCompletedOps();
+  schedule();
+
+  const jobs=[...state.orders]
+    .filter(o=>o.stage!=='done')
+    .sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));
+
+  const productEnd=o=>(o.ops||[]).length?((o.ops||[])[(o.ops||[]).length-1].planEnd||''):'';
+  const risk=o=>!!(o.requested&&productEnd(o)&&new Date(productEnd(o))>new Date(o.requested));
+
+  const machineSections=['Tezgâh 1 - 850','Tezgâh 2 - 1000'].map(machine=>{
+    const arr=jobs.filter(o=>o.machine===machine);
+    const rows=arr.length?arr.map((o,i)=>{
+      const ops=(o.ops||[]).map(op=>{
+        const done=opProcessed(op), target=opTarget(o,op);
+        const pct=target>0?Math.min(100,Math.round(done/target*100)):0;
+        return `<tr><td>${esc(op.name||'OP')}</td><td>${done}/${target}</td><td>%${pct}</td><td>${op.planStart?fmt(op.planStart):'-'}</td><td>${op.planEnd?fmt(op.planEnd):'-'}</td></tr>`;
+      }).join('');
+      return `<div class="job">
+        <h3>${i+1}. ${esc(o.orderNo)} — ${esc(o.part)}</h3>
+        <div class="meta2"><span><b>Adet:</b> ${n(o.produceQty)}</span><span><b>Başlangıç:</b> ${o.planStart?fmt(o.planStart):'-'}</span><span><b>Ürün Bitişi:</b> ${productEnd(o)?fmt(productEnd(o)):'-'}</span><span><b>Müşteri Termini:</b> ${o.requested?fmt(o.requested):'-'}</span><span class="${risk(o)?'bad':'good'}"><b>Durum:</b> ${risk(o)?'RİSK':'TERMİNDE'}</span></div>
+        <table><thead><tr><th>Operasyon</th><th>Yapılan / Hedef</th><th>İlerleme</th><th>Plan Başlangıç</th><th>Plan Bitiş</th></tr></thead><tbody>${ops||'<tr><td colspan="5">Operasyon girilmemiş.</td></tr>'}</tbody></table>
+      </div>`;
+    }).join(''):'<p>Planlanan iş bulunmuyor.</p>';
+    return `<section><h2>${esc(machine)}</h2>${rows}</section>`;
+  }).join('');
+
+  const now=new Date();
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>LÜYS Otomatik Planlama</title>
+  <style>
+    @page{size:A4 landscape;margin:10mm}
+    *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#16324a;margin:0;font-size:11px}
+    header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0d3456;padding-bottom:8px;margin-bottom:12px}
+    h1{margin:0;color:#0d3456;font-size:24px}h2{background:#eef5fa;padding:8px;border-left:5px solid #0b67a3;margin:14px 0 8px}
+    h3{margin:0 0 7px;font-size:13px}.job{border:1px solid #ccd9e2;border-radius:8px;padding:9px;margin-bottom:9px;break-inside:avoid}
+    .meta2{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:8px}.good{color:#168348}.bad{color:#c72e2e}
+    table{width:100%;border-collapse:collapse}th,td{border:1px solid #dbe4eb;padding:5px;text-align:left}th{background:#f3f7fa}
+    footer{margin-top:12px;color:#6f8291;font-size:9px;text-align:right}
+  </style></head><body>
+  <header><div><h1>LÜYS</h1><b>LUUKMAS Üretim Yönetim Sistemi — Otomatik Planlama</b></div><div>Rapor: ${now.toLocaleString('tr-TR')}</div></header>
+  ${machineSections}
+  <footer>Planlanan başlangıç ve bitiş süreleri tahminidir. Gerçek süreler operasyon ve günlük üretim kayıtlarına göre güncellenir.</footer>
+  <script>window.onload=()=>{setTimeout(()=>window.print(),250)}<\/script>
+  </body></html>`;
+
+  const w=window.open('','_blank');
+  if(!w){alert('PDF penceresi açılamadı. Tarayıcıda açılır pencereye izin ver.');return}
+  w.document.open();w.document.write(html);w.document.close();
+}
+
 function render(){syncCompletedOps();schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal();renderAccounting()}
 function renderBoard(){
   let a=[...state.orders].filter(o=>o.stage!=='done').sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
