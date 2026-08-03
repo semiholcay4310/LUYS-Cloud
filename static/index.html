@@ -110,51 +110,113 @@
   }
 }
 
-/* ===== LÜYS Dashboard v1 ===== */
-#dash{background:#f3f6fa;padding:18px;border-radius:18px}
-#dash .grid{gap:14px}
-#dash .metric{position:relative;border:1px solid #e1e8ef;border-radius:15px;padding:16px 18px;box-shadow:0 4px 14px rgba(17,50,76,.06);color:#5c6d7c}
-#dash .metric b{color:#173a57;font-size:30px}
-#dash .machineCards{align-items:stretch}
-#dash .machineCards>.card{overflow:hidden}
-.machineNow{position:relative}
-.machineStatus{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:#526879;margin-bottom:12px}
-.statusDot{width:9px;height:9px;border-radius:50%;background:#e3a21a;box-shadow:0 0 0 4px #fff3d7}
-.machineStatus.running .statusDot{background:#1b9a59;box-shadow:0 0 0 4px #def5e8}
-.machineStatus.running{color:#187246}
-.machineActiveTitle,.sectionEyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:#7b8d9d;margin-bottom:7px}
-.machineJob{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:16px;color:#173a57}
-.machineBadge,.termBadge,.miniBadge{display:inline-block;margin-top:10px;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900;background:#edf2f6;color:#516879}
-.machineBadge.running,.termBadge.ok{background:#dff6e8;color:#176b3d}
-.termBadge.risk,.miniBadge.risk{background:#ffe3e3;color:#a92a2a}
-.termBadge.neutral{background:#edf2f6;color:#5c6f7e}
-.machineProgressHead{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#667987}
-.machineProgress{height:9px;background:#e6edf3;border-radius:999px;overflow:hidden;margin-top:7px}
-.machineProgress>div{height:100%;background:#1678b8;border-radius:999px}
-.machineDates{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-.machineDates>div,.machineDue,.nextJob,.nextQueueBox{background:#f7f9fb;border:1px solid #e4ebf0;border-radius:11px;padding:11px}
-.machineDates small,.machineDue small,.nextJob small,.nextQueueBox small{display:block;color:#7b8d9a;font-size:10px;font-weight:800;margin-bottom:4px}
-.machineDue{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
-.machineDue .termBadge{margin-top:0;white-space:nowrap}
-.nextJob{margin-top:10px}
-.nextQueueBox{margin-top:10px;background:#fff}
-.nextQueueItem{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #edf1f4;font-size:12px}
-.nextQueueItem:last-child{border-bottom:0}
-.nextQueueItem span{color:#6d7e8c}
-.dashboardLower{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-.dashboardLower .card{margin:0}
-.dashList{display:grid;gap:8px}
-.dashListItem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #edf1f4}
+/* ===== LÜYS ANA PANEL — referans görsele yakın kompakt tasarım ===== */
+:root{
+  --navy:#0d3456; --blue:#176fbd; --green:#159454; --red:#d53a3a;
+  --amber:#e79b22; --ink:#183651; --muted:#718395; --line:#e1e8ef;
+  --panel:#ffffff; --bg:#f4f7fb;
+}
+#dash{background:var(--bg);padding:10px;border-radius:16px}
+#dash .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+#dash .metric{
+  position:relative;min-height:80px;padding:10px 10px 9px 40px;border:1px solid var(--line);
+  border-radius:13px;box-shadow:0 2px 10px #16324a10;color:#425b70;font-size:10px;font-weight:800
+}
+#dash .metric b{font-size:22px;color:#123a5d;margin-top:4px}
+#dash .metric small{display:block;font-size:8px;line-height:1.25;color:#81909e;font-weight:600;margin-top:2px}
+#dash .metric:before{
+  position:absolute;left:9px;top:12px;width:25px;height:25px;border-radius:8px;display:grid;place-items:center;
+  font-size:15px;background:#eaf3ff;color:#176fbd
+}
+#dash .metric:nth-child(1):before{content:"▣"}
+#dash .metric:nth-child(2):before{content:"↗";background:#e9f8ef;color:#159454}
+#dash .metric:nth-child(3):before{content:"◎";background:#f1eaff;color:#744cc7}
+#dash .metric:nth-child(4):before{content:"⚠";background:#ffeded;color:#cf3c3c}
+
+.dashSectionTitle{display:flex;align-items:center;justify-content:space-between;margin:7px 1px 7px}
+.dashSectionTitle b{font-size:11px;color:#263f58;letter-spacing:.02em}
+.dashSectionTitle span{font-size:9px;color:#176fbd;font-weight:800}
+
+#dash .machineCards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 10px}
+#dash .machineCards .card{padding:10px;border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 10px #16324a0d}
+.machineHeader{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.machineIcon{width:25px;height:25px;border-radius:7px;background:#eaf2f8;display:grid;place-items:center;font-size:15px}
+#dash .machineCards h2{font-size:13px;margin:0;color:#173a57}
+.machineStatus{font-size:9px;color:#159454;font-weight:800;margin-top:2px}
+.machineStatus:before{content:"●";font-size:8px;margin-right:4px}
+.machineStatus.wait{color:#7c8d9a}
+.machineActiveBox{border-radius:10px;background:#f7faff;border:1px solid #e6edf4;padding:7px;margin-top:6px}
+.machineActiveBox.running{background:#f3fff7;border-color:#d7f0e1}
+.machineLabel{font-size:8px;font-weight:900;color:#3978b6;text-transform:uppercase}
+.machineJob{font-size:10px;font-weight:800;color:#1e3b55;line-height:1.35;margin-top:3px}
+.machineBadge,.termBadge,.queueBadge{display:inline-block;border-radius:999px;font-size:8px;font-weight:900;padding:3px 6px;margin-top:4px;background:#eef3f7;color:#667887}
+.machineBadge.run,.termBadge.ok{background:#def5e8;color:#177246}
+.termBadge.risk{background:#ffe7e7;color:#b52e2e}
+.termBadge.warn{background:#fff4dc;color:#a86c12}
+.progressHead{display:flex;justify-content:space-between;font-size:8px;margin-top:7px;color:#647789}
+.progressHead b{font-size:9px;color:#23425d}
+.progressTrack{height:5px;background:#e5edf3;border-radius:99px;overflow:hidden;margin-top:3px}
+.progressTrack i{display:block;height:100%;background:#1972bd;border-radius:99px}
+.machineMiniGrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}
+.machineMini{border-top:1px solid #e7edf2;padding-top:5px}
+.machineMini small,.machineDue small{font-size:7px;color:#7c8c99;display:block}
+.machineMini b,.machineDue b{font-size:8px;color:#24415b}
+.machineDue{display:flex;justify-content:space-between;align-items:end;gap:5px;margin-top:7px;border-top:1px solid #e7edf2;padding-top:5px}
+.machineDue .termBadge{margin:0;white-space:nowrap}
+.nextOps{margin-top:7px;border-top:1px solid #e7edf2;padding-top:5px}
+.nextOpsTitle{font-size:8px;font-weight:900;color:#38536b;margin-bottom:3px}
+.nextOpItem{display:flex;gap:5px;align-items:center;padding:3px 0;border-bottom:1px dashed #edf1f4;font-size:8px}
+.nextOpItem:last-child{border-bottom:0}
+.nextNo{width:14px;height:14px;border:1px solid #d6e0e8;border-radius:50%;display:grid;place-items:center;font-size:7px;color:#587085}
+.nextOpItem b{font-size:8px;color:#29445d}
+.nextOpItem span{margin-left:auto;color:#82909c;font-size:7px}
+
+.dashLower{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.dashLower .card{padding:10px;margin:0;border:1px solid var(--line);box-shadow:0 2px 10px #16324a0d}
+.dashCardHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.dashCardHead b{font-size:10px;color:#29445d}
+.dashCardHead span{font-size:8px;color:#176fbd;font-weight:800}
+.dashListItem{display:grid;grid-template-columns:1.2fr .8fr auto;gap:5px;align-items:center;padding:5px 0;border-bottom:1px solid #edf1f4;font-size:8px}
 .dashListItem:last-child{border-bottom:0}
-.dashListItem b{font-size:13px}
-.dashListItem .small{text-align:right}
-.emptyDash{font-size:12px;color:#7b8b98;padding:8px 0}
-#dash .planCard{margin-top:14px}
+.dashListItem b{font-size:8px;color:#29445d}
+.dashListItem small{font-size:7px;color:#7c8d9a}
+.emptyDash{text-align:center;padding:14px 5px;color:#748696;font-size:9px}
+.emptyDash .emptyIcon{font-size:28px;opacity:.35;display:block;margin-bottom:4px}
+
+#dash .planCard{padding:10px;margin:0;border:1px solid var(--line);box-shadow:0 2px 10px #16324a0d}
+#dash .planCard h2{font-size:11px;margin:0 0 6px}
+#dash table{font-size:8px}
+#dash th,#dash td{padding:5px 4px}
+#dash th{font-size:7px;color:#617488;background:#f7f9fb}
+#dash td b{font-size:8px}
+.tinyBar{width:45px;height:4px;background:#e5edf3;border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle}
+.tinyBar i{display:block;height:100%;background:#176fbd}
+.rowRisk{background:#fff8f8}
+
 @media(max-width:800px){
-  #dash{padding:10px}
-  .machineDates,.dashboardLower{grid-template-columns:1fr}
-  .machineDue{align-items:flex-start;flex-direction:column}
-  .dashListItem{align-items:flex-start}
+  header{padding:7px 10px;gap:8px}.logo{width:42px;height:42px}.brand h1{font-size:21px}.brand small{font-size:10px}
+  .wrap{padding:6px}.notice,.readonlyNotice{font-size:9px;padding:7px;margin-bottom:6px}
+  .tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;top:56px;margin-bottom:7px;padding:4px 0}
+  .tabs button{padding:7px 2px;font-size:9px;border-radius:8px;min-width:0}
+  #dash{padding:6px}
+  #dash .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  #dash .metric{min-height:69px;padding:8px 5px 6px 29px;font-size:8px}
+  #dash .metric:before{left:5px;top:9px;width:20px;height:20px;font-size:12px}
+  #dash .metric b{font-size:18px}
+  #dash .metric small{font-size:6.5px}
+  #dash .machineCards{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+  #dash .machineCards .card{padding:7px}
+  .machineIcon{width:21px;height:21px;font-size:12px}
+  #dash .machineCards h2{font-size:10px}
+  .machineJob{font-size:8px}.machineLabel,.machineBadge,.termBadge,.nextOpsTitle{font-size:6.5px}
+  .machineMini b,.machineDue b,.progressHead b{font-size:7px}
+  .machineMini small,.machineDue small,.progressHead{font-size:6px}
+  .nextOpItem,.nextOpItem b{font-size:6.7px}.nextOpItem span{font-size:6px}
+  .nextNo{width:12px;height:12px;font-size:6px}
+  .dashLower{gap:5px}
+  .dashLower .card,#dash .planCard{padding:7px}
+  .dashListItem{font-size:6.5px;gap:3px}.dashListItem b{font-size:6.8px}.dashListItem small{font-size:6px}
+  #dash table{font-size:6.5px;min-width:620px}#dash th,#dash td{padding:4px 3px}
 }
 
 </style>
@@ -180,54 +242,23 @@
 
 <section id="dash" class="page active">
   <div class="grid">
-    <div class="metric">Aktif İş<b id="m1">0</b></div>
-    <div class="metric">Üretimde<b id="m2">0</b></div>
-    <div class="metric">CMM Bekleyen<b id="m3">0</b></div>
-    <div class="metric">Termin Riski<b id="m4">0</b></div>
+    <div class="metric">Aktif İş<b id="m1">0</b><small>Üretimde olan iş emri</small></div>
+    <div class="metric">Üretimde<b id="m2">0</b><small>Aktif operasyon sayısı</small></div>
+    <div class="metric">CMM Bekleyen<b id="m3">0</b><small>Onay bekleyen parça</small></div>
+    <div class="metric">Termin Riski<b id="m4">0</b><small>Riskli olan iş emri</small></div>
   </div>
-
+  <div class="dashSectionTitle"><b>TEZGAH DURUMU</b><span>Tümünü Listele ›</span></div>
   <div class="machineCards">
-    <div class="card">
-      <h2>Tezgâh 1 - 850</h2>
-      <div id="machine850">Planlanan iş yok</div>
-    </div>
-    <div class="card">
-      <h2>Tezgâh 2 - 1000</h2>
-      <div id="machine1000">Planlanan iş yok</div>
-    </div>
+    <div class="card"><div id="machine850">Planlanan iş yok</div></div>
+    <div class="card"><div id="machine1000">Planlanan iş yok</div></div>
   </div>
-
-  <div class="dashboardLower">
-    <div class="card">
-      <h2>Yaklaşan Terminler</h2>
-      <div id="dueList" class="dashList"></div>
-    </div>
-    <div class="card">
-      <h2>CMM Bekleyenler</h2>
-      <div id="cmmWaitList" class="dashList"></div>
-    </div>
+  <div class="dashLower">
+    <div class="card"><div class="dashCardHead"><b>◷ YAKLAŞAN TERMİNLER</b><span>Tümünü gör ›</span></div><div id="dueList"></div></div>
+    <div class="card"><div class="dashCardHead"><b>◎ CMM BEKLEYENLER</b><span>Tümünü gör ›</span></div><div id="cmmWaitList"></div></div>
   </div>
-
   <div class="card planCard">
-    <h2>Ürün Terminleri</h2>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Tezgâh</th>
-            <th>Sıra</th>
-            <th>İş Emri</th>
-            <th>Parça</th>
-            <th>Adet</th>
-            <th>Başlangıç</th>
-            <th>Ürün Bitiş</th>
-            <th>Müşteri Termini</th>
-            <th>Durum</th>
-          </tr>
-        </thead>
-        <tbody id="board"></tbody>
-      </table>
-    </div>
+    <div class="dashCardHead"><b>ÜRÜN TERMİNLERİ <small id="totalOrders"></small></b><span>Tümünü Listele ›</span></div>
+    <div class="tablewrap"><table><thead><tr><th>İş Emri / Parça</th><th>Adet</th><th>Tahmini Başlangıç</th><th>Tahmini Ürün Bitişi</th><th>Müşteri Termini</th><th>Durum</th><th>İlerleme</th></tr></thead><tbody id="board"></tbody></table></div>
   </div>
 </section>
 
@@ -357,122 +388,26 @@ function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));f
 function schedule(){let groups={};state.orders.filter(o=>o.stage!=='done').forEach(o=>(groups[o.machine]??=[]).push(o));Object.values(groups).forEach(a=>a.sort((x,y)=>n(x.queue)-n(y.queue)));for(let a of Object.values(groups)){let available=null;for(let o of a){let planned=nextMoment(available||new Date(o.start));o.planStart=localISO(planned);let cursor=planned;for(let op of o.ops){let start=nextMoment(cursor);if(op.actualStart)start=nextMoment(new Date(op.actualStart));op.planStart=localISO(start);let setupEnd=op.actualStart?start:addWork(start,n(op.setup)*60);op.setupEnd=localISO(setupEnd);let prodStart=nextMoment(setupEnd);op.prodStart=localISO(prodStart);let remaining=Math.max(0,n(o.produceQty)-n(op.done));let end=addWork(prodStart,remaining*(n(op.cycle)+n(op.handling)));op.planEnd=op.actualEnd||localISO(end);cursor=new Date(op.planEnd)}o.realStart=(o.ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');o.cncEnd=o.ops.length?o.ops[o.ops.length-1].planEnd:o.planStart;available=new Date(o.cncEnd);let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship)}}}
 function render(){schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal()}
 function renderBoard(){
-  let a=[...state.orders].sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
-  $('m1').textContent=a.filter(o=>o.stage!=='done').length;
-  $('m2').textContent=a.filter(o=>status(o)==='Üretimde').length;
-  $('m3').textContent=a.filter(o=>status(o)==='CMM').length;
-  $('m4').textContent=a.filter(o=>o.requested&&o.promised&&o.promised>o.requested).length;
-
-  $('board').innerHTML=a.map(o=>{
-    let risk=o.requested&&o.promised&&o.promised>o.requested;
-    let st=risk?'⚠ Termin Riski':status(o);
-    return `<tr>
-      <td>${esc(o.machine)}</td>
-      <td>${n(o.queue)}</td>
-      <td><b>${esc(o.orderNo)}</b></td>
-      <td>${esc(o.part)}</td>
-      <td>${n(o.produceQty)}</td>
-      <td>${fmt(o.planStart)}</td>
-      <td><b>${fmt(o.promised)}</b></td>
-      <td>${fmt(o.requested)}</td>
-      <td><span class="miniBadge ${risk?'risk':''}">${esc(st)}</span></td>
-    </tr>`;
-  }).join('');
-
-  let due=[...a].filter(o=>o.requested).sort((x,y)=>x.requested.localeCompare(y.requested)).slice(0,6);
-  $('dueList').innerHTML=due.length?due.map(o=>{
-    let risk=o.promised&&o.promised>o.requested;
-    return `<div class="dashListItem">
-      <div><b>${esc(o.orderNo)} • ${esc(o.part)}</b><div class="small">${esc(o.machine)}</div></div>
-      <div class="small"><b>${fmt(o.requested)}</b><br><span class="miniBadge ${risk?'risk':''}">${risk?'Termin Riski':'Planlı'}</span></div>
-    </div>`;
-  }).join(''):'<div class="emptyDash">Yaklaşan termin yok.</div>';
-
-  let cmm=a.filter(o=>o.cmmRequired==='yes' && (!o.cmm?.status || o.cmm.status!=='Onay'));
-  $('cmmWaitList').innerHTML=cmm.length?cmm.slice(0,6).map(o=>`<div class="dashListItem">
-    <div><b>${esc(o.orderNo)} • ${esc(o.part)}</b><div class="small">${esc(o.machine)}</div></div>
-    <div class="small"><b>${esc(o.cmm?.status||'Bekliyor')}</b><br>${o.cmm?.expected?fmt(o.cmm.expected):'Termin yok'}</div>
-  </div>`).join(''):'<div class="emptyDash">CMM bekleyen iş yok.</div>';
+  let a=[...state.orders].filter(o=>o.stage!=='done').sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
+  $('m1').textContent=a.length;
+  $('m2').textContent=a.filter(o=>(o.ops||[]).some(op=>op.runState==='running')).length;
+  $('m3').textContent=a.filter(o=>o.cmmRequired==='yes'&&o.cmm?.status&&o.cmm.status!=='Onay').length;
+  let productEnd=o=>(o.ops||[]).length?(o.ops[o.ops.length-1].planEnd||''):'';
+  let isRisk=o=>!!(o.requested&&productEnd(o)&&new Date(productEnd(o))>new Date(o.requested));
+  $('m4').textContent=a.filter(isRisk).length;
+  if($('totalOrders'))$('totalOrders').textContent='(Toplam '+a.length+')';
+  $('board').innerHTML=a.map(o=>{let end=productEnd(o),pct=Math.round(progress(o)),risk=isRisk(o),near=!risk&&o.requested&&end&&((new Date(o.requested)-new Date(end))/86400000)<=2,badge=!o.requested?'Termin yok':risk?'RİSK':near?'YAKLAŞIYOR':'TERMİNDE';return `<tr class="${risk?'rowRisk':''}"><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>${n(o.produceQty)}</td><td>${fmt(o.planStart)}</td><td><b>${end?fmt(end):'-'}</b></td><td>${o.requested?fmt(o.requested):'-'}</td><td><span class="termBadge ${risk?'risk':near?'warn':'ok'}">${badge}</span></td><td><span class="tinyBar"><i style="width:${Math.min(100,pct)}%"></i></span> ${pct}%</td></tr>`}).join('');
+  let due=[...a].filter(o=>o.requested).sort((x,y)=>x.requested.localeCompare(y.requested)).slice(0,4);
+  $('dueList').innerHTML=due.length?due.map(o=>{let end=productEnd(o),risk=isRisk(o);return `<div class="dashListItem"><div><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></div><div><small>Ürün Bitiş (Tahmini)</small><br><b>${end?fmt(end):'-'}</b></div><span class="termBadge ${risk?'risk':'ok'}">${risk?'RİSK':'TERMİNDE'}</span></div>`}).join(''):'<div class="emptyDash">Yaklaşan termin bulunmuyor.</div>';
+  let cmm=a.filter(o=>o.cmmRequired==='yes'&&o.cmm?.status&&o.cmm.status!=='Onay');
+  $('cmmWaitList').innerHTML=cmm.length?cmm.slice(0,4).map(o=>`<div class="dashListItem"><div><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></div><div><small>Beklenen</small><br><b>${o.cmm?.expected?fmt(o.cmm.expected):'-'}</b></div><span class="queueBadge">${esc(o.cmm?.status||'Bekliyor')}</span></div>`).join(''):'<div class="emptyDash"><span class="emptyIcon">⌕</span>CMM onayı bekleyen<br>parça bulunmuyor.<br><b style="color:#159454">Harika! Her şey yolunda.</b></div>';
 }
-
 function renderMachines(){
-  const machines=[
-    {name:'Tezgâh 1 - 850',id:'machine850'},
-    {name:'Tezgâh 2 - 1000',id:'machine1000'}
-  ];
-
-  machines.forEach(m=>{
-    const el=$(m.id);
-    if(!el)return;
-
-    const jobs=state.orders
-      .filter(o=>o.machine===m.name && o.stage!=='done')
-      .sort((a,b)=>n(a.queue)-n(b.queue));
-
-    if(!jobs.length){
-      el.innerHTML='<div class="emptyDash">Planlanan iş yok.</div>';
-      return;
-    }
-
-    const o=jobs[0];
-    const ops=o.ops||[];
-    const aktif=ops.find(op=>op.runState==='running');
-    const current=aktif || currentOp(o);
-    const currentIndex=current?ops.findIndex(op=>op.id===current.id):-1;
-    const sonraki=currentIndex>=0
-      ? ops.slice(currentIndex+1).find(op=>opProcessed(op)<opTarget(o,op))
-      : ops.find(op=>opProcessed(op)<opTarget(o,op));
-    const aktifBitis=current?.planEnd||'';
-    const urunBitis=o.promised || (ops.length?ops[ops.length-1]?.planEnd||'':'');
-    const pct=Math.round(progress(o));
-    const risk=!!(o.requested&&urunBitis&&new Date(urunBitis)>new Date(o.requested));
-    const running=!!aktif;
-    const nextJobs=jobs.slice(1,4);
-
-    el.innerHTML=`
-      <div class="machineNow">
-        <div class="machineStatus ${running?'running':''}">
-          <span class="statusDot"></span>
-          <b>${running?'Çalışıyor':'Planlandı'}</b>
-        </div>
-
-        <div class="machineActiveTitle">${running?'AKTİF İŞ':'SIRADAKİ İŞ'}</div>
-        <div class="machineJob">
-          <b>${esc(o.orderNo||'-')}</b><span>•</span>
-          <b>${esc(o.part||'-')}</b><span>•</span>
-          <b>${current?esc(current.name||'OP'):'Operasyon bekliyor'}</b>
-        </div>
-
-        <span class="machineBadge ${running?'running':''}">${running?'Üretimde':'Bekliyor'}</span>
-
-        <div class="machineProgressHead"><span>İlerleme</span><b>${pct}%</b></div>
-        <div class="machineProgress"><div style="width:${Math.min(100,pct)}%"></div></div>
-
-        <div class="machineDates">
-          <div><small>OP Bitiş (Tahmini)</small><b>${aktifBitis?fmt(aktifBitis):'-'}</b></div>
-          <div><small>Ürün Bitiş (Tahmini)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div>
-        </div>
-
-        <div class="machineDue">
-          <div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div>
-          <span class="termBadge ${!o.requested||!urunBitis?'neutral':risk?'risk':'ok'}">
-            ${!o.requested?'Termin girilmedi':!urunBitis?'Plan hesaplanmadı':risk?'⚠ TERMİN RİSKİ':'TERMİNDE ✓'}
-          </span>
-        </div>
-
-        <div class="nextJob">
-          <small>SONRAKİ OPERASYON</small>
-          <b>${sonraki?esc(sonraki.name||'OP'):'Planlanan operasyon yok'}</b>
-        </div>
-
-        <div class="nextQueueBox">
-          <small>SIRADAKİ İŞLER</small>
-          ${nextJobs.length?nextJobs.map((j,i)=>`<div class="nextQueueItem">
-            <b>${i+2}. ${esc(j.orderNo)} • ${esc(j.part)}</b>
-            <span>${fmt(j.promised)}</span>
-          </div>`).join(''):'<div class="emptyDash">Bu tezgâhta başka iş yok.</div>'}
-        </div>
-      </div>`;
+  const machines=[{name:'Tezgâh 1 - 850',id:'machine850'},{name:'Tezgâh 2 - 1000',id:'machine1000'}];
+  machines.forEach(m=>{const el=$(m.id);if(!el)return;const jobs=state.orders.filter(o=>o.machine===m.name&&o.stage!=='done').sort((a,b)=>n(a.queue)-n(b.queue));
+    if(!jobs.length){el.innerHTML=`<div class="machineHeader"><div class="machineIcon">▣</div><div><h2>${esc(m.name)}</h2><div class="machineStatus wait">Planlanan iş yok</div></div></div><div class="emptyDash">Bu tezgâhta sırada iş bulunmuyor.</div>`;return}
+    const o=jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>opProcessed(op)<opTarget(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=ops.length?(ops[ops.length-1]?.planEnd||''):'',pct=Math.round(progress(o)),risk=!!(o.requested&&urunBitis&&new Date(urunBitis)>new Date(o.requested)),queued=jobs.slice(1,3);
+    el.innerHTML=`<div class="machineHeader"><div class="machineIcon">▣</div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span><div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>Ürün Bitiş (Tahmini)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div></div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
   });
 }
 
