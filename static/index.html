@@ -369,19 +369,19 @@ const urunBitis = ops.length ? ops[ops.length-1]?.planEnd || '' : '';
     <div class="machineDue">
       <div>
         <small>Müşteri Termini</small>
-        <b>${o.dueDate ? fmt(o.dueDate) : '-'}</b>
+        <b>${o.requested ? fmt(o.requested) : '-'}</b>
       </div>
       <span class="termBadge ${
-  !o.dueDate
+  !o.requested
     ? ''
-    : (o.planEnd && new Date(o.planEnd) > new Date(o.dueDate) ? 'risk' : '')
+    : (o.planEnd && new Date(o.planEnd) > new Date(o.requested) ? 'risk' : '')
 }">
   ${
-    !o.dueDate
+    !o.requested
       ? 'Termin girilmedi'
       : !o.planEnd
         ? 'Plan hesaplanmadı'
-        : new Date(o.planEnd) > new Date(o.dueDate)
+        : new Date(o.planEnd) > new Date(o.requested)
           ? '⚠ TERMİN RİSKİ'
           : 'TERMİNDE ✓'
   }
