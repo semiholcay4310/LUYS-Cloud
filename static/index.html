@@ -135,7 +135,7 @@
 
 .dashSectionTitle{display:flex;align-items:center;justify-content:space-between;margin:7px 1px 7px}
 .dashSectionTitle b{font-size:11px;color:#263f58;letter-spacing:.02em}
-.dashSectionTitle span{font-size:9px;color:#176fbd;font-weight:800}
+.dashSectionTitle span{font-size:9px;color:#176fbd;font-weight:800}.dashAction{cursor:pointer;user-select:none}
 
 #dash .machineCards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 10px}
 #dash .machineCards .card{padding:10px;border:1px solid var(--line);border-radius:13px;box-shadow:0 2px 10px #16324a0d}
@@ -175,7 +175,7 @@
 .dashLower .card{padding:10px;margin:0;border:1px solid var(--line);box-shadow:0 2px 10px #16324a0d}
 .dashCardHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
 .dashCardHead b{font-size:10px;color:#29445d}
-.dashCardHead span{font-size:8px;color:#176fbd;font-weight:800}
+.dashCardHead span{font-size:8px;color:#176fbd;font-weight:800}.dashAction{cursor:pointer;user-select:none}.dashAction:hover{text-decoration:underline}
 .dashListItem{display:grid;grid-template-columns:1.2fr .8fr auto;gap:5px;align-items:center;padding:5px 0;border-bottom:1px solid #edf1f4;font-size:8px}
 .dashListItem:last-child{border-bottom:0}
 .dashListItem b{font-size:8px;color:#29445d}
@@ -233,6 +233,35 @@
 .machineActiveBox.riskBox{background:#fff7f7!important;border-color:#f1cccc!important}
 @media(max-width:800px){.machineIcon{width:29px!important;height:26px!important;flex-basis:29px!important}.cncFig{transform:scale(.84)}}
 
+
+/* ===== MUHASEBE ===== */
+.accGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.accMetric{background:#fff;border:1px solid #e0e8ef;border-radius:13px;padding:12px;box-shadow:0 2px 10px #16324a0d}
+.accMetric small{display:block;color:#758696;font-size:10px;font-weight:800}
+.accMetric b{display:block;color:#123a5d;font-size:22px;margin-top:5px}
+.accMetric.good b{color:#168348}.accMetric.warn b{color:#c97512}.accMetric.bad b{color:#c72e2e}
+.accCols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.accTable td,.accTable th{font-size:11px}
+.moneyGood{color:#168348;font-weight:800}.moneyBad{color:#c72e2e;font-weight:800}.moneyWarn{color:#b86d10;font-weight:800}
+.accPill{display:inline-block;padding:4px 7px;border-radius:99px;font-size:10px;font-weight:800;background:#edf2f6;color:#667989}
+.accPill.ok{background:#def5e8;color:#177246}.accPill.wait{background:#fff1d8;color:#9a6511}
+@media(max-width:800px){
+  .tabs{grid-template-columns:repeat(4,1fr)!important}
+  .accGrid{grid-template-columns:repeat(2,1fr)}
+  .accCols{grid-template-columns:1fr}
+  .accMetric b{font-size:19px}
+}
+
+
+.dashModal{position:fixed;inset:0;background:rgba(10,30,50,.45);z-index:9999;display:none;align-items:flex-end;justify-content:center;padding:12px}
+.dashModal.open{display:flex}
+.dashModalBox{background:#fff;width:min(980px,100%);max-height:88vh;overflow:auto;border-radius:18px 18px 10px 10px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
+.dashModalHead{position:sticky;top:0;background:#fff;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e4eaf0}
+.dashModalHead b{font-size:15px;color:#173a57}.dashModalClose{border:0;background:#eef3f7;border-radius:10px;width:34px;height:34px;font-size:20px;cursor:pointer}
+.dashModalBody{padding:12px 16px 18px}
+.modalMachineGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:800px){.dashModal{padding:0}.dashModalBox{border-radius:18px 18px 0 0;max-height:92vh}.modalMachineGrid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -252,6 +281,7 @@
     <button data-p="daily">Günlük Üretim</button>
     <button data-p="cmm">CMM</button>
     <button data-p="calendar">Takvim</button>
+    <button data-p="accounting">Muhasebe</button>
   </div>
 
 <section id="dash" class="page active">
@@ -261,17 +291,17 @@
     <div class="metric">CMM Bekleyen<b id="m3">0</b><small>Onay bekleyen parça</small></div>
     <div class="metric">Termin Riski<b id="m4">0</b><small>Riskli olan iş emri</small></div>
   </div>
-  <div class="dashSectionTitle"><b>TEZGAH DURUMU</b><span>Tümünü Listele ›</span></div>
+  <div class="dashSectionTitle"><b>TEZGAH DURUMU</b><span class="dashAction" data-dash-action="machines">Tümünü Listele ›</span></div>
   <div class="machineCards">
     <div class="card"><div id="machine850">Planlanan iş yok</div></div>
     <div class="card"><div id="machine1000">Planlanan iş yok</div></div>
   </div>
   <div class="dashLower">
-    <div class="card"><div class="dashCardHead"><b>◷ YAKLAŞAN TERMİNLER</b><span>Tümünü gör ›</span></div><div id="dueList"></div></div>
-    <div class="card"><div class="dashCardHead"><b>◎ CMM BEKLEYENLER</b><span>Tümünü gör ›</span></div><div id="cmmWaitList"></div></div>
+    <div class="card"><div class="dashCardHead"><b>◷ YAKLAŞAN TERMİNLER</b><span class="dashAction" data-dash-action="due">Tümünü gör ›</span></div><div id="dueList"></div></div>
+    <div class="card"><div class="dashCardHead"><b>◎ CMM BEKLEYENLER</b><span class="dashAction" data-dash-action="cmm">Tümünü gör ›</span></div><div id="cmmWaitList"></div></div>
   </div>
   <div class="card planCard">
-    <div class="dashCardHead"><b>ÜRÜN TERMİNLERİ <small id="totalOrders"></small></b><span>Tümünü Listele ›</span></div>
+    <div class="dashCardHead"><b>ÜRÜN TERMİNLERİ <small id="totalOrders"></small></b><span class="dashAction" data-dash-action="products">Tümünü Listele ›</span></div>
     <div class="tablewrap"><table><thead><tr><th>İş Emri / Parça</th><th>Adet</th><th>Tahmini Başlangıç</th><th>Tahmini Ürün Bitişi</th><th>Müşteri Termini</th><th>Durum</th><th>İlerleme</th></tr></thead><tbody id="board"></tbody></table></div>
   </div>
 </section>
@@ -359,11 +389,72 @@
 <section id="calendar" class="page">
   <div class="card"><h2>Çalışma Takvimi</h2><div class="cal" id="cal"></div><div class="inline editOnly"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div><p class="small">Brüt saatten mola düşülür. Ayar süresi her OP başlangıcında bir kez hesaplanır.</p></div>
 </section>
-<div class="footer">LÜYS Cloud v0.2 • Bulut Veri</div>
+
+<section id="accounting" class="page">
+  <div class="accGrid">
+    <div class="accMetric good"><small>TAHSİL EDİLEN</small><b id="accCollected">₺0</b></div>
+    <div class="accMetric warn"><small>BEKLEYEN TAHSİLAT</small><b id="accReceivable">₺0</b></div>
+    <div class="accMetric bad"><small>TOPLAM GİDER</small><b id="accExpense">₺0</b></div>
+    <div class="accMetric"><small>NET NAKİT</small><b id="accNet">₺0</b></div>
+  </div>
+
+  <div class="accCols editOnly">
+    <div class="card">
+      <h2>Gelir / Tahsilat Ekle</h2>
+      <form id="incomeForm" class="form">
+        <label>İş Emri<select name="orderId" id="incomeOrder"></select></label>
+        <label>Tutar (TL)<input name="amount" type="number" step="0.01" min="0" required></label>
+        <label>Vade<input name="dueDate" type="date"></label>
+        <label>Durum<select name="status"><option value="Bekliyor">Bekliyor</option><option value="Tahsil Edildi">Tahsil Edildi</option></select></label>
+        <label>Tahsil Tarihi<input name="paidDate" type="date"></label>
+        <label>Açıklama<input name="note" placeholder="Fatura / hakediş / avans"></label>
+        <button class="btn green full">GELİRİ KAYDET</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Gider Ekle</h2>
+      <form id="expenseForm" class="form">
+        <label>Kategori<select name="category"><option>Malzeme</option><option>Takım</option><option>Personel</option><option>Elektrik</option><option>Kira</option><option>Vergi / SGK</option><option>Leasing / Kredi</option><option>Nakliye</option><option>CMM / Kalite</option><option>Diğer</option></select></label>
+        <label>Tutar (TL)<input name="amount" type="number" step="0.01" min="0" required></label>
+        <label>Tarih<input name="date" type="date" required></label>
+        <label>Ödeme Durumu<select name="status"><option value="Ödendi">Ödendi</option><option value="Bekliyor">Bekliyor</option></select></label>
+        <label class="full">Açıklama<input name="note"></label>
+        <button class="btn red full">GİDERİ KAYDET</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="dashCardHead"><b>TAHSİLAT TAKİBİ</b><span id="accIncomeCount"></span></div>
+    <div class="tablewrap"><table class="accTable">
+      <thead><tr><th>İş Emri</th><th>Açıklama</th><th>Tutar</th><th>Vade</th><th>Durum</th><th>Tahsil Tarihi</th><th class="editOnly">İşlem</th></tr></thead>
+      <tbody id="incomeList"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <div class="dashCardHead"><b>GİDERLER</b><span id="accExpenseCount"></span></div>
+    <div class="tablewrap"><table class="accTable">
+      <thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Tutar</th><th>Durum</th><th class="editOnly">İşlem</th></tr></thead>
+      <tbody id="expenseList"></tbody>
+    </table></div>
+  </div>
+</section>
+
+
+<div id="dashModal" class="dashModal" aria-hidden="true">
+  <div class="dashModalBox">
+    <div class="dashModalHead"><b id="dashModalTitle">Liste</b><button type="button" class="dashModalClose" id="dashModalClose">×</button></div>
+    <div class="dashModalBody" id="dashModalBody"></div>
+  </div>
+</div>
+
+<div class="footer">LÜYS Cloud v0.3 • Bulut Veri</div>
 </div>
 <script>
 const $=id=>document.getElementById(id), n=v=>Number(v||0), uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let state={orders:[],daily:[],calendar:{0:{h:0,b:0},1:{h:10,b:1},2:{h:10,b:1},3:{h:10,b:1},4:{h:10,b:1},5:{h:10,b:1},6:{h:10,b:1}}};
+let state={orders:[],daily:[],calendar:{0:{h:0,b:0},1:{h:10,b:1},2:{h:10,b:1},3:{h:10,b:1},4:{h:10,b:1},5:{h:10,b:1},6:{h:10,b:1}},accounting:{incomes:[],expenses:[]}};
 let me={username:'',role:'viewer',can_edit:false};
 const dayNames=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
 function pad(v){return String(v).padStart(2,'0')}
@@ -374,7 +465,7 @@ function canEdit(){return me.can_edit===true}
 async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block'}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
-function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o)})}
+function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o)})}
 function autoNo(){let d=new Date(),pre='LUK-'+String(d.getFullYear()).slice(-2)+pad(d.getMonth()+1)+'-',used=new Set(state.orders.map(o=>o.orderNo));for(let i=1;i<1000;i++){let x=pre+String(i).padStart(3,'0');if(!used.has(x))return x}return pre+'999'}
 function nextQueue(machine){let a=state.orders.filter(o=>o.machine===machine && o.stage!=='done').map(o=>n(o.queue));return a.length?Math.max(...a)+1:1}
 function order(id){return state.orders.find(o=>o.id===id)}
@@ -400,7 +491,7 @@ function windows(day){let c=cal(day);if(c.net<=0)return[];let st=new Date(day+'T
 function nextMoment(v){let d=new Date(v);for(let g=0;g<60;g++){let day=ymd(d),ws=windows(day);for(let [a,b] of ws){if(d<=a)return new Date(a);if(d>=a&&d<b)return d}d.setDate(d.getDate()+1);d.setHours(8,0,0,0)}return d}
 function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<2000&&left>0;g++){d=nextMoment(d);let w=windows(ymd(d)).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(8,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
 function schedule(){let groups={};state.orders.filter(o=>o.stage!=='done').forEach(o=>(groups[o.machine]??=[]).push(o));Object.values(groups).forEach(a=>a.sort((x,y)=>n(x.queue)-n(y.queue)));for(let a of Object.values(groups)){let available=null;for(let o of a){let planned=nextMoment(available||new Date(o.start));o.planStart=localISO(planned);let cursor=planned;for(let op of o.ops){let start=nextMoment(cursor);if(op.actualStart)start=nextMoment(new Date(op.actualStart));op.planStart=localISO(start);let setupEnd=op.actualStart?start:addWork(start,n(op.setup)*60);op.setupEnd=localISO(setupEnd);let prodStart=nextMoment(setupEnd);op.prodStart=localISO(prodStart);let remaining=Math.max(0,n(o.produceQty)-n(op.done));let end=addWork(prodStart,remaining*(n(op.cycle)+n(op.handling)));op.planEnd=op.actualEnd||localISO(end);cursor=new Date(op.planEnd)}o.realStart=(o.ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');o.cncEnd=o.ops.length?o.ops[o.ops.length-1].planEnd:o.planStart;available=new Date(o.cncEnd);let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship)}}}
-function render(){schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal()}
+function render(){schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal();renderAccounting()}
 function renderBoard(){
   let a=[...state.orders].filter(o=>o.stage!=='done').sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
   $('m1').textContent=a.length;
@@ -433,6 +524,88 @@ function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>`<div><b>${x}</b><la
 function fillSelects(){let opts='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder','cmmOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=opts;el.value=old});fillDailyOps();syncOpAuto()}
 function fillDailyOps(){let el=$('dailyOp');if(!el)return;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''))}
 function syncOpAuto(){let o=order($('opOrder')?.value);if($('opMachine'))$('opMachine').value=o?.machine||'';if($('opQty'))$('opQty').value=o?.produceQty||''}
+
+function tl(v){return '₺'+n(v).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}
+function renderAccounting(){
+  normalize();
+  const inc=state.accounting.incomes||[], exp=state.accounting.expenses||[];
+  const collected=inc.filter(x=>x.status==='Tahsil Edildi').reduce((a,x)=>a+n(x.amount),0);
+  const receivable=inc.filter(x=>x.status!=='Tahsil Edildi').reduce((a,x)=>a+n(x.amount),0);
+  const expenses=exp.reduce((a,x)=>a+n(x.amount),0);
+  const net=collected-expenses;
+  if($('accCollected'))$('accCollected').textContent=tl(collected);
+  if($('accReceivable'))$('accReceivable').textContent=tl(receivable);
+  if($('accExpense'))$('accExpense').textContent=tl(expenses);
+  if($('accNet')){$('accNet').textContent=tl(net);$('accNet').style.color=net<0?'#c72e2e':'#168348'}
+  if($('accIncomeCount'))$('accIncomeCount').textContent=inc.length+' kayıt';
+  if($('accExpenseCount'))$('accExpenseCount').textContent=exp.length+' kayıt';
+
+  if($('incomeOrder')){
+    let cur=$('incomeOrder').value;
+    $('incomeOrder').innerHTML='<option value="">İş emri seçmeden kayıt</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} • ${esc(o.part)}</option>`).join('');
+    if([...$('incomeOrder').options].some(x=>x.value===cur))$('incomeOrder').value=cur;
+  }
+
+  if($('incomeList'))$('incomeList').innerHTML=[...inc].sort((a,b)=>(b.dueDate||'').localeCompare(a.dueDate||'')).map(x=>{
+    let o=order(x.orderId),paid=x.status==='Tahsil Edildi';
+    return `<tr><td>${o?esc(o.orderNo):'-'}</td><td>${esc(x.note||'-')}</td><td class="${paid?'moneyGood':'moneyWarn'}">${tl(x.amount)}</td><td>${x.dueDate?fmt(x.dueDate):'-'}</td><td><span class="accPill ${paid?'ok':'wait'}">${esc(x.status)}</span></td><td>${x.paidDate?fmt(x.paidDate):'-'}</td>${canEdit()?`<td><button class="btn alt" onclick="toggleIncome('${x.id}')">${paid?'Bekliyor yap':'Tahsil edildi'}</button> <button class="btn red" onclick="delIncome('${x.id}')">Sil</button></td>`:''}</tr>`
+  }).join('')||'<tr><td colspan="7">Henüz tahsilat kaydı yok.</td></tr>';
+
+  if($('expenseList'))$('expenseList').innerHTML=[...exp].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(x=>`<tr><td>${x.date?fmt(x.date):'-'}</td><td>${esc(x.category||'-')}</td><td>${esc(x.note||'-')}</td><td class="moneyBad">${tl(x.amount)}</td><td><span class="accPill ${x.status==='Ödendi'?'ok':'wait'}">${esc(x.status||'Ödendi')}</span></td>${canEdit()?`<td><button class="btn red" onclick="delExpense('${x.id}')">Sil</button></td>`:''}</tr>`).join('')||'<tr><td colspan="6">Henüz gider kaydı yok.</td></tr>';
+}
+window.toggleIncome=async id=>{let x=state.accounting.incomes.find(v=>v.id===id);if(!x)return;x.status=x.status==='Tahsil Edildi'?'Bekliyor':'Tahsil Edildi';x.paidDate=x.status==='Tahsil Edildi'?ymd(new Date()):'';await save()}
+window.delIncome=async id=>{if(!confirm('Tahsilat kaydı silinsin mi?'))return;state.accounting.incomes=state.accounting.incomes.filter(x=>x.id!==id);await save()}
+window.delExpense=async id=>{if(!confirm('Gider kaydı silinsin mi?'))return;state.accounting.expenses=state.accounting.expenses.filter(x=>x.id!==id);await save()}
+
+if($('incomeForm'))$('incomeForm').onsubmit=async e=>{
+  e.preventDefault();if(!canEdit())return;
+  let f=e.target,d=Object.fromEntries(new FormData(f));
+  state.accounting.incomes.push({id:uid(),orderId:d.orderId||'',amount:n(d.amount),dueDate:d.dueDate||'',status:d.status||'Bekliyor',paidDate:d.paidDate||'',note:d.note||''});
+  if(d.status==='Tahsil Edildi'&&!d.paidDate)state.accounting.incomes[state.accounting.incomes.length-1].paidDate=ymd(new Date());
+  f.reset();await save()
+}
+if($('expenseForm'))$('expenseForm').onsubmit=async e=>{
+  e.preventDefault();if(!canEdit())return;
+  let f=e.target,d=Object.fromEntries(new FormData(f));
+  state.accounting.expenses.push({id:uid(),category:d.category||'Diğer',amount:n(d.amount),date:d.date||ymd(new Date()),status:d.status||'Ödendi',note:d.note||''});
+  f.reset();if(f.date)f.date.value=ymd(new Date());await save()
+}
+
+
+function dashProductEnd(o){return (o.ops||[]).length ? (o.ops[o.ops.length-1].planEnd||'') : ''}
+function dashRisk(o){let e=dashProductEnd(o);return !!(o.requested&&e&&new Date(e)>new Date(o.requested))}
+function openDashModal(kind){
+  let a=[...state.orders].filter(o=>o.stage!=='done').sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
+  let title='',html='';
+  if(kind==='products'){
+    title='Tüm Ürün Terminleri';
+    html=`<div class="tablewrap"><table><thead><tr><th>İş Emri / Parça</th><th>Adet</th><th>Tezgâh</th><th>Başlangıç</th><th>Ürün Bitişi</th><th>Müşteri Termini</th><th>Durum</th><th>İlerleme</th></tr></thead><tbody>${a.map(o=>{let e=dashProductEnd(o),r=dashRisk(o),p=Math.round(progress(o));return `<tr><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>${n(o.produceQty)}</td><td>${esc(o.machine||'-')}</td><td>${o.planStart?fmt(o.planStart):'-'}</td><td>${e?fmt(e):'-'}</td><td>${o.requested?fmt(o.requested):'-'}</td><td><span class="termBadge ${r?'risk':'ok'}">${r?'RİSK':'TERMİNDE'}</span></td><td>${p}%</td></tr>`}).join('')}</tbody></table></div>`;
+  }else if(kind==='due'){
+    title='Tüm Yaklaşan Terminler';
+    let list=a.filter(o=>o.requested).sort((x,y)=>x.requested.localeCompare(y.requested));
+    html=list.length?list.map(o=>{let e=dashProductEnd(o),r=dashRisk(o);return `<div class="dashListItem"><div><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></div><div><small>Ürün Bitiş</small><br><b>${e?fmt(e):'-'}</b><br><small>Müşteri: ${fmt(o.requested)}</small></div><span class="termBadge ${r?'risk':'ok'}">${r?'RİSK':'TERMİNDE'}</span></div>`}).join(''):'<div class="emptyDash">Termin girilmiş iş bulunmuyor.</div>';
+  }else if(kind==='cmm'){
+    title='Tüm CMM Bekleyenler';
+    let list=a.filter(o=>o.cmmRequired==='yes'&&o.cmm?.status&&o.cmm.status!=='Onay');
+    html=list.length?list.map(o=>`<div class="dashListItem"><div><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></div><div><small>Beklenen Termin</small><br><b>${o.cmm?.expected?fmt(o.cmm.expected):'-'}</b></div><span class="queueBadge">${esc(o.cmm?.status||'Bekliyor')}</span></div>`).join(''):'<div class="emptyDash">CMM onayı bekleyen parça bulunmuyor.</div>';
+  }else if(kind==='machines'){
+    title='Tüm Tezgâh Sıralaması';
+    const ms=['Tezgâh 1 - 850','Tezgâh 2 - 1000'];
+    html='<div class="modalMachineGrid">'+ms.map(m=>{let jobs=a.filter(o=>o.machine===m).sort((x,y)=>n(x.queue)-n(y.queue));return `<div class="card"><h2>${esc(m)}</h2>${jobs.length?jobs.map((o,i)=>`<div class="nextOpItem"><span class="nextNo">${i+1}</span><b>${esc(o.orderNo)} • ${esc(o.part)}</b><span>${Math.round(progress(o))}%</span></div>`).join(''):'<div class="emptyDash">Planlanan iş yok.</div>'}</div>`}).join('')+'</div>';
+  }
+  $('dashModalTitle').textContent=title;
+  $('dashModalBody').innerHTML=html;
+  $('dashModal').classList.add('open');
+  $('dashModal').setAttribute('aria-hidden','false');
+}
+function closeDashModal(){$('dashModal').classList.remove('open');$('dashModal').setAttribute('aria-hidden','true')}
+document.addEventListener('click',e=>{
+  let a=e.target.closest('[data-dash-action]');
+  if(a){e.preventDefault();openDashModal(a.dataset.dashAction)}
+});
+if($('dashModalClose'))$('dashModalClose').onclick=closeDashModal;
+if($('dashModal'))$('dashModal').onclick=e=>{if(e.target===$('dashModal'))closeDashModal()};
+
 $('tabs').onclick=e=>{if(e.target.dataset.p){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b===e.target));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===e.target.dataset.p))}}
 $('orderForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('id'),no=f.get('orderNo').trim();if(state.orders.some(o=>o.orderNo===no&&o.id!==id)){alert('Bu iş emri numarası zaten kullanılıyor.');return}let obj={id:id||uid(),orderNo:no,customerOrderNo:f.get('customerOrderNo'),customer:f.get('customer'),part:f.get('part'),revision:f.get('revision'),qty:n(f.get('qty')),produceQty:n(f.get('produceQty')),stockStatus:f.get('stockStatus'),stockQty:n(f.get('stockQty')),machine:f.get('machine'),queue:n(f.get('queue')),start:f.get('start'),requested:f.get('requested'),cmmRequired:f.get('cmmRequired'),cmmDays:n(f.get('cmmDays')),shipDays:n(f.get('shipDays')),note:f.get('note'),stage:'plan',ops:[],cmm:{}};let old=order(id);if(old){obj.ops=old.ops||[];obj.cmm=old.cmm||{};obj.stage=old.stage||'plan';Object.assign(old,obj)}else{state.orders.filter(o=>o.machine===obj.machine&&n(o.queue)>=obj.queue).forEach(o=>o.queue++);state.orders.push(obj)}if(await save())newOrderForm()}
 function newOrderForm(){if(!canEdit())return;let f=$('orderForm');f.reset();f.id.value='';f.orderNo.value=autoNo();f.customer.value='Lucas';f.machine.value='Tezgâh 1 - 850';f.stockStatus.value='Geldi';f.stockQty.value=0;f.queue.value=nextQueue(f.machine.value);f.start.value=localISO(new Date()).slice(0,16);$('orderTitle').textContent='Yeni İş Emri'}
