@@ -415,7 +415,7 @@
   <div class="sync" id="sync">Bağlanıyor…</div>
 </header>
 <div class="wrap">
-  <div class="notice"><b>Ortak veri sürümü:</b> Telefon, ev ve iş yeri farklı internetlerde olsa bile aynı hesabın ortak verilerini görür.</div>
+  
   <div class="readonlyNotice" id="readonlyNotice"><b>Görüntüleme modu:</b> Bu kullanıcı verileri görebilir; kayıt ekleyemez, silemez veya değiştiremez.</div>
   <div class="tabs" id="tabs">
     <button data-p="dash" class="active">Ana Panel</button>
@@ -698,7 +698,7 @@ function windows(day){let c=cal(day);if(c.net<=0)return[];let st=new Date(day+'T
 function nextMoment(v){let d=new Date(v);for(let g=0;g<60;g++){let day=ymd(d),ws=windows(day);for(let [a,b] of ws){if(d<=a)return new Date(a);if(d>=a&&d<b)return d}d.setDate(d.getDate()+1);d.setHours(8,0,0,0)}return d}
 function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<2000&&left>0;g++){d=nextMoment(d);let w=windows(ymd(d)).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(8,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
 function schedule(){let groups={};state.orders.filter(o=>o.stage!=='done').forEach(o=>(groups[o.machine]??=[]).push(o));Object.values(groups).forEach(a=>a.sort((x,y)=>n(x.queue)-n(y.queue)));for(let a of Object.values(groups)){let available=null;for(let o of a){let planned=nextMoment(available||new Date(o.start));o.planStart=localISO(planned);let cursor=planned;for(let op of o.ops){let start=nextMoment(cursor);if(op.actualStart)start=nextMoment(new Date(op.actualStart));op.planStart=localISO(start);let setupEnd=op.actualStart?start:addWork(start,n(op.setup)*60);op.setupEnd=localISO(setupEnd);let prodStart=nextMoment(setupEnd);op.prodStart=localISO(prodStart);let remaining=Math.max(0,n(o.produceQty)-n(op.done));let end=addWork(prodStart,remaining*(n(op.cycle)+n(op.handling)));op.planEnd=op.actualEnd||localISO(end);cursor=new Date(op.planEnd)}o.realStart=(o.ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');o.cncEnd=o.ops.length?o.ops[o.ops.length-1].planEnd:o.planStart;available=new Date(o.cncEnd);let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship)}}}
-function render(){syncCompletedOps();schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal();renderAccounting()}
+function render(){syncCompletedOps();schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal();renderAccounting();let ap=$('autoPlanPdfWrap');if(ap)ap.style.display=canEdit()?'':'none'}
 function renderBoard(){
   let a=[...state.orders].filter(o=>o.stage!=='done').sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
   $('m1').textContent=a.length;
