@@ -405,6 +405,25 @@
  .dailyWeekHead{padding:11px}.dailyWeekHead b{font-size:12px}.dailyWeekHead .weekTotal{font-size:10px}
 }
 
+
+/* ===== PLAN / GERÇEKLEŞEN ÜRETİM TAKİBİ ===== */
+.planTrack{margin-top:9px;padding-top:8px;border-top:1px solid #e3ece7}
+.planTrackGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.planTrackItem{background:#fff;border:1px solid #e5ecef;border-radius:8px;padding:6px}
+.planTrackItem small{display:block;color:#7a8b97;font-size:7px;margin-bottom:2px}
+.planTrackItem b{font-size:8px;color:#27445b}
+.planTrackDelta{margin-top:6px;padding:6px 8px;border-radius:8px;text-align:center;font-size:8px;font-weight:900}
+.planTrackDelta.ahead{background:#def5e8;color:#177246}
+.planTrackDelta.behind{background:#ffe7e7;color:#b52e2e}
+.planTrackDelta.same{background:#eef3f7;color:#667887}
+.planMiniDelta{display:block;margin-top:3px;font-size:7px;font-weight:900}
+.planMiniDelta.ahead{color:#168348}.planMiniDelta.behind{color:#c72e2e}.planMiniDelta.same{color:#718394}
+@media(min-width:1000px){
+  .planTrackItem small{font-size:9px}.planTrackItem b{font-size:11px}
+  .planTrackDelta{font-size:10px;padding:7px 9px}
+  .planMiniDelta{font-size:9px}
+}
+
 </style>
 </head>
 <body>
@@ -656,7 +675,7 @@ function canEdit(){return me.can_edit===true}
 async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none'}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
-function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o)})}
+function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o);if(!o.baselineProductEnd&&(o.ops||[]).some(op=>op.actualStart)){let b=baselineProductEnd(o);if(b)o.baselineProductEnd=b}})}
 function autoNo(){let d=new Date(),pre='LUK-'+String(d.getFullYear()).slice(-2)+pad(d.getMonth()+1)+'-',used=new Set(state.orders.map(o=>o.orderNo));for(let i=1;i<1000;i++){let x=pre+String(i).padStart(3,'0');if(!used.has(x))return x}return pre+'999'}
 function nextQueue(machine){let a=state.orders.filter(o=>o.machine===machine && o.stage!=='done').map(o=>n(o.queue));return a.length?Math.max(...a)+1:1}
 function order(id){return state.orders.find(o=>o.id===id)}
@@ -756,17 +775,102 @@ function automaticPlanningPDF(){
   w.document.open();w.document.write(html);w.document.close();
 }
 
+function baselineProductEnd(o){
+  if(!o||!(o.ops||[]).length)return '';
+  if(o.baselineProductEnd)return o.baselineProductEnd;
+  const ops=o.ops||[];
+  let first=ops.findIndex(op=>op.actualStart);
+  if(first<0)return '';
+  let cursor=nextMoment(new Date(ops[first].actualStart));
+  for(let i=first;i<ops.length;i++){
+    const op=ops[i];
+    if(i>first)cursor=addWork(cursor,n(op.setup)*60);
+    const qty=Math.max(0,n(o.produceQty));
+    cursor=addWork(cursor,qty*(n(op.cycle)+n(op.handling)));
+  }
+  return localISO(cursor);
+}
+function ensureBaselineProductEnd(o){
+  if(!o||o.baselineProductEnd||!(o.ops||[]).some(op=>op.actualStart))return;
+  const b=baselineProductEnd(o);
+  if(b)o.baselineProductEnd=b;
+}
+function actualMinutesPerPiece(o,op){
+  const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
+  const processed=recs.reduce((a,r)=>a+n(r.good)+n(r.scrap),0);
+  const netHours=recs.reduce((a,r)=>{
+    let net=r.netHours;
+    if(net===undefined)net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
+    return a+n(net);
+  },0);
+  if(processed>0&&netHours>0)return (netHours*60)/processed;
+  return Math.max(0,n(op.cycle)+n(op.handling));
+}
+function currentProductForecast(o){
+  if(!o||!(o.ops||[]).length)return '';
+  const ops=o.ops||[];
+  const unfinished=ops.findIndex(op=>opProcessed(op)<opTarget(o,op));
+  if(unfinished<0)return ops[ops.length-1].actualEnd||ops[ops.length-1].planEnd||'';
+  const started=ops.some(op=>op.actualStart);
+  if(!started)return ops[ops.length-1].planEnd||'';
+
+  let cursor=nextMoment(new Date());
+  for(let i=unfinished;i<ops.length;i++){
+    const op=ops[i];
+    const remain=Math.max(0,opTarget(o,op)-opProcessed(op));
+    if(remain<=0)continue;
+    if(!op.actualStart)cursor=addWork(cursor,n(op.setup)*60);
+    const minPerPiece=op.actualStart?actualMinutesPerPiece(o,op):Math.max(0,n(op.cycle)+n(op.handling));
+    cursor=addWork(cursor,remain*minPerPiece);
+  }
+  return localISO(cursor);
+}
+function planDeltaInfo(o){
+  ensureBaselineProductEnd(o);
+  const base=o?.baselineProductEnd||'';
+  const forecast=currentProductForecast(o);
+  if(!base||!forecast)return null;
+  const ms=new Date(forecast)-new Date(base);
+  const abs=Math.abs(ms);
+  let mins=Math.round(abs/60000),days=Math.floor(mins/1440),hours=Math.floor((mins%1440)/60),minutes=mins%60;
+  let parts=[];
+  if(days)parts.push(days+' gün');
+  if(hours)parts.push(hours+' saat');
+  if(!days&&!hours&&minutes)parts.push(minutes+' dk');
+  if(!parts.length)parts.push('aynı');
+  const cls=ms<-60000?'ahead':ms>60000?'behind':'same';
+  const text=cls==='ahead'?parts.join(' ')+' önde':cls==='behind'?parts.join(' ')+' geride':'Planla aynı';
+  return {base,forecast,ms,cls,text};
+}
+function planTrackHTML(o){
+  const p=planDeltaInfo(o);
+  if(!p)return '';
+  return `<div class="planTrack">
+    <div class="planTrackGrid">
+      <div class="planTrackItem"><small>Başlangıç Planı</small><b>${fmt(p.base)}</b></div>
+      <div class="planTrackItem"><small>Güncel Tahmin</small><b>${fmt(p.forecast)}</b></div>
+    </div>
+    <div class="planTrackDelta ${p.cls}">${p.cls==='ahead'?'▲ ':p.cls==='behind'?'▼ ':''}${p.text}</div>
+  </div>`;
+}
+function planMiniHTML(o){
+  const p=planDeltaInfo(o);
+  if(!p)return '';
+  return `<span class="planMiniDelta ${p.cls}">${p.cls==='ahead'?'▲ ':p.cls==='behind'?'▼ ':''}${p.text}</span>`;
+}
+
+
 function render(){syncCompletedOps();schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal();renderAccounting()}
 function renderBoard(){
   let a=[...state.orders].filter(o=>o.stage!=='done').sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
   $('m1').textContent=a.length;
   $('m2').textContent=a.filter(o=>(o.ops||[]).some(op=>op.runState==='running')).length;
   $('m3').textContent=a.filter(o=>o.cmmRequired==='yes'&&o.cmm?.status&&o.cmm.status!=='Onay').length;
-  let productEnd=o=>(o.ops||[]).length?(o.ops[o.ops.length-1].planEnd||''):'';
+  let productEnd=o=>currentProductForecast(o)||((o.ops||[]).length?(o.ops[o.ops.length-1].planEnd||''):'');
   let isRisk=o=>!!(o.requested&&productEnd(o)&&new Date(productEnd(o))>new Date(o.requested));
   $('m4').textContent=a.filter(isRisk).length;
   if($('totalOrders'))$('totalOrders').textContent='(Toplam '+a.length+')';
-  $('board').innerHTML=a.map(o=>{let end=productEnd(o),pct=Math.round(progress(o)),risk=isRisk(o),near=!risk&&o.requested&&end&&((new Date(o.requested)-new Date(end))/86400000)<=2,badge=!o.requested?'Termin yok':risk?'RİSK':near?'YAKLAŞIYOR':'TERMİNDE';return `<tr class="${risk?'rowRisk':''}"><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>${n(o.produceQty)}</td><td>${fmt(o.planStart)}</td><td><b>${end?fmt(end):'-'}</b></td><td>${o.requested?fmt(o.requested):'-'}</td><td><span class="termBadge ${risk?'risk':near?'warn':'ok'}">${badge}</span></td><td><span class="tinyBar"><i class="${risk?'p-risk':near?'p-warn':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></span> ${pct}%</td></tr>`}).join('');
+  $('board').innerHTML=a.map(o=>{let end=productEnd(o),pct=Math.round(progress(o)),risk=isRisk(o),near=!risk&&o.requested&&end&&((new Date(o.requested)-new Date(end))/86400000)<=2,badge=!o.requested?'Termin yok':risk?'RİSK':near?'YAKLAŞIYOR':'TERMİNDE';return `<tr class="${risk?'rowRisk':''}"><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>${n(o.produceQty)}</td><td>${fmt(o.planStart)}</td><td><b>${end?fmt(end):'-'}</b>${planMiniHTML(o)}</td><td>${o.requested?fmt(o.requested):'-'}</td><td><span class="termBadge ${risk?'risk':near?'warn':'ok'}">${badge}</span></td><td><span class="tinyBar"><i class="${risk?'p-risk':near?'p-warn':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></span> ${pct}%</td></tr>`}).join('');
   let due=[...a].filter(o=>o.requested).sort((x,y)=>x.requested.localeCompare(y.requested)).slice(0,4);
   $('dueList').innerHTML=due.length?due.map(o=>{let end=productEnd(o),risk=isRisk(o);return `<div class="dashListItem"><div><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></div><div><small>Ürün Bitiş (Tahmini)</small><br><b>${end?fmt(end):'-'}</b></div><span class="termBadge ${risk?'risk':'ok'}">${risk?'RİSK':'TERMİNDE'}</span></div>`}).join(''):'<div class="emptyDash">Yaklaşan termin bulunmuyor.</div>';
   let cmm=a.filter(o=>o.cmmRequired==='yes'&&o.cmm?.status&&o.cmm.status!=='Onay');
@@ -776,8 +880,8 @@ function renderMachines(){
   const machines=[{name:'Tezgâh 1 - 850',id:'machine850'},{name:'Tezgâh 2 - 1000',id:'machine1000'}];
   machines.forEach(m=>{const el=$(m.id);if(!el)return;const jobs=state.orders.filter(o=>o.machine===m.name&&o.stage!=='done').sort((a,b)=>n(a.queue)-n(b.queue));
     if(!jobs.length){el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus wait">Planlanan iş yok</div></div></div><div class="emptyDash">Bu tezgâhta sırada iş bulunmuyor.</div>`;return}
-    const o=jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>opProcessed(op)<opTarget(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=ops.length?(ops[ops.length-1]?.planEnd||''):'',pct=Math.round(progress(o)),risk=!!(o.requested&&urunBitis&&new Date(urunBitis)>new Date(o.requested)),queued=jobs.slice(1,3);
-    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span><div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>Ürün Bitiş (Tahmini)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div></div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
+    const o=jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>opProcessed(op)<opTarget(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=currentProductForecast(o)||(ops.length?(ops[ops.length-1]?.planEnd||''):''),pct=Math.round(progress(o)),risk=!!(o.requested&&urunBitis&&new Date(urunBitis)>new Date(o.requested)),queued=jobs.slice(1,3);
+    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span><div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>Ürün Bitiş (Tahmini)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
   });
 }
 
@@ -980,9 +1084,9 @@ $('opOrder').onchange=syncOpAuto;
 $('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
 window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
 window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
-window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});op.runState='running';if(!op.actualStart)op.actualStart=localISO(new Date());op.pauseReason='';o.stage='production';syncCompletedOps();await save()}
+window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});op.runState='running';if(!op.actualStart)op.actualStart=localISO(new Date());op.pauseReason='';o.stage='production';schedule();ensureBaselineProductEnd(o);syncCompletedOps();await save()}
 window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());o.stage='paused';await save()}
-window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart=''}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production'}await save()}
+window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart=''}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production';schedule();ensureBaselineProductEnd(o)}await save()}
 window.cmmApprove=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);op.runState='running';op.pauseReason='';op.cmmApprovedAt=localISO(new Date());o.stage='production';if(o.cmm)o.cmm.status='Onay';await save()}
 $('dailyOrder').onchange=fillDailyOps;
 $('dailyForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('recId'),key=r=>r.orderId===f.get('orderId')&&r.opId===f.get('opId')&&r.date===f.get('date'),existing=state.daily.find(key),obj={id:id||existing?.id||uid(),orderId:f.get('orderId'),opId:f.get('opId'),date:f.get('date'),hours:n(f.get('hours')),good:n(f.get('good')),scrap:n(f.get('scrap')),downtime:n(f.get('downtime')),reason:f.get('reason')};if(existing&&!id){if(!confirm('Bu tarih için kayıt var. Mevcut kayıt güncellensin mi?'))return;Object.assign(existing,obj)}else if(id){let r=state.daily.find(x=>x.id===id);Object.assign(r,obj)}else state.daily.push(obj);if(await save()){e.target.reset();e.target.recId.value='';e.target.date.value=ymd(new Date());e.target.hours.value=10;$('dailyTitle').textContent='Günlük Üretim Kaydı'}}
