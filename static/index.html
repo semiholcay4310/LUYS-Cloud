@@ -30,6 +30,85 @@
     gap:12px;
   }
 }
+/* LÜYS PROFESYONEL PANEL */
+#dash{
+  background:#f4f7fb;
+  padding:18px;
+  border-radius:18px;
+}
+
+#dash .grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:18px;
+}
+
+#dash .metric{
+  background:#fff;
+  border:1px solid #e5eaf1;
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 3px 12px rgba(20,50,80,.06);
+  font-size:13px;
+  color:#53657a;
+}
+
+#dash .metric b{
+  display:block;
+  margin-top:7px;
+  font-size:27px;
+  color:#123b61;
+}
+/* Profesyonel tezgah kartları */
+#dash .machineCards{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin:18px 0;
+}
+
+#dash .machineCards .card{
+  background:#fff;
+  border:1px solid #e3eaf2;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 4px 16px rgba(20,50,80,.06);
+}
+
+#dash .machineCards h2{
+  margin:0 0 14px;
+  font-size:19px;
+  color:#123b61;
+  font-weight:700;
+}
+
+#machine850,
+#machine1000{
+  line-height:1.7;
+  color:#30485e;
+  font-size:14px;
+}
+
+@media(max-width:800px){
+  #dash{
+    padding:10px;
+  }
+
+  #dash .grid{
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+  }
+
+  #dash .metric{
+    padding:12px;
+  }
+
+  #dash .machineCards{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+}
 </style>
 </head>
 <body>
