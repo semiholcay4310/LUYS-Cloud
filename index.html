@@ -1,63 +1,671 @@
-<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>LÜYS</title>
+  <!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LÜYS</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#eef3f8;color:#16324a;font-family:Arial,sans-serif}header{background:#0d3456;color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;position:sticky;top:0;z-index:5}.logo{width:54px;height:54px;border-radius:12px;background:#fff;object-fit:contain;padding:4px}.brand h1{margin:0;font-size:24px}.brand small{opacity:.86}.sync{margin-left:auto;font-size:12px;background:#ffffff1a;padding:6px 9px;border-radius:10px}.wrap{max-width:1300px;margin:auto;padding:14px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.tabs button{border:0;border-radius:10px;padding:10px 13px;background:#fff;font-weight:700;cursor:pointer}.tabs button.active{background:#0b67a3;color:#fff}.page{display:none}.page.active{display:block}.card{background:#fff;border-radius:14px;padding:15px;margin-bottom:12px;box-shadow:0 3px 14px #0001}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#fff;border-radius:12px;padding:13px}.metric b{font-size:25px;display:block}.form{display:grid;grid-template-columns:1fr 1fr;gap:11px}.form label{font-size:13px;font-weight:700}.form input,.form select,.form textarea{display:block;width:100%;margin-top:5px;padding:11px;border:1px solid #9dafbe;border-radius:9px;background:#fff;font-size:15px}.full{grid-column:1/-1}.btn{border:0;border-radius:9px;padding:10px 13px;background:#0b67a3;color:#fff;font-weight:800;cursor:pointer}.btn.alt{background:#e6edf3;color:#17354b}.btn.green{background:#168348}.btn.red{background:#c72e2e}.btn.orange{background:#c97512}.row{border:1px solid #dbe4eb;border-radius:11px;padding:12px;margin:8px 0}.row.running{border:2px solid #19884e;background:#f2fff7}.row.paused{border:2px solid #c93333;background:#fff5f5}.meta{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;font-size:12px}.small{font-size:12px;color:#687b89}.inline{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.status{display:inline-block;padding:4px 8px;border-radius:99px;font-size:12px;font-weight:800;background:#e3edf5}.status.run{background:#dff6e7;color:#176b3d}.status.pause{background:#ffe0e0;color:#9a2525}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border-bottom:1px solid #dfe7ed;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#f3f7fa}.bar{height:8px;background:#e5edf3;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#0b67a3}.notice{padding:11px;background:#e9f7ee;border-left:4px solid #178449;border-radius:8px;margin-bottom:11px}.danger{padding:11px;background:#fff1f1;border-left:4px solid #c53030;border-radius:8px}.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.cal>div{background:#f5f8fb;border-radius:10px;padding:9px}.cal input{width:100%;padding:7px;margin-top:4px}.footer{text-align:center;color:#71828f;font-size:11px;padding:20px}
-@media(max-width:800px){.wrap{padding:9px}.grid{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}.full{grid-column:auto}.meta{grid-template-columns:1fr 1fr}.cal{grid-template-columns:1fr 1fr}.tabs{position:sticky;top:74px;z-index:4;background:#eef3f8;padding:5px 0}.tabs button{flex:1 1 30%}}
-</style></head><body>
-<header><img src="logo.jpg" class="logo"><div class="brand"><h1>LÜYS</h1><small>LUUKMAS Üretim Yönetim Sistemi</small></div><div class="sync" id="sync">Bağlanıyor…</div></header>
-<div class="wrap"><div class="notice"><b>Ortak veri sürümü:</b> Telefon, ev ve iş yeri farklı internetlerde olsa bile aynı hesabın ortak verilerini görür.</div>
-<div class="tabs" id="tabs"><button data-p="dash" class="active">Ana Panel</button><button data-p="orders">İş Emri</button><button data-p="ops">Operasyon</button><button data-p="daily">Günlük Üretim</button><button data-p="cmm">CMM</button><button data-p="calendar">Takvim</button></div>
-<section id="dash" class="page active"><div class="grid"><div class="metric">Aktif İş<b id="m1">0</b></div><div class="metric">Üretimde<b id="m2">0</b></div><div class="metric">CMM Bekleyen<b id="m3">0</b></div><div class="metric">Termin Riski<b id="m4">0</b></div></div><div class="card"><h2>Üretim Planı</h2><div class="tablewrap"><table><thead><tr><th>İş Emri</th><th>Parça</th><th>Durum</th><th>Tezgâh</th><th>Sıra</th><th>Talep</th><th>Üretilecek</th><th>Sağlam</th><th>Hurda</th><th>Kalan</th><th>Genel %</th><th>Mevcut OP</th><th>Planlanan Baş.</th><th>Gerçek Baş.</th><th>CNC Bitiş</th><th>CMM</th><th>Önerilen Teslim</th></tr></thead><tbody id="board"></tbody></table></div></div></section>
-<section id="orders" class="page"><div class="card"><h2 id="orderTitle">Yeni İş Emri</h2><form id="orderForm" class="form"><input type="hidden" name="id"><label>İş Emri No<input name="orderNo" required></label><label>Müşteri Sipariş No<input name="customerOrderNo"></label><label>Müşteri<input name="customer" value="Lucas" required></label><label>Parça<input name="part" required></label><label>Revizyon<input name="revision"></label><label>Talep Edilen Adet<input name="qty" type="number" min="1" required></label><label>Üretilecek Adet<input name="produceQty" type="number" min="1" required></label><label>Ana Tezgâh<select name="machine"><option>Tezgâh 1 - 850</option><option>Tezgâh 2 - 1000</option></select></label><label>İmalat Sırası<input name="queue" type="number" min="1" required></label><label>İlk Plan Başlangıç<input name="start" type="datetime-local" required></label><label>Müşteri Talep Teslim<input name="requested" type="date" required></label><label>CMM Gerekli?<select name="cmmRequired"><option value="yes">Evet</option><option value="no">Hayır</option></select></label><label>CMM Plan Süresi (gün)<input name="cmmDays" type="number" step="0.5" value="1"></label><label>Sevkiyat Hazırlık (gün)<input name="shipDays" type="number" step="0.5" value="0.5"></label><label class="full">Not<textarea name="note"></textarea></label><button class="btn full">KAYDET</button></form></div><div class="card"><h2>Kayıtlı İş Emirleri</h2><div id="orderList"></div></div></section>
-<section id="ops" class="page"><div class="card"><h2 id="opTitle">Operasyon Ekle</h2><form id="opForm" class="form"><input type="hidden" name="opId"><label>İş Emri<select name="orderId" id="opOrder" required></select></label><label>Operasyon Adı<input name="name" placeholder="OP1" required></label><label>Tezgâh<input id="opMachine" readonly></label><label>Operasyon Adedi<input id="opQty" readonly></label><label>İşleme dk/adet<input name="cycle" type="number" step="0.1" required></label><label>Sök-Tak dk/adet<input name="handling" type="number" step="0.1" value="0"></label><label>Ayar (saat)<input name="setup" type="number" step="0.25" value="1"></label><button class="btn full">OPERASYONU KAYDET</button></form></div><div class="card"><h2>Operasyonlar</h2><div id="opList"></div></div></section>
-<section id="daily" class="page"><div class="card"><h2 id="dailyTitle">Günlük Üretim Kaydı</h2><form id="dailyForm" class="form"><input type="hidden" name="recId"><label>İş Emri<select name="orderId" id="dailyOrder" required></select></label><label>Operasyon<select name="opId" id="dailyOp" required></select></label><label>Tarih<input name="date" type="date" required></label><label>Çalışılan Brüt Saat<input name="hours" type="number" step="0.25" value="10"></label><label>Sağlam Adet<input name="good" type="number" min="0" required></label><label>Hurda Adet<input name="scrap" type="number" min="0" value="0"></label><label>Duruş (dk)<input name="downtime" type="number" min="0" value="0"></label><label>Duruş Nedeni<input name="reason"></label><button class="btn full">GÜNLÜK KAYDI KAYDET</button></form></div><div class="card"><h2>Geçmiş Günlük Kayıtlar</h2><div id="dailyList"></div></div></section>
-<section id="cmm" class="page"><div class="card"><h2>CMM</h2><form id="cmmForm" class="form"><label>İş Emri<select name="orderId" id="cmmOrder" required></select></label><label>Firma<input name="firm"></label><label>CMM'ye Gönderildi mi?<select name="sent"><option value="no">Hayır</option><option value="yes">Evet</option></select></label><label>Gönderim Tarihi<input name="sentDate" type="date"></label><label>Beklenen Termin<input name="expected" type="date"></label><label>Gerçek Dönüş<input name="returned" type="date"></label><label>Durum<select name="status"><option>Bekliyor</option><option>Ölçümde</option><option>Rapor bekliyor</option><option>Onay</option><option>Red</option></select></label><label>Rapor No<input name="reportNo"></label><button class="btn full">CMM KAYDET</button></form></div></section>
-<section id="calendar" class="page"><div class="card"><h2>Çalışma Takvimi</h2><div class="cal" id="cal"></div><div class="inline"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div><p class="small">Brüt saatten mola düşülür. Ayar süresi her OP başlangıcında bir kez hesaplanır.</p></div></section>
-<div class="footer">LÜYS Cloud v0.1 • Bulut Veri</div></div>
+*{box-sizing:border-box}body{margin:0;background:#eef3f8;color:#16324a;font-family:Arial,sans-serif}header{background:#0d3456;color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;position:sticky;top:0;z-index:5}.logo{width:54px;height:54px;border-radius:12px;background:#fff;object-fit:contain;padding:4px}.brand h1{margin:0;font-size:24px}.brand small{opacity:.86}.sync{margin-left:auto;font-size:12px;background:#ffffff1a;padding:6px 9px;border-radius:10px}.userbox{font-size:11px;background:#ffffff18;padding:6px 9px;border-radius:10px}.userbox a{color:#fff}.wrap{max-width:1300px;margin:auto;padding:14px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.tabs button{border:0;border-radius:10px;padding:10px 13px;background:#fff;font-weight:700;cursor:pointer}.tabs button.active{background:#0b67a3;color:#fff}.page{display:none}.page.active{display:block}.card{background:#fff;border-radius:14px;padding:15px;margin-bottom:12px;box-shadow:0 3px 14px #0001}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#fff;border-radius:12px;padding:13px}.metric b{font-size:25px;display:block}.form{display:grid;grid-template-columns:1fr 1fr;gap:11px}.form label{font-size:13px;font-weight:700}.form input,.form select,.form textarea{display:block;width:100%;margin-top:5px;padding:11px;border:1px solid #9dafbe;border-radius:9px;background:#fff;font-size:15px}.full{grid-column:1/-1}.btn{border:0;border-radius:9px;padding:10px 13px;background:#0b67a3;color:#fff;font-weight:800;cursor:pointer}.btn.alt{background:#e6edf3;color:#17354b}.btn.green{background:#168348}.btn.red{background:#c72e2e}.btn.orange{background:#c97512}.btn:disabled{opacity:.45;cursor:not-allowed}.row{border:1px solid #dbe4eb;border-radius:11px;padding:12px;margin:8px 0}.row.running{border:2px solid #19884e;background:#f2fff7}.row.paused{border:2px solid #c93333;background:#fff5f5}.meta{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;font-size:12px}.small{font-size:12px;color:#687b89}.inline{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;align-items:end}.status{display:inline-block;padding:4px 8px;border-radius:99px;font-size:12px;font-weight:800;background:#e3edf5}.status.run{background:#dff6e7;color:#176b3d}.status.pause{background:#ffe0e0;color:#9a2525}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border-bottom:1px solid #dfe7ed;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#f3f7fa}.bar{height:8px;background:#e5edf3;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:#0b67a3}.notice{padding:11px;background:#e9f7ee;border-left:4px solid #178449;border-radius:8px;margin-bottom:11px}.danger{padding:11px;background:#fff1f1;border-left:4px solid #c53030;border-radius:8px}.readonlyNotice{display:none;padding:11px;background:#fff8e6;border-left:4px solid #d99000;border-radius:8px;margin-bottom:11px}.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.cal>div{background:#f5f8fb;border-radius:10px;padding:9px}.cal input{width:100%;padding:7px;margin-top:4px}.footer{text-align:center;color:#71828f;font-size:11px;padding:20px}.finishbox{margin-top:9px;padding:10px 12px;border-radius:10px;background:#e9f4fb;border-left:4px solid #0b67a3;font-size:13px}.finishbox b{font-size:15px}.actualEditor{display:flex;gap:7px;align-items:end;flex-wrap:wrap;margin-top:8px;padding:9px;background:#f7fafc;border-radius:9px}.actualEditor label{font-size:11px;font-weight:700}.actualEditor input{display:block;margin-top:4px;padding:8px;border:1px solid #9dafbe;border-radius:8px;font-size:13px}.stock.ok{color:#176b3d;font-weight:800}.stock.wait{color:#9a5a00;font-weight:800}.viewerOnly{display:none}
+@media(max-width:800px){.wrap{padding:9px}.grid{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}.full{grid-column:auto}.meta{grid-template-columns:1fr 1fr}.cal{grid-template-columns:1fr 1fr}.tabs{position:sticky;top:74px;z-index:4;background:#eef3f8;padding:5px 0}.tabs button{flex:1 1 30%}.userbox{display:none}.actualEditor{display:block}.actualEditor .btn{margin-top:7px;width:100%}.actualEditor input{width:100%}}
+.machineCards{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:16px;
+  margin:18px 0;
+}
+
+.machineCards .card{
+  margin:0;
+  padding:18px;
+}
+
+.machineCards h2{
+  margin:0 0 12px;
+  font-size:22px;
+}
+
+@media(max-width:800px){
+  .machineCards{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+}
+/* LÜYS PROFESYONEL PANEL */
+#dash{
+  background:#f4f7fb;
+  padding:18px;
+  border-radius:18px;
+}
+
+#dash .grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:18px;
+}
+
+#dash .metric{
+  background:#fff;
+  border:1px solid #e5eaf1;
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 3px 12px rgba(20,50,80,.06);
+  font-size:13px;
+  color:#53657a;
+}
+
+#dash .metric b{
+  display:block;
+  margin-top:7px;
+  font-size:27px;
+  color:#123b61;
+}
+/* Profesyonel tezgah kartları */
+#dash .machineCards{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin:18px 0;
+}
+
+#dash .machineCards .card{
+  background:#fff;
+  border:1px solid #e3eaf2;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 4px 16px rgba(20,50,80,.06);
+}
+
+#dash .machineCards h2{
+  margin:0 0 14px;
+  font-size:19px;
+  color:#123b61;
+  font-weight:700;
+}
+
+#machine850,
+#machine1000{
+  line-height:1.7;
+  color:#30485e;
+  font-size:14px;
+}
+
+@media(max-width:800px){
+  #dash{
+    padding:10px;
+  }
+
+  #dash .grid{
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+  }
+
+  #dash .metric{
+    padding:12px;
+  }
+
+  #dash .machineCards{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+}
+
+/* ===== LÜYS Dashboard v1 ===== */
+#dash{background:#f3f6fa;padding:18px;border-radius:18px}
+#dash .grid{gap:14px}
+#dash .metric{position:relative;border:1px solid #e1e8ef;border-radius:15px;padding:16px 18px;box-shadow:0 4px 14px rgba(17,50,76,.06);color:#5c6d7c}
+#dash .metric b{color:#173a57;font-size:30px}
+#dash .machineCards{align-items:stretch}
+#dash .machineCards>.card{overflow:hidden}
+.machineNow{position:relative}
+.machineStatus{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:#526879;margin-bottom:12px}
+.statusDot{width:9px;height:9px;border-radius:50%;background:#e3a21a;box-shadow:0 0 0 4px #fff3d7}
+.machineStatus.running .statusDot{background:#1b9a59;box-shadow:0 0 0 4px #def5e8}
+.machineStatus.running{color:#187246}
+.machineActiveTitle,.sectionEyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:#7b8d9d;margin-bottom:7px}
+.machineJob{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:16px;color:#173a57}
+.machineBadge,.termBadge,.miniBadge{display:inline-block;margin-top:10px;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900;background:#edf2f6;color:#516879}
+.machineBadge.running,.termBadge.ok{background:#dff6e8;color:#176b3d}
+.termBadge.risk,.miniBadge.risk{background:#ffe3e3;color:#a92a2a}
+.termBadge.neutral{background:#edf2f6;color:#5c6f7e}
+.machineProgressHead{display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#667987}
+.machineProgress{height:9px;background:#e6edf3;border-radius:999px;overflow:hidden;margin-top:7px}
+.machineProgress>div{height:100%;background:#1678b8;border-radius:999px}
+.machineDates{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.machineDates>div,.machineDue,.nextJob,.nextQueueBox{background:#f7f9fb;border:1px solid #e4ebf0;border-radius:11px;padding:11px}
+.machineDates small,.machineDue small,.nextJob small,.nextQueueBox small{display:block;color:#7b8d9a;font-size:10px;font-weight:800;margin-bottom:4px}
+.machineDue{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.machineDue .termBadge{margin-top:0;white-space:nowrap}
+.nextJob{margin-top:10px}
+.nextQueueBox{margin-top:10px;background:#fff}
+.nextQueueItem{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #edf1f4;font-size:12px}
+.nextQueueItem:last-child{border-bottom:0}
+.nextQueueItem span{color:#6d7e8c}
+.dashboardLower{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.dashboardLower .card{margin:0}
+.dashList{display:grid;gap:8px}
+.dashListItem{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #edf1f4}
+.dashListItem:last-child{border-bottom:0}
+.dashListItem b{font-size:13px}
+.dashListItem .small{text-align:right}
+.emptyDash{font-size:12px;color:#7b8b98;padding:8px 0}
+#dash .planCard{margin-top:14px}
+@media(max-width:800px){
+  #dash{padding:10px}
+  .machineDates,.dashboardLower{grid-template-columns:1fr}
+  .machineDue{align-items:flex-start;flex-direction:column}
+  .dashListItem{align-items:flex-start}
+}
+
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.jpg" class="logo">
+  <div class="brand"><h1>LÜYS</h1><small>LUUKMAS Üretim Yönetim Sistemi</small></div>
+  <div class="userbox" id="userbox">Kullanıcı…</div>
+  <div class="sync" id="sync">Bağlanıyor…</div>
+</header>
+<div class="wrap">
+  <div class="notice"><b>Ortak veri sürümü:</b> Telefon, ev ve iş yeri farklı internetlerde olsa bile aynı hesabın ortak verilerini görür.</div>
+  <div class="readonlyNotice" id="readonlyNotice"><b>Görüntüleme modu:</b> Bu kullanıcı verileri görebilir; kayıt ekleyemez, silemez veya değiştiremez.</div>
+  <div class="tabs" id="tabs">
+    <button data-p="dash" class="active">Ana Panel</button>
+    <button data-p="orders">İş Emri</button>
+    <button data-p="ops">Operasyon</button>
+    <button data-p="daily">Günlük Üretim</button>
+    <button data-p="cmm">CMM</button>
+    <button data-p="calendar">Takvim</button>
+  </div>
+
+<section id="dash" class="page active">
+  <div class="grid">
+    <div class="metric">Aktif İş<b id="m1">0</b></div>
+    <div class="metric">Üretimde<b id="m2">0</b></div>
+    <div class="metric">CMM Bekleyen<b id="m3">0</b></div>
+    <div class="metric">Termin Riski<b id="m4">0</b></div>
+  </div>
+
+  <div class="machineCards">
+    <div class="card">
+      <h2>Tezgâh 1 - 850</h2>
+      <div id="machine850">Planlanan iş yok</div>
+    </div>
+    <div class="card">
+      <h2>Tezgâh 2 - 1000</h2>
+      <div id="machine1000">Planlanan iş yok</div>
+    </div>
+  </div>
+
+  <div class="dashboardLower">
+    <div class="card">
+      <h2>Yaklaşan Terminler</h2>
+      <div id="dueList" class="dashList"></div>
+    </div>
+    <div class="card">
+      <h2>CMM Bekleyenler</h2>
+      <div id="cmmWaitList" class="dashList"></div>
+    </div>
+  </div>
+
+  <div class="card planCard">
+    <h2>Ürün Terminleri</h2>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tezgâh</th>
+            <th>Sıra</th>
+            <th>İş Emri</th>
+            <th>Parça</th>
+            <th>Adet</th>
+            <th>Başlangıç</th>
+            <th>Ürün Bitiş</th>
+            <th>Müşteri Termini</th>
+            <th>Durum</th>
+          </tr>
+        </thead>
+        <tbody id="board"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="orders" class="page">
+  <div class="card editOnly"><h2 id="orderTitle">Yeni İş Emri</h2><form id="orderForm" class="form">
+    <input type="hidden" name="id">
+    <label>İş Emri No<input name="orderNo" required></label>
+    <label>Müşteri Sipariş No<input name="customerOrderNo"></label>
+    <label>Müşteri<input name="customer" value="Lucas" required></label>
+    <label>Parça<input name="part" required></label>
+    <label>Revizyon<input name="revision"></label>
+    <label>Talep Edilen Adet<input name="qty" type="number" min="1" required></label>
+    <label>Üretilecek Adet<input name="produceQty" type="number" min="1" required></label>
+    <label>Stok Durumu<select name="stockStatus"><option value="Geldi">Geldi</option><option value="Kısmi">Kısmi Geldi</option><option value="Bekleniyor">Bekleniyor</option></select></label>
+    <label>Eldeki Stok<input name="stockQty" type="number" min="0" value="0"></label>
+    <label>Ana Tezgâh<select name="machine"><option>Tezgâh 1 - 850</option><option>Tezgâh 2 - 1000</option></select></label>
+    <label>İmalat Sırası<input name="queue" type="number" min="1" required></label>
+    <label>İlk Plan Başlangıç<input name="start" type="datetime-local" required></label>
+    <label>Müşteri Talep Teslim<input name="requested" type="date" required></label>
+    <label>CMM Gerekli?<select name="cmmRequired"><option value="yes">Evet</option><option value="no">Hayır</option></select></label>
+    <label>CMM Plan Süresi (gün)<input name="cmmDays" type="number" step="0.5" value="1"></label>
+    <label>Sevkiyat Hazırlık (gün)<input name="shipDays" type="number" step="0.5" value="0.5"></label>
+    <label class="full">Not<textarea name="note"></textarea></label>
+    <button class="btn full">KAYDET</button>
+  </form></div>
+  <div class="card"><h2>Kayıtlı İş Emirleri</h2><div id="orderList"></div></div>
+</section>
+
+<section id="ops" class="page">
+  <div class="card editOnly"><h2 id="opTitle">Operasyon Ekle</h2><form id="opForm" class="form">
+    <input type="hidden" name="opId">
+    <label>İş Emri<select name="orderId" id="opOrder" required></select></label>
+    <label>Operasyon Adı<input name="name" placeholder="OP1" required></label>
+    <label>Tezgâh<input id="opMachine" readonly></label>
+    <label>Operasyon Adedi<input id="opQty" readonly></label>
+    <label>İşleme dk/adet<input name="cycle" type="number" step="0.1" required></label>
+    <label>Sök-Tak dk/adet<input name="handling" type="number" step="0.1" value="0"></label>
+    <label>Ayar (saat)<input name="setup" type="number" step="0.25" value="1"></label>
+    <button class="btn full">OPERASYONU KAYDET</button>
+  </form></div>
+  <div class="card"><h2>Operasyonlar</h2><div id="opList"></div></div>
+</section>
+
+<section id="daily" class="page">
+  <div class="card editOnly"><h2 id="dailyTitle">Günlük Üretim Kaydı</h2><form id="dailyForm" class="form">
+    <input type="hidden" name="recId">
+    <label>İş Emri<select name="orderId" id="dailyOrder" required></select></label>
+    <label>Operasyon<select name="opId" id="dailyOp" required></select></label>
+    <label>Tarih<input name="date" type="date" required></label>
+    <label>Çalışılan Brüt Saat<input name="hours" type="number" step="0.25" value="10"></label>
+    <label>Sağlam Adet<input name="good" type="number" min="0" required></label>
+    <label>Hurda Adet<input name="scrap" type="number" min="0" value="0"></label>
+   <label>Mola (dk)<input name="breaktime" type="number" min="0" value="0"></label>
+    <label>Duruş (dk)<input name="downtime" type="number" min="0" value="0"></label>
+    <label>Duruş Nedeni<input name="reason"></label>
+  <div class="card" style="margin:12px 0">
+  <h3>Üretim Verimi</h3>
+  <div id="verimBilgi">
+    <p>Net Üretim Süresi: <b id="netSure">0 saat</b></p>
+    <p>Teorik Hedef: <b id="teorikAdet">0 adet</b></p>
+    <p>Verim: <b id="verimYuzde">%0</b></p>
+  </div>
+</div>
+    <button class="btn full">GÜNLÜK KAYDI KAYDET</button>
+  </form></div>
+  <div class="card"><h2>Geçmiş Günlük Kayıtlar</h2><div id="dailyList"></div></div>
+</section>
+
+<section id="cmm" class="page">
+  <div class="card editOnly"><h2>CMM</h2><form id="cmmForm" class="form">
+    <label>İş Emri<select name="orderId" id="cmmOrder" required></select></label>
+    <label>Firma<input name="firm"></label>
+    <label>CMM'ye Gönderildi mi?<select name="sent"><option value="no">Hayır</option><option value="yes">Evet</option></select></label>
+    <label>Gönderim Tarihi<input name="sentDate" type="date"></label>
+    <label>Beklenen Termin<input name="expected" type="date"></label>
+    <label>Gerçek Dönüş<input name="returned" type="date"></label>
+    <label>Durum<select name="status"><option>Bekliyor</option><option>Ölçümde</option><option>Rapor bekliyor</option><option>Onay</option><option>Red</option></select></label>
+    <label>Rapor No<input name="reportNo"></label>
+    <button class="btn full">CMM KAYDET</button>
+  </form></div>
+  <div class="card viewerOnly"><h2>CMM</h2><div class="small">CMM durumlarını Ana Panel'den görüntüleyebilirsin.</div></div>
+</section>
+
+<section id="calendar" class="page">
+  <div class="card"><h2>Çalışma Takvimi</h2><div class="cal" id="cal"></div><div class="inline editOnly"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div><p class="small">Brüt saatten mola düşülür. Ayar süresi her OP başlangıcında bir kez hesaplanır.</p></div>
+</section>
+<div class="footer">LÜYS Cloud v0.2 • Bulut Veri</div>
+</div>
 <script>
 const $=id=>document.getElementById(id), n=v=>Number(v||0), uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 let state={orders:[],daily:[],calendar:{0:{h:0,b:0},1:{h:10,b:1},2:{h:10,b:1},3:{h:10,b:1},4:{h:10,b:1},5:{h:10,b:1},6:{h:10,b:1}}};
+let me={username:'',role:'viewer',can_edit:false};
 const dayNames=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
-function pad(v){return String(v).padStart(2,'0')} function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())} function dt(s){return s?new Date(s):new Date()} function localISO(d){return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())} function fmt(s){if(!s)return '-';let d=new Date(s);if(String(s).length===10)d=new Date(s+'T12:00');return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+(String(s).includes('T')?' '+pad(d.getHours())+':'+pad(d.getMinutes()):'')}
-async function load(){let r=await fetch('/api/state',{cache:'no-store'});state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
-async function save(){normalize();$('sync').textContent='Kaydediliyor…';await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});$('sync').textContent='Kaydedildi';render()}
-function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];syncDone(o)})}
+function pad(v){return String(v).padStart(2,'0')}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function localISO(d){return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
+function fmt(s){if(!s)return '-';let d=new Date(s);if(String(s).length===10)d=new Date(s+'T12:00');return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+(String(s).includes('T')?' '+pad(d.getHours())+':'+pad(d.getMinutes()):'')}
+function canEdit(){return me.can_edit===true}
+async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block'}
+async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
+async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
+function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o)})}
 function autoNo(){let d=new Date(),pre='LUK-'+String(d.getFullYear()).slice(-2)+pad(d.getMonth()+1)+'-',used=new Set(state.orders.map(o=>o.orderNo));for(let i=1;i<1000;i++){let x=pre+String(i).padStart(3,'0');if(!used.has(x))return x}return pre+'999'}
 function nextQueue(machine){let a=state.orders.filter(o=>o.machine===machine && o.stage!=='done').map(o=>n(o.queue));return a.length?Math.max(...a)+1:1}
-function order(id){return state.orders.find(o=>o.id===id)} function opBy(o,id){return (o?.ops||[]).find(x=>x.id===id)}
+function order(id){return state.orders.find(o=>o.id===id)}
+function opBy(o,id){return (o?.ops||[]).find(x=>x.id===id)}
 function syncDone(o){(o.ops||[]).forEach(op=>{op.done=state.daily.filter(r=>r.orderId===o.id&&r.opId===op.id).reduce((a,r)=>a+n(r.good),0);op.scrap=state.daily.filter(r=>r.orderId===o.id&&r.opId===op.id).reduce((a,r)=>a+n(r.scrap),0)})}
+function opTarget(o,op){
+  let i=(o.ops||[]).findIndex(x=>x.id===op.id);
+  let oncekiHurda=(o.ops||[])
+    .slice(0,Math.max(0,i))
+    .reduce((t,x)=>t+n(x.scrap),0);
+  return Math.max(0,n(o.produceQty)-oncekiHurda);
+}
+
+function opProcessed(op){
+  return n(op.done)+n(op.scrap);
+}
 function opWeight(o,op){let total=(o.ops||[]).reduce((a,x)=>a+n(o.produceQty)*(n(x.cycle)+n(x.handling))+n(x.setup)*60,0);let w=n(o.produceQty)*(n(op.cycle)+n(op.handling))+n(op.setup)*60;return total?100*w/total:0}
 function progress(o){return Math.min(100,(o.ops||[]).reduce((a,op)=>a+opWeight(o,op)*Math.min(1,n(op.done)/Math.max(1,n(o.produceQty))),0))}
-function currentOp(o){let run=(o.ops||[]).find(x=>x.runState==='running');if(run)return run;return (o.ops||[]).find(x=>n(x.done)<n(o.produceQty))||null}
+function currentOp(o){let run=(o.ops||[]).find(x=>x.runState==='running');if(run)return run;return (o.ops||[]).find(x=>opProcessed(x)<opTarget(o,x))||null}
 function status(o){let op=currentOp(o);if(op?.runState==='running')return 'Üretimde';if(op?.runState==='paused')return 'Durduruldu';if(o.cmm?.status&&o.cmm.status!=='Onay')return 'CMM';return progress(o)>=100?'Üretim tamamlandı':'Planlandı'}
 function cal(d){let c=state.calendar[new Date(d).getDay()]||{h:0,b:0};return {gross:n(c.h),br:n(c.b),net:Math.max(0,n(c.h)-n(c.b))}}
 function windows(day){let c=cal(day);if(c.net<=0)return[];let st=new Date(day+'T08:00'),en=new Date(st.getTime()+c.gross*3600000),bs=new Date(day+'T12:00'),be=new Date(bs.getTime()+c.br*3600000);if(c.br<=0)return[[st,en]];let a=[];if(bs>st)a.push([st,new Date(Math.min(bs,en))]);if(be<en)a.push([be,en]);return a}
 function nextMoment(v){let d=new Date(v);for(let g=0;g<60;g++){let day=ymd(d),ws=windows(day);for(let [a,b] of ws){if(d<=a)return new Date(a);if(d>=a&&d<b)return d}d.setDate(d.getDate()+1);d.setHours(8,0,0,0)}return d}
 function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<2000&&left>0;g++){d=nextMoment(d);let w=windows(ymd(d)).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(8,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
 function schedule(){let groups={};state.orders.filter(o=>o.stage!=='done').forEach(o=>(groups[o.machine]??=[]).push(o));Object.values(groups).forEach(a=>a.sort((x,y)=>n(x.queue)-n(y.queue)));for(let a of Object.values(groups)){let available=null;for(let o of a){let planned=nextMoment(available||new Date(o.start));o.planStart=localISO(planned);let cursor=planned;for(let op of o.ops){let start=nextMoment(cursor);if(op.actualStart)start=nextMoment(new Date(op.actualStart));op.planStart=localISO(start);let setupEnd=op.actualStart?start:addWork(start,n(op.setup)*60);op.setupEnd=localISO(setupEnd);let prodStart=nextMoment(setupEnd);op.prodStart=localISO(prodStart);let remaining=Math.max(0,n(o.produceQty)-n(op.done));let end=addWork(prodStart,remaining*(n(op.cycle)+n(op.handling)));op.planEnd=op.actualEnd||localISO(end);cursor=new Date(op.planEnd)}o.realStart=(o.ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');o.cncEnd=o.ops.length?o.ops[o.ops.length-1].planEnd:o.planStart;available=new Date(o.cncEnd);let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship)}}}
-function render(){schedule();fillSelects();renderBoard();renderOrders();renderOps();renderDaily();renderCal()}
-function renderBoard(){let a=[...state.orders].sort((x,y)=>{let sx=status(x)==='Üretimde'?0:1,sy=status(y)==='Üretimde'?0:1;return sx-sy||x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue)});$('m1').textContent=a.length;$('m2').textContent=a.filter(o=>status(o)==='Üretimde').length;$('m3').textContent=a.filter(o=>status(o)==='CMM').length;$('m4').textContent=a.filter(o=>o.requested&&o.promised&&o.promised>o.requested).length;$('board').innerHTML=a.map(o=>{let good=o.ops.length?Math.min(...o.ops.map(x=>n(x.done))):0,scrap=o.ops.reduce((s,x)=>s+n(x.scrap),0),remain=Math.max(0,n(o.produceQty)-good),co=currentOp(o);return `<tr><td>${esc(o.orderNo)}</td><td>${esc(o.part)}</td><td>${status(o)}</td><td>${esc(o.machine)}</td><td>${o.queue}</td><td>${o.qty}</td><td>${o.produceQty}</td><td>${good}</td><td>${scrap}</td><td>${remain}</td><td>${progress(o).toFixed(1)}%</td><td>${co?esc(co.name)+' '+n(co.done)+'/'+o.produceQty:'-'}</td><td>${fmt(o.planStart)}</td><td>${fmt(o.realStart)}</td><td>${fmt(o.cncEnd)}</td><td>${esc(o.cmm?.status||'-')}</td><td>${fmt(o.promised)}</td></tr>`}).join('')}
-function renderOrders(){$('orderList').innerHTML=state.orders.map(o=>`<div class="row"><b>${esc(o.orderNo)} • ${esc(o.part)}</b><div class="small">${esc(o.machine)} • Sıra ${o.queue} • Üretilecek ${o.produceQty}</div><div class="inline"><button class="btn alt" onclick="editOrder('${o.id}')">Düzenle</button><button class="btn red" onclick="delOrder('${o.id}')">Sil</button></div></div>`).join('')||'<div class="small">Henüz iş emri yok.</div>'}
-function renderOps(){let rows=[];for(let o of state.orders)for(let op of o.ops)rows.push({o,op});rows.sort((a,b)=>((a.op.runState==='running')?0:1)-((b.op.runState==='running')?0:1)||a.o.machine.localeCompare(b.o.machine)||n(a.o.queue)-n(b.o.queue)||a.op.name.localeCompare(b.op.name));$('opList').innerHTML=rows.map(({o,op})=>{let pct=Math.min(100,100*n(op.done)/Math.max(1,n(o.produceQty))),remain=Math.max(0,n(o.produceQty)-n(op.done)),cls=op.runState==='running'?'running':op.runState==='paused'?'paused':'';return `<div class="row ${cls}"><b>${esc(o.orderNo)} • ${esc(o.part)} • ${esc(op.name)}</b> <span class="status ${op.runState==='running'?'run':op.runState==='paused'?'pause':''}">${op.runState==='running'?'ÜRETİMDE':op.runState==='paused'?'DURDURULDU':'BEKLİYOR'}</span><div class="meta"><div>Toplam<br><b>${o.produceQty}</b></div><div>Yapılan<br><b>${op.done||0}</b></div><div>Kalan<br><b>${remain}</b></div><div>OP %<br><b>${pct.toFixed(1)}</b></div><div>Total katkı<br><b>${(opWeight(o,op)*pct/100).toFixed(1)}%</b></div></div><div class="small">Plan: ${fmt(op.planStart)} → ${fmt(op.planEnd)} • Gerçek: ${fmt(op.actualStart)} → ${fmt(op.actualEnd)}</div><div class="inline">${op.runState==='running'?`<button class="btn red" onclick="stopOp('${o.id}','${op.id}')">OP'Yİ DURDUR</button>`:`<button class="btn green" onclick="startOp('${o.id}','${op.id}')">OP'Yİ BAŞLAT</button>`}<button class="btn alt" onclick="editOp('${o.id}','${op.id}')">Düzenle</button><button class="btn red" onclick="delOp('${o.id}','${op.id}')">Sil</button></div></div>`}).join('')||'<div class="small">Henüz operasyon yok.</div>'}
-function renderDaily(){$('dailyList').innerHTML=[...state.daily].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{let o=order(r.orderId),op=opBy(o,r.opId);return `<div class="row"><b>${r.date} • ${esc(o?.part||'-')} • ${esc(op?.name||'-')}</b><div class="small">Sağlam ${r.good} • Hurda ${r.scrap} • Toplam işlenen ${n(r.good)+n(r.scrap)} • Brüt ${r.hours} saat • Duruş ${r.downtime||0} dk</div><div class="inline"><button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button><button class="btn red" onclick="delDaily('${r.id}')">Sil</button></div></div>`}).join('')||'<div class="small">Henüz günlük kayıt yok.</div>'}
-function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>`<div><b>${x}</b><label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${state.calendar[i]?.h||0}"></label><label class="small">Mola<input data-day="${i}" data-k="b" type="number" step="0.25" value="${state.calendar[i]?.b||0}"></label></div>`).join('')}
-function fillSelects(){let opts='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder','cmmOrder'].forEach(id=>{let old=$(id).value;$(id).innerHTML=opts;$(id).value=old});fillDailyOps();syncOpAuto()}
-function fillDailyOps(){let o=order($('dailyOrder').value);$('dailyOp').innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''))}
-function syncOpAuto(){let o=order($('opOrder').value);$('opMachine').value=o?.machine||'';$('opQty').value=o?.produceQty||''}
+function render(){schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal()}
+function renderBoard(){
+  let a=[...state.orders].sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
+  $('m1').textContent=a.filter(o=>o.stage!=='done').length;
+  $('m2').textContent=a.filter(o=>status(o)==='Üretimde').length;
+  $('m3').textContent=a.filter(o=>status(o)==='CMM').length;
+  $('m4').textContent=a.filter(o=>o.requested&&o.promised&&o.promised>o.requested).length;
+
+  $('board').innerHTML=a.map(o=>{
+    let risk=o.requested&&o.promised&&o.promised>o.requested;
+    let st=risk?'⚠ Termin Riski':status(o);
+    return `<tr>
+      <td>${esc(o.machine)}</td>
+      <td>${n(o.queue)}</td>
+      <td><b>${esc(o.orderNo)}</b></td>
+      <td>${esc(o.part)}</td>
+      <td>${n(o.produceQty)}</td>
+      <td>${fmt(o.planStart)}</td>
+      <td><b>${fmt(o.promised)}</b></td>
+      <td>${fmt(o.requested)}</td>
+      <td><span class="miniBadge ${risk?'risk':''}">${esc(st)}</span></td>
+    </tr>`;
+  }).join('');
+
+  let due=[...a].filter(o=>o.requested).sort((x,y)=>x.requested.localeCompare(y.requested)).slice(0,6);
+  $('dueList').innerHTML=due.length?due.map(o=>{
+    let risk=o.promised&&o.promised>o.requested;
+    return `<div class="dashListItem">
+      <div><b>${esc(o.orderNo)} • ${esc(o.part)}</b><div class="small">${esc(o.machine)}</div></div>
+      <div class="small"><b>${fmt(o.requested)}</b><br><span class="miniBadge ${risk?'risk':''}">${risk?'Termin Riski':'Planlı'}</span></div>
+    </div>`;
+  }).join(''):'<div class="emptyDash">Yaklaşan termin yok.</div>';
+
+  let cmm=a.filter(o=>o.cmmRequired==='yes' && (!o.cmm?.status || o.cmm.status!=='Onay'));
+  $('cmmWaitList').innerHTML=cmm.length?cmm.slice(0,6).map(o=>`<div class="dashListItem">
+    <div><b>${esc(o.orderNo)} • ${esc(o.part)}</b><div class="small">${esc(o.machine)}</div></div>
+    <div class="small"><b>${esc(o.cmm?.status||'Bekliyor')}</b><br>${o.cmm?.expected?fmt(o.cmm.expected):'Termin yok'}</div>
+  </div>`).join(''):'<div class="emptyDash">CMM bekleyen iş yok.</div>';
+}
+
+function renderMachines(){
+  const machines=[
+    {name:'Tezgâh 1 - 850',id:'machine850'},
+    {name:'Tezgâh 2 - 1000',id:'machine1000'}
+  ];
+
+  machines.forEach(m=>{
+    const el=$(m.id);
+    if(!el)return;
+
+    const jobs=state.orders
+      .filter(o=>o.machine===m.name && o.stage!=='done')
+      .sort((a,b)=>n(a.queue)-n(b.queue));
+
+    if(!jobs.length){
+      el.innerHTML='<div class="emptyDash">Planlanan iş yok.</div>';
+      return;
+    }
+
+    const o=jobs[0];
+    const ops=o.ops||[];
+    const aktif=ops.find(op=>op.runState==='running');
+    const current=aktif || currentOp(o);
+    const currentIndex=current?ops.findIndex(op=>op.id===current.id):-1;
+    const sonraki=currentIndex>=0
+      ? ops.slice(currentIndex+1).find(op=>opProcessed(op)<opTarget(o,op))
+      : ops.find(op=>opProcessed(op)<opTarget(o,op));
+    const aktifBitis=current?.planEnd||'';
+    const urunBitis=o.promised || (ops.length?ops[ops.length-1]?.planEnd||'':'');
+    const pct=Math.round(progress(o));
+    const risk=!!(o.requested&&urunBitis&&new Date(urunBitis)>new Date(o.requested));
+    const running=!!aktif;
+    const nextJobs=jobs.slice(1,4);
+
+    el.innerHTML=`
+      <div class="machineNow">
+        <div class="machineStatus ${running?'running':''}">
+          <span class="statusDot"></span>
+          <b>${running?'Çalışıyor':'Planlandı'}</b>
+        </div>
+
+        <div class="machineActiveTitle">${running?'AKTİF İŞ':'SIRADAKİ İŞ'}</div>
+        <div class="machineJob">
+          <b>${esc(o.orderNo||'-')}</b><span>•</span>
+          <b>${esc(o.part||'-')}</b><span>•</span>
+          <b>${current?esc(current.name||'OP'):'Operasyon bekliyor'}</b>
+        </div>
+
+        <span class="machineBadge ${running?'running':''}">${running?'Üretimde':'Bekliyor'}</span>
+
+        <div class="machineProgressHead"><span>İlerleme</span><b>${pct}%</b></div>
+        <div class="machineProgress"><div style="width:${Math.min(100,pct)}%"></div></div>
+
+        <div class="machineDates">
+          <div><small>OP Bitiş (Tahmini)</small><b>${aktifBitis?fmt(aktifBitis):'-'}</b></div>
+          <div><small>Ürün Bitiş (Tahmini)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div>
+        </div>
+
+        <div class="machineDue">
+          <div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div>
+          <span class="termBadge ${!o.requested||!urunBitis?'neutral':risk?'risk':'ok'}">
+            ${!o.requested?'Termin girilmedi':!urunBitis?'Plan hesaplanmadı':risk?'⚠ TERMİN RİSKİ':'TERMİNDE ✓'}
+          </span>
+        </div>
+
+        <div class="nextJob">
+          <small>SONRAKİ OPERASYON</small>
+          <b>${sonraki?esc(sonraki.name||'OP'):'Planlanan operasyon yok'}</b>
+        </div>
+
+        <div class="nextQueueBox">
+          <small>SIRADAKİ İŞLER</small>
+          ${nextJobs.length?nextJobs.map((j,i)=>`<div class="nextQueueItem">
+            <b>${i+2}. ${esc(j.orderNo)} • ${esc(j.part)}</b>
+            <span>${fmt(j.promised)}</span>
+          </div>`).join(''):'<div class="emptyDash">Bu tezgâhta başka iş yok.</div>'}
+        </div>
+      </div>`;
+  });
+}
+
+
+  function renderOrders(){$('orderList').innerHTML=state.orders.map(o=>`<div class="row"><b>${esc(o.orderNo)} • ${esc(o.part)}</b><div class="small">${esc(o.machine)} • Sıra ${o.queue} • Stok: ${esc(o.stockStatus)} / ${n(o.stockQty)} adet • Üretilecek ${o.produceQty}</div>${canEdit()?`<div class="inline"><button class="btn alt" onclick="editOrder('${o.id}')">Düzenle</button><button class="btn red" onclick="delOrder('${o.id}')">Sil</button></div>`:''}</div>`).join('')||'<div class="small">Henüz iş emri yok.</div>'}
+function renderOps(){let rows=[];for(let o of state.orders)for(let op of o.ops)rows.push({o,op});rows.sort((a,b)=>((a.op.runState==='running')?0:1)-((b.op.runState==='running')?0:1)||a.o.machine.localeCompare(b.o.machine)||n(a.o.queue)-n(b.o.queue)||a.op.name.localeCompare(b.op.name));$('opList').innerHTML=rows.map(({o,op},idx)=>{let target=opTarget(o,op),processed=opProcessed(op),pct=Math.min(100,100*processed/Math.max(1,target)),remain=Math.max(0,target-processed),cls=op.runState==='running'?'running':op.runState==='paused'?'paused':'',iid='start_'+idx+'_'+op.id;let stateText=op.runState==='running'?'ÜRETİMDE':op.runState==='paused'?'DURDURULDU':'BEKLİYOR';let controls='';if(canEdit()){controls=`<div class="inline">${op.runState==='running'?`<button class="btn red" onclick="stopOp('${o.id}','${op.id}')">OP'Yİ DURDUR</button>`:`<button class="btn green" onclick="startOp('${o.id}','${op.id}')">OP'Yİ BAŞLAT</button>`}${op.runState==='paused'&&op.pauseReason==='CMM Onayı'?`<button class="btn orange" onclick="cmmApprove('${o.id}','${op.id}')">CMM ONAY • DEVAM</button>`:''}<button class="btn alt" onclick="editOp('${o.id}','${op.id}')">Düzenle</button><button class="btn red" onclick="delOp('${o.id}','${op.id}')">Sil</button></div><div class="actualEditor"><label>Gerçek üretime başlama zamanı<input id="${iid}" type="datetime-local" value="${esc(op.actualStart||'')}"></label><button class="btn alt" onclick="setOpStart('${o.id}','${op.id}','${iid}')">BAŞLANGIÇ SAATİNİ KAYDET</button></div>`}return `<div class="row ${cls}"><b>${esc(o.orderNo)} • ${esc(o.part)} • ${esc(op.name)}</b> <span class="status ${op.runState==='running'?'run':op.runState==='paused'?'pause':''}">${stateText}</span><div class="meta"><div>Toplam<br><b>${target}</b></div><div>Yapılan<br><b>${op.done||0}</b></div><div>Kalan<br><b>${remain}</b></div><div>OP %<br><b>${pct.toFixed(1)}</b></div><div>Total katkı<br><b>${(opWeight(o,op)*pct/100).toFixed(1)}%</b></div></div><div class="finishbox">Planlanan başlangıç: ${fmt(op.planStart)}<br><b>Tahmini OP bitişi: ${fmt(op.planEnd)}</b>${op.actualStart?`<br>Gerçek başlangıç: ${fmt(op.actualStart)}`:''}${op.pauseReason?`<br>Duruş nedeni: ${esc(op.pauseReason)}`:''}</div>${controls}</div>`}).join('')||'<div class="small">Henüz operasyon yok.</div>'}
+function renderDaily(){$('dailyList').innerHTML=[...state.daily].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{let o=order(r.orderId),op=opBy(o,r.opId);return `<div class="row"><b>${r.date} • ${esc(o?.part||'-')} • ${esc(op?.name||'-')}</b><div class="small">Sağlam ${r.good} • Hurda ${r.scrap} • Toplam işlenen ${n(r.good)+n(r.scrap)} • Brüt ${r.hours} saat • Duruş ${r.downtime||0} dk</div>${canEdit()?`<div class="inline"><button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button><button class="btn red" onclick="delDaily('${r.id}')">Sil</button></div>`:''}</div>`}).join('')||'<div class="small">Henüz günlük kayıt yok.</div>'}
+function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>`<div><b>${x}</b><label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${state.calendar[i]?.h||0}" ${canEdit()?'':'disabled'}></label><label class="small">Mola<input data-day="${i}" data-k="b" type="number" step="0.25" value="${state.calendar[i]?.b||0}" ${canEdit()?'':'disabled'}></label></div>`).join('')}
+function fillSelects(){let opts='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder','cmmOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=opts;el.value=old});fillDailyOps();syncOpAuto()}
+function fillDailyOps(){let el=$('dailyOp');if(!el)return;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''))}
+function syncOpAuto(){let o=order($('opOrder')?.value);if($('opMachine'))$('opMachine').value=o?.machine||'';if($('opQty'))$('opQty').value=o?.produceQty||''}
 $('tabs').onclick=e=>{if(e.target.dataset.p){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b===e.target));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===e.target.dataset.p))}}
-$('orderForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),id=f.get('id'),no=f.get('orderNo').trim();if(state.orders.some(o=>o.orderNo===no&&o.id!==id)){alert('Bu iş emri numarası zaten kullanılıyor.');return}let obj={id:id||uid(),orderNo:no,customerOrderNo:f.get('customerOrderNo'),customer:f.get('customer'),part:f.get('part'),revision:f.get('revision'),qty:n(f.get('qty')),produceQty:n(f.get('produceQty')),machine:f.get('machine'),queue:n(f.get('queue')),start:f.get('start'),requested:f.get('requested'),cmmRequired:f.get('cmmRequired'),cmmDays:n(f.get('cmmDays')),shipDays:n(f.get('shipDays')),note:f.get('note'),stage:'plan',ops:[],cmm:{}};let old=order(id);if(old){obj.ops=old.ops||[];obj.cmm=old.cmm||{};obj.stage=old.stage||'plan';Object.assign(old,obj)}else{state.orders.filter(o=>o.machine===obj.machine&&n(o.queue)>=obj.queue).forEach(o=>o.queue++);state.orders.push(obj)}await save();newOrderForm()}
-function newOrderForm(){$('orderForm').reset();let f=$('orderForm');f.id.value='';f.orderNo.value=autoNo();f.customer.value='Lucas';f.machine.value='Tezgâh 1 - 850';f.queue.value=nextQueue(f.machine.value);f.start.value=localISO(new Date()).slice(0,16);$('orderTitle').textContent='Yeni İş Emri'}
-window.editOrder=id=>{let o=order(id),f=$('orderForm');for(let k of ['id','orderNo','customerOrderNo','customer','part','revision','qty','produceQty','machine','queue','start','requested','cmmRequired','cmmDays','shipDays','note'])if(f.elements[k])f.elements[k].value=o[k]??'';$('orderTitle').textContent='İş Emri Düzenle';document.querySelector('[data-p="orders"]').click();window.scrollTo(0,0)}
-window.delOrder=async id=>{if(confirm('İş emri silinsin mi?')){state.orders=state.orders.filter(o=>o.id!==id);state.daily=state.daily.filter(r=>r.orderId!==id);await save()}}
-$('opOrder').onchange=syncOpAuto;$('opForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd});else o.ops.push(obj);await save();e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}
-window.editOp=(oid,id)=>{let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
-window.delOp=async(oid,id)=>{if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
-window.startOp=async(oid,id)=>{let o=order(oid),op=opBy(o,id);op.runState='running';if(!op.actualStart)op.actualStart=localISO(new Date());o.stage='production';await save()}
-window.stopOp=async(oid,id)=>{let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());o.stage='paused';await save()}
-$('dailyOrder').onchange=fillDailyOps;$('dailyForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),id=f.get('recId'),key=r=>r.orderId===f.get('orderId')&&r.opId===f.get('opId')&&r.date===f.get('date'),existing=state.daily.find(key),obj={id:id||existing?.id||uid(),orderId:f.get('orderId'),opId:f.get('opId'),date:f.get('date'),hours:n(f.get('hours')),good:n(f.get('good')),scrap:n(f.get('scrap')),downtime:n(f.get('downtime')),reason:f.get('reason')};if(existing&&!id){if(!confirm('Bu tarih için kayıt var. Mevcut kayıt güncellensin mi?'))return;Object.assign(existing,obj)}else if(id){let r=state.daily.find(x=>x.id===id);Object.assign(r,obj)}else state.daily.push(obj);await save();e.target.reset();e.target.recId.value='';e.target.date.value=ymd(new Date());e.target.hours.value=10;$('dailyTitle').textContent='Günlük Üretim Kaydı'}
-window.editDaily=id=>{let r=state.daily.find(x=>x.id===id),f=$('dailyForm');for(let k of ['recId','orderId','opId','date','hours','good','scrap','downtime','reason'])if(f.elements[k])f.elements[k].value=r[k]??'';fillDailyOps();f.opId.value=r.opId;$('dailyTitle').textContent='Günlük Kaydı Düzenle';document.querySelector('[data-p="daily"]').click();window.scrollTo(0,0)}
-window.delDaily=async id=>{if(confirm('Günlük kayıt silinsin mi?')){state.daily=state.daily.filter(r=>r.id!==id);await save()}}
-$('cmmForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;o.cmm={firm:f.get('firm'),sent:f.get('sent'),sentDate:f.get('sentDate'),expected:f.get('expected'),returned:f.get('returned'),status:f.get('status'),reportNo:f.get('reportNo')};await save()}
-$('saveCal').onclick=async()=>{document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
-load().then(()=>{newOrderForm();$('dailyForm').date.value=ymd(new Date())}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
+$('orderForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('id'),no=f.get('orderNo').trim();if(state.orders.some(o=>o.orderNo===no&&o.id!==id)){alert('Bu iş emri numarası zaten kullanılıyor.');return}let obj={id:id||uid(),orderNo:no,customerOrderNo:f.get('customerOrderNo'),customer:f.get('customer'),part:f.get('part'),revision:f.get('revision'),qty:n(f.get('qty')),produceQty:n(f.get('produceQty')),stockStatus:f.get('stockStatus'),stockQty:n(f.get('stockQty')),machine:f.get('machine'),queue:n(f.get('queue')),start:f.get('start'),requested:f.get('requested'),cmmRequired:f.get('cmmRequired'),cmmDays:n(f.get('cmmDays')),shipDays:n(f.get('shipDays')),note:f.get('note'),stage:'plan',ops:[],cmm:{}};let old=order(id);if(old){obj.ops=old.ops||[];obj.cmm=old.cmm||{};obj.stage=old.stage||'plan';Object.assign(old,obj)}else{state.orders.filter(o=>o.machine===obj.machine&&n(o.queue)>=obj.queue).forEach(o=>o.queue++);state.orders.push(obj)}if(await save())newOrderForm()}
+function newOrderForm(){if(!canEdit())return;let f=$('orderForm');f.reset();f.id.value='';f.orderNo.value=autoNo();f.customer.value='Lucas';f.machine.value='Tezgâh 1 - 850';f.stockStatus.value='Geldi';f.stockQty.value=0;f.queue.value=nextQueue(f.machine.value);f.start.value=localISO(new Date()).slice(0,16);$('orderTitle').textContent='Yeni İş Emri'}
+window.editOrder=id=>{if(!canEdit())return;let o=order(id),f=$('orderForm');for(let k of ['id','orderNo','customerOrderNo','customer','part','revision','qty','produceQty','stockStatus','stockQty','machine','queue','start','requested','cmmRequired','cmmDays','shipDays','note'])if(f.elements[k])f.elements[k].value=o[k]??'';$('orderTitle').textContent='İş Emri Düzenle';document.querySelector('[data-p="orders"]').click();window.scrollTo(0,0)}
+window.delOrder=async id=>{if(!canEdit())return;if(confirm('İş emri silinsin mi?')){state.orders=state.orders.filter(o=>o.id!==id);state.daily=state.daily.filter(r=>r.orderId!==id);await save()}}
+$('opOrder').onchange=syncOpAuto;
+$('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
+window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
+window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
+window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);op.runState='running';if(!op.actualStart)op.actualStart=localISO(new Date());op.pauseReason='';o.stage='production';await save()}
+window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());o.stage='paused';await save()}
+window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart=''}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production'}await save()}
+window.cmmApprove=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);op.runState='running';op.pauseReason='';op.cmmApprovedAt=localISO(new Date());o.stage='production';if(o.cmm)o.cmm.status='Onay';await save()}
+$('dailyOrder').onchange=fillDailyOps;
+$('dailyForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('recId'),key=r=>r.orderId===f.get('orderId')&&r.opId===f.get('opId')&&r.date===f.get('date'),existing=state.daily.find(key),obj={id:id||existing?.id||uid(),orderId:f.get('orderId'),opId:f.get('opId'),date:f.get('date'),hours:n(f.get('hours')),good:n(f.get('good')),scrap:n(f.get('scrap')),downtime:n(f.get('downtime')),reason:f.get('reason')};if(existing&&!id){if(!confirm('Bu tarih için kayıt var. Mevcut kayıt güncellensin mi?'))return;Object.assign(existing,obj)}else if(id){let r=state.daily.find(x=>x.id===id);Object.assign(r,obj)}else state.daily.push(obj);if(await save()){e.target.reset();e.target.recId.value='';e.target.date.value=ymd(new Date());e.target.hours.value=10;$('dailyTitle').textContent='Günlük Üretim Kaydı'}}
+window.editDaily=id=>{if(!canEdit())return;let r=state.daily.find(x=>x.id===id),f=$('dailyForm');for(let k of ['recId','orderId','opId','date','hours','good','scrap','downtime','reason'])if(f.elements[k])f.elements[k].value=r[k]??'';fillDailyOps();f.opId.value=r.opId;$('dailyTitle').textContent='Günlük Kaydı Düzenle';document.querySelector('[data-p="daily"]').click();window.scrollTo(0,0)}
+window.delDaily=async id=>{if(!canEdit())return;if(confirm('Günlük kayıt silinsin mi?')){state.daily=state.daily.filter(r=>r.id!==id);await save()}}
+$('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;o.cmm={firm:f.get('firm'),sent:f.get('sent'),sentDate:f.get('sentDate'),expected:f.get('expected'),returned:f.get('returned'),status:f.get('status'),reportNo:f.get('reportNo')};await save()}
+$('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
+Promise.all([loadMe(),load()]).then(()=>{if(canEdit())newOrderForm();if($('dailyForm')){$('dailyForm').date.value=ymd(new Date())}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
 setInterval(()=>load().catch(()=>{}),15000);
-</script></body></html>
+function gunlukHesap(f){
+  const brut=n(f.hours.value);
+  const mola=n(f.breaktime ? f.breaktime.value : 0);
+  const durus=n(f.downtime.value);
+  const saglam=n(f.good.value);
+
+  const netSaat=Math.max(0,brut-((mola+durus)/60));
+
+  const o=order(f.orderId.value);
+  const op=opBy(o,f.opId.value);
+  const dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
+
+  const teorik=dakikaAdet>0 ? (netSaat*60)/dakikaAdet : 0;
+  const verim=teorik>0 ? (saglam/teorik)*100 : 0;
+
+  return {brut,mola,durus,saglam,netSaat,teorik,verim};
+}
+
+function hesaplaVerim(){
+  const f=$('dailyForm');
+  if(!f)return;
+
+  const x=gunlukHesap(f);
+
+  $('netSure').textContent=x.netSaat.toFixed(2)+' saat';
+  $('teorikAdet').textContent=Math.floor(x.teorik)+' adet';
+  $('verimYuzde').textContent='%'+x.verim.toFixed(1);
+}
+
+['hours','breaktime','good','downtime'].forEach(k=>{
+  const el=$('dailyForm').elements[k];
+  if(el)el.addEventListener('input',hesaplaVerim);
+});
+
+$('dailyOrder').addEventListener('change',()=>setTimeout(hesaplaVerim,50));
+$('dailyOp').addEventListener('change',hesaplaVerim);
+
+$('dailyForm').onsubmit=async e=>{
+  e.preventDefault();
+  if(typeof canEdit==='function' && !canEdit())return;
+
+  let f=new FormData(e.target);
+  let id=f.get('recId');
+  let key=r=>r.orderId===f.get('orderId') &&
+             r.opId===f.get('opId') &&
+             r.date===f.get('date');
+
+  let existing=state.daily.find(key);
+  let h=gunlukHesap(e.target);
+
+  let obj={
+    id:id||existing?.id||uid(),
+    orderId:f.get('orderId'),
+    opId:f.get('opId'),
+    date:f.get('date'),
+    hours:n(f.get('hours')),
+    breaktime:n(f.get('breaktime')),
+    good:n(f.get('good')),
+    scrap:n(f.get('scrap')),
+    downtime:n(f.get('downtime')),
+    reason:f.get('reason'),
+    netHours:h.netSaat,
+    targetQty:h.teorik,
+    efficiency:h.verim
+  };
+
+  if(existing&&!id){
+    if(!confirm('Bu tarih için kayıt var. Mevcut kayıt güncellensin mi?'))return;
+    Object.assign(existing,obj);
+  }else if(id){
+    let r=state.daily.find(x=>x.id===id);
+    Object.assign(r,obj);
+  }else{
+    state.daily.push(obj);
+  }
+
+  await save();
+
+  e.target.reset();
+  e.target.recId.value='';
+  e.target.date.value=ymd(new Date());
+  e.target.hours.value=10;
+  e.target.breaktime.value=0;
+  e.target.scrap.value=0;
+  e.target.downtime.value=0;
+
+  $('dailyTitle').textContent='Günlük Üretim Kaydı';
+  hesaplaVerim();
+};
+
+function renderDaily(){
+  $('dailyList').innerHTML=[...state.daily]
+  .sort((a,b)=>b.date.localeCompare(a.date))
+  .map(r=>{
+    let o=order(r.orderId);
+    let op=opBy(o,r.opId);
+
+    let net=r.netHours;
+    if(net===undefined){
+      net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
+    }
+
+    let dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
+
+    let hedef=r.targetQty;
+    if(hedef===undefined){
+      hedef=dakikaAdet>0 ? (net*60)/dakikaAdet : 0;
+    }
+
+    let verim=r.efficiency;
+    if(verim===undefined){
+      verim=hedef>0 ? n(r.good)/hedef*100 : 0;
+    }
+
+    return `<div class="row">
+      <b>${r.date} • ${esc(o?.part||'-')} • ${esc(op?.name||'-')}</b>
+
+      <div style="margin-top:8px;font-size:15px">
+        Hedef: <b>${Math.floor(hedef)} adet</b>
+        • Yapılan: <b>${n(r.good)} adet</b>
+        • Verim: <b>%${verim.toFixed(1)}</b>
+      </div>
+
+      <div class="small" style="margin-top:6px">
+        Net ${net.toFixed(2)} saat
+        • Brüt ${r.hours} saat
+        • Mola ${n(r.breaktime)} dk
+        • Duruş ${n(r.downtime)} dk
+        • Hurda ${n(r.scrap)}
+      </div>
+
+      <div class="inline">
+        <button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button>
+        <button class="btn red" onclick="delDaily('${r.id}')">Sil</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="small">Henüz günlük kayıt yok.</div>';
+}
+
+window.editDaily=id=>{
+  if(typeof canEdit==='function' && !canEdit())return;
+
+  let r=state.daily.find(x=>x.id===id);
+  let f=$('dailyForm');
+
+  f.recId.value=r.id;
+  f.orderId.value=r.orderId;
+  fillDailyOps();
+  f.opId.value=r.opId;
+  f.date.value=r.date;
+  f.hours.value=r.hours;
+  f.breaktime.value=r.breaktime||0;
+  f.good.value=r.good;
+  f.scrap.value=r.scrap||0;
+  f.downtime.value=r.downtime||0;
+  f.reason.value=r.reason||'';
+
+  $('dailyTitle').textContent='Günlük Kaydı Düzenle';
+  document.querySelector('[data-p="daily"]').click();
+  hesaplaVerim();
+  window.scrollTo(0,0);
+};</script>
+</body>
+</html>
