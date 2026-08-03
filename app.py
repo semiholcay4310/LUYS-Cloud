@@ -7,6 +7,8 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 app.secret_key = os.environ.get('SECRET_KEY','change-this-secret')
 USER = os.environ.get('LUYS_USER','admin')
 PASSWORD = os.environ.get('LUYS_PASSWORD','luys-change-me')
+VIEWER_USER = os.environ.get('LUYS_VIEWER_USER','metahan')
+VIEWER_PASSWORD = os.environ.get('LUYS_VIEWER_PASSWORD','5454')
 DB_URL = os.environ.get('DATABASE_URL','sqlite:///luys_cloud.db')
 if DB_URL.startswith('postgres://'):
     DB_URL='postgresql+psycopg://'+DB_URL[len('postgres://'):]
@@ -31,12 +33,25 @@ LOGIN_HTML='''<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta n
 
 def auth_ok(): return session.get('luys_auth') is True
 
+def can_edit(): return session.get('luys_role') == 'admin'
+
 @app.route('/login',methods=['GET','POST'])
 def login():
     err=False
     if request.method=='POST':
-        if request.form.get('username')==USER and request.form.get('password')==PASSWORD:
+        username=request.form.get('username','')
+        password=request.form.get('password','')
+        if username==USER and password==PASSWORD:
+            session.clear()
             session['luys_auth']=True
+            session['luys_role']='admin'
+            session['luys_username']=username
+            return redirect('/')
+        if username==VIEWER_USER and password==VIEWER_PASSWORD:
+            session.clear()
+            session['luys_auth']=True
+            session['luys_role']='viewer'
+            session['luys_username']='Metahan Mutlu'
             return redirect('/')
         err=True
     return render_template_string(LOGIN_HTML,err=err)
@@ -57,6 +72,15 @@ def protect():
 @app.route('/')
 def home(): return send_from_directory('static','index.html')
 
+
+@app.route('/api/me',methods=['GET'])
+def api_me():
+    return jsonify({
+        'username': session.get('luys_username', USER),
+        'role': session.get('luys_role','viewer'),
+        'can_edit': can_edit()
+    })
+
 @app.route('/api/state',methods=['GET'])
 def get_state():
     init_db()
@@ -66,6 +90,8 @@ def get_state():
 
 @app.route('/api/state',methods=['PUT'])
 def put_state():
+    if not can_edit():
+        return jsonify({'error':'forbidden'}),403
     payload=request.get_json(force=True,silent=False)
     if not isinstance(payload,dict): return jsonify({'error':'invalid'}),400
     raw=json.dumps(payload,ensure_ascii=False)
