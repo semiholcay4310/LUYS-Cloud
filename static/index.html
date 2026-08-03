@@ -379,9 +379,9 @@ const urunBitis = ops.length ? ops[ops.length-1]?.planEnd || '' : '';
   ${
     !o.requested
       ? 'Termin girilmedi'
-      : !o.planEnd
+      : !urunBitis
         ? 'Plan hesaplanmadı'
-        : new Date(o.planEnd) > new Date(o.requested)
+        : new Date(urunBitis) > new Date(o.requested)
           ? '⚠ TERMİN RİSKİ'
           : 'TERMİNDE ✓'
   }
