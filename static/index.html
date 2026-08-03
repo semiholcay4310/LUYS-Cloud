@@ -368,9 +368,42 @@
 }
 
 
-.autoPdfCard{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid #dbe6ee}
-.autoPdfCard>b{font-size:15px}.autoPdfCard .btn{min-width:170px;padding:12px 16px}
-@media(max-width:650px){.autoPdfCard{align-items:stretch;flex-direction:column}.autoPdfCard .btn{width:100%}}
+/* ===== GÜNLÜK ÜRETİM - HAFTALIK KATLANIR ARŞİV ===== */
+.dailyWeek{border:1px solid #dfe7ee;border-radius:14px;background:#fff;margin:10px 0;overflow:hidden}
+.dailyWeekHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;cursor:pointer;background:#fbfdff}
+.dailyWeekHead:hover{background:#f5f9fc}
+.dailyWeekHead .left{display:flex;align-items:center;gap:9px;min-width:0}
+.dailyWeekHead .weekIcon{width:30px;height:30px;border-radius:9px;background:#edf6fc;display:grid;place-items:center;color:#1676ad;font-size:15px;flex:0 0 auto}
+.dailyWeekHead b{font-size:14px;color:#173c58}
+.dailyWeekHead small{color:#168348;font-weight:800}
+.dailyWeekHead .weekTotal{font-size:12px;color:#176fbd;font-weight:800;white-space:nowrap}
+.dailyWeekBody{display:none;padding:0 12px 12px}
+.dailyWeek.open .dailyWeekBody{display:block}
+.dailyWeek.open .dailyWeekHead{border-bottom:1px solid #e7edf2}
+.dailyDays{display:flex;gap:7px;overflow-x:auto;padding:10px 0 12px;scrollbar-width:thin}
+.dailyDayBtn{border:1px solid #dce5ec;background:#fff;border-radius:10px;padding:8px 10px;min-width:88px;cursor:pointer;color:#2d485d}
+.dailyDayBtn b{display:block;font-size:11px}.dailyDayBtn span{display:block;font-size:10px;color:#6e8292;margin-top:3px}
+.dailyDayBtn.active{border-color:#1676d2;background:#eef6ff;color:#0b63b1}
+.dailyDayPanel{border:1px solid #e1e8ee;border-radius:12px;overflow:hidden;background:#fff}
+.dailyDayTitle{display:flex;justify-content:space-between;gap:8px;padding:11px 12px;border-bottom:1px solid #e7edf2;background:#fbfcfd}
+.dailyDayTitle b{font-size:13px;color:#173c58}.dailyDayTitle span{font-size:11px;color:#176fbd;font-weight:800}
+.dailyEntries{padding:4px 10px}
+.dailyEntry{padding:10px 4px;border-bottom:1px solid #eef2f5}
+.dailyEntry:last-child{border-bottom:0}
+.dailyEntryTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dailyEntryTop b{font-size:12px;color:#173c58}
+.dailyEntry .dailyStats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
+.dailyEntry .dailyStats div{background:#f7f9fb;border-radius:8px;padding:7px}
+.dailyEntry .dailyStats small{display:block;color:#7b8c99;font-size:8px}.dailyEntry .dailyStats b{font-size:11px}
+.dailyCurrentSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 12px}
+.dailySummaryBox{border:1px solid #e1e8ee;border-radius:12px;background:#fff;padding:12px}
+.dailySummaryBox small{display:block;color:#748695;font-size:10px;font-weight:700}.dailySummaryBox b{display:block;font-size:20px;color:#173d5a;margin-top:4px}
+@media(max-width:800px){
+ .dailyCurrentSummary{grid-template-columns:1fr 1fr 1fr;gap:7px}
+ .dailySummaryBox{padding:9px}.dailySummaryBox b{font-size:17px}
+ .dailyEntry .dailyStats{grid-template-columns:1fr 1fr}
+ .dailyWeekHead{padding:11px}.dailyWeekHead b{font-size:12px}.dailyWeekHead .weekTotal{font-size:10px}
+}
 
 </style>
 </head>
@@ -382,7 +415,9 @@
   <div class="sync" id="sync">Bağlanıyor…</div>
 </header>
 <div class="wrap">
-<div class="tabs" id="tabs">
+  <div class="notice"><b>Ortak veri sürümü:</b> Telefon, ev ve iş yeri farklı internetlerde olsa bile aynı hesabın ortak verilerini görür.</div>
+  <div class="readonlyNotice" id="readonlyNotice"><b>Görüntüleme modu:</b> Bu kullanıcı verileri görebilir; kayıt ekleyemez, silemez veya değiştiremez.</div>
+  <div class="tabs" id="tabs">
     <button data-p="dash" class="active">Ana Panel</button>
     <button data-p="orders">İş Emri</button>
     <button data-p="ops">Operasyon</button>
@@ -411,13 +446,6 @@
   <div class="card planCard">
     <div class="dashCardHead"><b>ÜRÜN TERMİNLERİ <small id="totalOrders"></small></b><span class="dashAction" data-dash-action="products">Tümünü Listele ›</span></div>
     <div class="tablewrap"><table><thead><tr><th>İş Emri / Parça</th><th>Adet</th><th>Tahmini Başlangıç</th><th>Tahmini Ürün Bitişi</th><th>Müşteri Termini</th><th>Durum</th><th>İlerleme</th></tr></thead><tbody id="board"></tbody></table></div>
-  </div>
-  <div class="card autoPdfCard">
-    <div>
-      <b>📄 OTOMATİK PLANLAMA PDF</b>
-      <div class="small">Güncel iş emirleri, tezgâh sırası, operasyonlar ve terminlerle plan raporu oluşturur.</div>
-    </div>
-    <button class="btn" type="button" onclick="automaticPlanningPDF()">PDF OLUŞTUR</button>
   </div>
 </section>
 
@@ -618,7 +646,7 @@ function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate
 function localISO(d){return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function fmt(s){if(!s)return '-';let d=new Date(s);if(String(s).length===10)d=new Date(s+'T12:00');return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+(String(s).includes('T')?' '+pad(d.getHours())+':'+pad(d.getMinutes()):'')}
 function canEdit(){return me.can_edit===true}
-async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');if($('readonlyNotice'))$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"]').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none'}
+async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"]').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none'}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
 function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o)})}
@@ -670,58 +698,6 @@ function windows(day){let c=cal(day);if(c.net<=0)return[];let st=new Date(day+'T
 function nextMoment(v){let d=new Date(v);for(let g=0;g<60;g++){let day=ymd(d),ws=windows(day);for(let [a,b] of ws){if(d<=a)return new Date(a);if(d>=a&&d<b)return d}d.setDate(d.getDate()+1);d.setHours(8,0,0,0)}return d}
 function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<2000&&left>0;g++){d=nextMoment(d);let w=windows(ymd(d)).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(8,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
 function schedule(){let groups={};state.orders.filter(o=>o.stage!=='done').forEach(o=>(groups[o.machine]??=[]).push(o));Object.values(groups).forEach(a=>a.sort((x,y)=>n(x.queue)-n(y.queue)));for(let a of Object.values(groups)){let available=null;for(let o of a){let planned=nextMoment(available||new Date(o.start));o.planStart=localISO(planned);let cursor=planned;for(let op of o.ops){let start=nextMoment(cursor);if(op.actualStart)start=nextMoment(new Date(op.actualStart));op.planStart=localISO(start);let setupEnd=op.actualStart?start:addWork(start,n(op.setup)*60);op.setupEnd=localISO(setupEnd);let prodStart=nextMoment(setupEnd);op.prodStart=localISO(prodStart);let remaining=Math.max(0,n(o.produceQty)-n(op.done));let end=addWork(prodStart,remaining*(n(op.cycle)+n(op.handling)));op.planEnd=op.actualEnd||localISO(end);cursor=new Date(op.planEnd)}o.realStart=(o.ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');o.cncEnd=o.ops.length?o.ops[o.ops.length-1].planEnd:o.planStart;available=new Date(o.cncEnd);let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship)}}}
-
-function automaticPlanningPDF(){
-  syncCompletedOps();
-  schedule();
-
-  const jobs=[...state.orders]
-    .filter(o=>o.stage!=='done')
-    .sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));
-
-  const productEnd=o=>(o.ops||[]).length?((o.ops||[])[(o.ops||[]).length-1].planEnd||''):'';
-  const risk=o=>!!(o.requested&&productEnd(o)&&new Date(productEnd(o))>new Date(o.requested));
-
-  const machineSections=['Tezgâh 1 - 850','Tezgâh 2 - 1000'].map(machine=>{
-    const arr=jobs.filter(o=>o.machine===machine);
-    const rows=arr.length?arr.map((o,i)=>{
-      const ops=(o.ops||[]).map(op=>{
-        const done=opProcessed(op), target=opTarget(o,op);
-        const pct=target>0?Math.min(100,Math.round(done/target*100)):0;
-        return `<tr><td>${esc(op.name||'OP')}</td><td>${done}/${target}</td><td>%${pct}</td><td>${op.planStart?fmt(op.planStart):'-'}</td><td>${op.planEnd?fmt(op.planEnd):'-'}</td></tr>`;
-      }).join('');
-      return `<div class="job">
-        <h3>${i+1}. ${esc(o.orderNo)} — ${esc(o.part)}</h3>
-        <div class="meta2"><span><b>Adet:</b> ${n(o.produceQty)}</span><span><b>Başlangıç:</b> ${o.planStart?fmt(o.planStart):'-'}</span><span><b>Ürün Bitişi:</b> ${productEnd(o)?fmt(productEnd(o)):'-'}</span><span><b>Müşteri Termini:</b> ${o.requested?fmt(o.requested):'-'}</span><span class="${risk(o)?'bad':'good'}"><b>Durum:</b> ${risk(o)?'RİSK':'TERMİNDE'}</span></div>
-        <table><thead><tr><th>Operasyon</th><th>Yapılan / Hedef</th><th>İlerleme</th><th>Plan Başlangıç</th><th>Plan Bitiş</th></tr></thead><tbody>${ops||'<tr><td colspan="5">Operasyon girilmemiş.</td></tr>'}</tbody></table>
-      </div>`;
-    }).join(''):'<p>Planlanan iş bulunmuyor.</p>';
-    return `<section><h2>${esc(machine)}</h2>${rows}</section>`;
-  }).join('');
-
-  const now=new Date();
-  const html=`<!doctype html><html><head><meta charset="utf-8"><title>LÜYS Otomatik Planlama</title>
-  <style>
-    @page{size:A4 landscape;margin:10mm}
-    *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#16324a;margin:0;font-size:11px}
-    header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0d3456;padding-bottom:8px;margin-bottom:12px}
-    h1{margin:0;color:#0d3456;font-size:24px}h2{background:#eef5fa;padding:8px;border-left:5px solid #0b67a3;margin:14px 0 8px}
-    h3{margin:0 0 7px;font-size:13px}.job{border:1px solid #ccd9e2;border-radius:8px;padding:9px;margin-bottom:9px;break-inside:avoid}
-    .meta2{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:8px}.good{color:#168348}.bad{color:#c72e2e}
-    table{width:100%;border-collapse:collapse}th,td{border:1px solid #dbe4eb;padding:5px;text-align:left}th{background:#f3f7fa}
-    footer{margin-top:12px;color:#6f8291;font-size:9px;text-align:right}
-  </style></head><body>
-  <header><div><h1>LÜYS</h1><b>LUUKMAS Üretim Yönetim Sistemi — Otomatik Planlama</b></div><div>Rapor: ${now.toLocaleString('tr-TR')}</div></header>
-  ${machineSections}
-  <footer>Planlanan başlangıç ve bitiş süreleri tahminidir. Gerçek süreler operasyon ve günlük üretim kayıtlarına göre güncellenir.</footer>
-  <script>window.onload=()=>{setTimeout(()=>window.print(),250)}<\/script>
-  </body></html>`;
-
-  const w=window.open('','_blank');
-  if(!w){alert('PDF penceresi açılamadı. Tarayıcıda açılır pencereye izin ver.');return}
-  w.document.open();w.document.write(html);w.document.close();
-}
-
 function render(){syncCompletedOps();schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal();renderAccounting()}
 function renderBoard(){
   let a=[...state.orders].filter(o=>o.stage!=='done').sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
@@ -1049,54 +1025,131 @@ $('dailyForm').onsubmit=async e=>{
   hesaplaVerim();
 };
 
+function dailyWeekStart(dateStr){
+  let d=new Date(dateStr+'T12:00:00');
+  let day=d.getDay(); // 0 Pazar
+  let diff=(day===0?-6:1-day);
+  d.setDate(d.getDate()+diff);
+  return ymd(d);
+}
+function dailyAddDays(dateStr,days){
+  let d=new Date(dateStr+'T12:00:00');d.setDate(d.getDate()+days);return ymd(d);
+}
+function dailyDateLabel(dateStr){
+  let d=new Date(dateStr+'T12:00:00');
+  return d.toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'});
+}
+function dailyShortLabel(dateStr){
+  let d=new Date(dateStr+'T12:00:00');
+  let gun=d.toLocaleDateString('tr-TR',{weekday:'short'});
+  return `${String(d.getDate()).padStart(2,'0')} ${gun}`;
+}
+function dailyRecordMetrics(r){
+  let o=order(r.orderId),op=opBy(o,r.opId);
+  let net=r.netHours;
+  if(net===undefined)net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
+  let dakikaAdet=op?n(op.cycle)+n(op.handling):0;
+  let hedef=r.targetQty;
+  if(hedef===undefined)hedef=dakikaAdet>0?(net*60)/dakikaAdet:0;
+  let verim=r.efficiency;
+  if(verim===undefined)verim=hedef>0?n(r.good)/hedef*100:0;
+  return {o,op,net,hedef,verim};
+}
 function renderDaily(){
-  $('dailyList').innerHTML=[...state.daily]
-  .sort((a,b)=>b.date.localeCompare(a.date))
-  .map(r=>{
-    let o=order(r.orderId);
-    let op=opBy(o,r.opId);
+  const records=[...state.daily].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!records.length){$('dailyList').innerHTML='<div class="small">Henüz günlük kayıt yok.</div>';return}
 
-    let net=r.netHours;
-    if(net===undefined){
-      net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
-    }
+  const today=ymd(new Date());
+  const currentWeek=dailyWeekStart(today);
+  const weekMap={};
 
-    let dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
+  records.forEach(r=>{
+    const wk=dailyWeekStart(r.date);
+    if(!weekMap[wk])weekMap[wk]=[];
+    weekMap[wk].push(r);
+  });
 
-    let hedef=r.targetQty;
-    if(hedef===undefined){
-      hedef=dakikaAdet>0 ? (net*60)/dakikaAdet : 0;
-    }
+  const weekKeys=Object.keys(weekMap).sort((a,b)=>b.localeCompare(a));
+  const thisWeekRecords=weekMap[currentWeek]||[];
+  const thisWeekGood=thisWeekRecords.reduce((a,r)=>a+n(r.good),0);
+  const thisWeekScrap=thisWeekRecords.reduce((a,r)=>a+n(r.scrap),0);
+  const thisWeekJobs=new Set(thisWeekRecords.map(r=>r.orderId)).size;
 
-    let verim=r.efficiency;
-    if(verim===undefined){
-      verim=hedef>0 ? n(r.good)/hedef*100 : 0;
-    }
+  let html=`<div class="dailyCurrentSummary">
+    <div class="dailySummaryBox"><small>BU HAFTA ÜRETİM</small><b>${thisWeekGood}</b></div>
+    <div class="dailySummaryBox"><small>İŞ EMRİ</small><b>${thisWeekJobs}</b></div>
+    <div class="dailySummaryBox"><small>HURDA</small><b>${thisWeekScrap}</b></div>
+  </div>`;
 
-    return `<div class="row">
-      <b>${r.date} • ${esc(o?.part||'-')} • ${esc(op?.name||'-')}</b>
+  html+=weekKeys.map((wk,wi)=>{
+    const arr=weekMap[wk].sort((a,b)=>b.date.localeCompare(a.date));
+    const weekEnd=dailyAddDays(wk,6);
+    const total=arr.reduce((a,r)=>a+n(r.good),0);
+    const isCurrent=wk===currentWeek;
+    const dates=[...new Set(arr.map(r=>r.date))].sort();
+    const selected=(isCurrent && dates.includes(today))?today:dates[dates.length-1];
+    const dayButtons=dates.map(d=>{
+      const dayTotal=arr.filter(r=>r.date===d).reduce((a,r)=>a+n(r.good),0);
+      return `<button type="button" class="dailyDayBtn ${d===selected?'active':''}" data-week="${wk}" data-day="${d}">
+        <b>${dailyShortLabel(d)}</b><span>${dayTotal} adet</span>
+      </button>`;
+    }).join('');
 
-      <div style="margin-top:8px;font-size:15px">
-        Hedef: <b>${Math.floor(hedef)} adet</b>
-        • Yapılan: <b>${n(r.good)} adet</b>
-        • Verim: <b>%${verim.toFixed(1)}</b>
+    const dayPanels=dates.map(d=>{
+      const dr=arr.filter(r=>r.date===d);
+      const dayTotal=dr.reduce((a,r)=>a+n(r.good),0);
+      const entries=dr.map(r=>{
+        const m=dailyRecordMetrics(r);
+        return `<div class="dailyEntry">
+          <div class="dailyEntryTop">
+            <div><b>${esc(m.o?.orderNo||'-')} • ${esc(m.o?.part||'-')} • ${esc(m.op?.name||'-')}</b></div>
+            <span class="termBadge ok">${n(r.good)} adet</span>
+          </div>
+          <div class="dailyStats">
+            <div><small>Hedef</small><b>${Math.floor(m.hedef)} adet</b></div>
+            <div><small>Yapılan</small><b>${n(r.good)} adet</b></div>
+            <div><small>Verim</small><b>%${m.verim.toFixed(1)}</b></div>
+            <div><small>Hurda</small><b>${n(r.scrap)}</b></div>
+          </div>
+          <div class="small" style="margin-top:7px">Net ${m.net.toFixed(2)} saat • Brüt ${r.hours} saat • Mola ${n(r.breaktime)} dk • Duruş ${n(r.downtime)} dk</div>
+          ${canEdit()?`<div class="inline" style="margin-top:7px"><button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button><button class="btn red" onclick="delDaily('${r.id}')">Sil</button></div>`:''}
+        </div>`;
+      }).join('');
+      return `<div class="dailyDayPanel" data-week-panel="${wk}" data-day-panel="${d}" style="${d===selected?'':'display:none'}">
+        <div class="dailyDayTitle"><b>📅 ${dailyDateLabel(d)}</b><span>Toplam Üretim: ${dayTotal} adet</span></div>
+        <div class="dailyEntries">${entries}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="dailyWeek ${isCurrent?'open':''}" data-week-box="${wk}">
+      <div class="dailyWeekHead" data-week-toggle="${wk}">
+        <div class="left"><div class="weekIcon">📅</div><div><b>${dailyDateLabel(wk)} – ${dailyDateLabel(weekEnd)}</b>${isCurrent?'<br><small>Bu Hafta</small>':''}</div></div>
+        <div class="weekTotal">Toplam: ${total} adet ${isCurrent?'⌃':'⌄'}</div>
       </div>
-
-      <div class="small" style="margin-top:6px">
-        Net ${net.toFixed(2)} saat
-        • Brüt ${r.hours} saat
-        • Mola ${n(r.breaktime)} dk
-        • Duruş ${n(r.downtime)} dk
-        • Hurda ${n(r.scrap)}
-      </div>
-
-      <div class="inline">
-        <button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button>
-        <button class="btn red" onclick="delDaily('${r.id}')">Sil</button>
+      <div class="dailyWeekBody">
+        <div class="dailyDays">${dayButtons}</div>
+        ${dayPanels}
       </div>
     </div>`;
-  }).join('') || '<div class="small">Henüz günlük kayıt yok.</div>';
+  }).join('');
+
+  $('dailyList').innerHTML=html;
 }
+
+document.addEventListener('click',e=>{
+  const wh=e.target.closest('[data-week-toggle]');
+  if(wh){
+    const wk=wh.dataset.weekToggle,box=document.querySelector(`[data-week-box="${wk}"]`);
+    if(box)box.classList.toggle('open');
+    return;
+  }
+  const db=e.target.closest('.dailyDayBtn');
+  if(db){
+    const wk=db.dataset.week,day=db.dataset.day;
+    document.querySelectorAll(`.dailyDayBtn[data-week="${wk}"]`).forEach(x=>x.classList.toggle('active',x===db));
+    document.querySelectorAll(`[data-week-panel="${wk}"]`).forEach(x=>x.style.display=x.dataset.dayPanel===day?'':'none');
+  }
+});
 
 window.editDaily=id=>{
   if(typeof canEdit==='function' && !canEdit())return;
