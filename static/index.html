@@ -323,23 +323,73 @@ function renderMachines(){
       : ops.find(op=>opProcessed(op)<opTarget(o,op));
 
     el.innerHTML=`
-      <div class="machineNow">
-        <div class="machineLabel">Parça</div>
-        <div class="machineValue">${esc(o.part)}</div>
+  <div class="machineNow">
 
-        <div class="machineLabel">Aktif Operasyon</div>
-        <div class="machineValue">${aktif?esc(aktif.name):'-'}</div>
+    <div class="machineStatus">
+      <span class="statusDot"></span>
+      <b>${aktif ? 'Çalışıyor' : 'Planlandı'}</b>
+    </div>
 
-        <div class="machineLabel">Sonraki Operasyon</div>
-        <div class="machineValue">${sonraki?esc(sonraki.name):'-'}</div>
+    <div class="machineActiveTitle">AKTİF İŞ</div>
 
-        <div class="machineLabel">Adet</div>
-        <div class="machineValue">${n(o.produceQty)}</div>
+    <div class="machineJob">
+      <b>${esc(o.orderNo || '-')}</b>
+      <span>•</span>
+      <b>${esc(o.part || '-')}</b>
+      <span>•</span>
+      <b>${aktif ? esc(aktif.name || aktif.opName || 'OP') : 'Bekliyor'}</b>
+    </div>
 
-        <div class="machineLabel">Tahmini Ürün Bitişi</div>
-        <div class="machineValue">${fmt(o.promised)}</div>
+    <div class="machineBadge">
+      ${aktif ? 'Üretimde' : 'Bekliyor'}
+    </div>
+
+    <div class="machineProgressHead">
+      <span>İlerleme</span>
+      <b>${Math.round((n(o.producedQty)/Math.max(1,n(o.qty)))*100)}%</b>
+    </div>
+
+    <div class="machineProgress">
+      <div style="width:${Math.min(100,Math.round((n(o.producedQty)/Math.max(1,n(o.qty)))*100))}%"></div>
+    </div>
+
+    <div class="machineDates">
+      <div>
+        <small>OP Bitiş (Tahmini)</small>
+        <b>${aktif && aktif.end ? fmt(aktif.end) : '-'}</b>
       </div>
-    `;
+
+      <div>
+        <small>Ürün Bitiş (Tahmini)</small>
+        <b>${o.planEnd ? fmt(o.planEnd) : '-'}</b>
+      </div>
+    </div>
+
+    <div class="machineDue">
+      <div>
+        <small>Müşteri Termini</small>
+        <b>${o.dueDate ? fmt(o.dueDate) : '-'}</b>
+      </div>
+      <span class="termBadge ${
+  o.dueDate && o.planEnd && new Date(o.planEnd) > new Date(o.dueDate)
+    ? 'risk'
+    : ''
+}">
+  ${
+    o.dueDate && o.planEnd && new Date(o.planEnd) > new Date(o.dueDate)
+      ? '⚠ TERMİN RİSKİ'
+      : 'TERMİNDE ✓'
+  }
+</span>
+    </div>
+
+    <div class="nextJob">
+      <small>SONRAKİ OPERASYON</small>
+      <b>${sonraki ? esc(sonraki.name || sonraki.opName || 'OP') : 'Planlanan operasyon yok'}</b>
+    </div>
+
+  </div>
+`;
   });
 }
   function renderOrders(){$('orderList').innerHTML=state.orders.map(o=>`<div class="row"><b>${esc(o.orderNo)} • ${esc(o.part)}</b><div class="small">${esc(o.machine)} • Sıra ${o.queue} • Stok: ${esc(o.stockStatus)} / ${n(o.stockQty)} adet • Üretilecek ${o.produceQty}</div>${canEdit()?`<div class="inline"><button class="btn alt" onclick="editOrder('${o.id}')">Düzenle</button><button class="btn red" onclick="delOrder('${o.id}')">Sil</button></div>`:''}</div>`).join('')||'<div class="small">Henüz iş emri yok.</div>'}
