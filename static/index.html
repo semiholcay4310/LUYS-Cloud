@@ -521,7 +521,9 @@
     <label>İş Emri<select name="orderId" id="dailyOrder" required></select></label>
     <label>Operasyon<select name="opId" id="dailyOp" required></select></label>
     <label>Tarih<input name="date" type="date" required></label>
-    <label>Çalışılan Brüt Saat<input name="hours" type="number" step="0.25" value="10"></label>
+    <label>Giriş Saati<input name="startTime" type="time" required></label>
+    <label>Çıkış Saati<input name="endTime" type="time" required></label>
+    <label>Brüt Süre (otomatik)<input name="hours" type="number" step="0.01" value="0" readonly></label>
     <label>Sağlam Adet<input name="good" type="number" min="0" required></label>
     <label>Hurda Adet<input name="scrap" type="number" min="0" value="0"></label>
    <label>Mola (dk)<input name="breaktime" type="number" min="0" value="0"></label>
@@ -530,6 +532,7 @@
   <div class="card" style="margin:12px 0">
   <h3>Üretim Verimi</h3>
   <div id="verimBilgi">
+    <p>Brüt Çalışma Süresi: <b id="brutSure">0 saat</b></p>
     <p>Net Üretim Süresi: <b id="netSure">0 saat</b></p>
     <p>Teorik Hedef: <b id="teorikAdet">0 adet</b></p>
     <p>Verim: <b id="verimYuzde">%0</b></p>
@@ -1094,10 +1097,23 @@ window.editDaily=id=>{if(!canEdit())return;let r=state.daily.find(x=>x.id===id),
 window.delDaily=async id=>{if(!canEdit())return;if(confirm('Günlük kayıt silinsin mi?')){state.daily=state.daily.filter(r=>r.id!==id);await save()}}
 $('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;o.cmm={firm:f.get('firm'),sent:f.get('sent'),sentDate:f.get('sentDate'),expected:f.get('expected'),returned:f.get('returned'),status:f.get('status'),reportNo:f.get('reportNo')};await save()}
 $('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
-Promise.all([loadMe(),load()]).then(()=>{if(canEdit())newOrderForm();if($('dailyForm')){$('dailyForm').date.value=ymd(new Date())}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
+Promise.all([loadMe(),load()]).then(()=>{if(canEdit())newOrderForm();if($('dailyForm')){$('dailyForm').date.value=ymd(new Date());$('dailyForm').hours.value=0}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
 setInterval(()=>load().catch(()=>{}),15000);
+function saatFarki(startTime,endTime){
+  if(!startTime||!endTime)return 0;
+  const [sh,sm]=String(startTime).split(':').map(Number);
+  const [eh,em]=String(endTime).split(':').map(Number);
+  if([sh,sm,eh,em].some(x=>Number.isNaN(x)))return 0;
+  let start=sh*60+sm,end=eh*60+em;
+  if(end<start)end+=24*60; // gece vardiyası: 22:00 -> 06:00
+  return Math.max(0,(end-start)/60);
+}
 function gunlukHesap(f){
-  const brut=n(f.hours.value);
+  let brut=saatFarki(f.startTime?.value,f.endTime?.value);
+  // Eski kayıtları düzenlerken giriş/çıkış yoksa mevcut brüt saati koru.
+  if(!brut && (!f.startTime?.value || !f.endTime?.value))brut=n(f.hours.value);
+  if(f.hours)f.hours.value=brut.toFixed(2);
+
   const mola=n(f.breaktime ? f.breaktime.value : 0);
   const durus=n(f.downtime.value);
   const saglam=n(f.good.value);
@@ -1120,12 +1136,13 @@ function hesaplaVerim(){
 
   const x=gunlukHesap(f);
 
+  if($('brutSure'))$('brutSure').textContent=x.brut.toFixed(2)+' saat';
   $('netSure').textContent=x.netSaat.toFixed(2)+' saat';
   $('teorikAdet').textContent=Math.floor(x.teorik)+' adet';
   $('verimYuzde').textContent='%'+x.verim.toFixed(1);
 }
 
-['hours','breaktime','good','downtime'].forEach(k=>{
+['startTime','endTime','breaktime','good','downtime'].forEach(k=>{
   const el=$('dailyForm').elements[k];
   if(el)el.addEventListener('input',hesaplaVerim);
 });
@@ -1151,7 +1168,9 @@ $('dailyForm').onsubmit=async e=>{
     orderId:f.get('orderId'),
     opId:f.get('opId'),
     date:f.get('date'),
-    hours:n(f.get('hours')),
+    startTime:f.get('startTime')||'',
+    endTime:f.get('endTime')||'',
+    hours:h.brut,
     breaktime:n(f.get('breaktime')),
     good:n(f.get('good')),
     scrap:n(f.get('scrap')),
@@ -1178,7 +1197,9 @@ $('dailyForm').onsubmit=async e=>{
   e.target.reset();
   e.target.recId.value='';
   e.target.date.value=ymd(new Date());
-  e.target.hours.value=10;
+  e.target.startTime.value='';
+  e.target.endTime.value='';
+  e.target.hours.value=0;
   e.target.breaktime.value=0;
   e.target.scrap.value=0;
   e.target.downtime.value=0;
@@ -1273,7 +1294,7 @@ function renderDaily(){
             <div><small>Verim</small><b>%${m.verim.toFixed(1)}</b></div>
             <div><small>Hurda</small><b>${n(r.scrap)}</b></div>
           </div>
-          <div class="small" style="margin-top:7px">Net ${m.net.toFixed(2)} saat • Brüt ${r.hours} saat • Mola ${n(r.breaktime)} dk • Duruş ${n(r.downtime)} dk</div>
+          <div class="small" style="margin-top:7px">${r.startTime&&r.endTime?`Giriş ${esc(r.startTime)} • Çıkış ${esc(r.endTime)} • `:''}Net ${m.net.toFixed(2)} saat • Brüt ${n(r.hours).toFixed(2)} saat • Mola ${n(r.breaktime)} dk • Duruş ${n(r.downtime)} dk</div>
           ${canEdit()?`<div class="inline" style="margin-top:7px"><button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button><button class="btn red" onclick="delDaily('${r.id}')">Sil</button></div>`:''}
         </div>`;
       }).join('');
@@ -1324,7 +1345,9 @@ window.editDaily=id=>{
   fillDailyOps();
   f.opId.value=r.opId;
   f.date.value=r.date;
-  f.hours.value=r.hours;
+  f.startTime.value=r.startTime||'';
+  f.endTime.value=r.endTime||'';
+  f.hours.value=n(r.hours).toFixed(2);
   f.breaktime.value=r.breaktime||0;
   f.good.value=r.good;
   f.scrap.value=r.scrap||0;
