@@ -289,46 +289,15 @@
 
 .row.done{border-left:4px solid #1b9a5a!important;background:#f0fbf5!important;opacity:1}.row.done .status{background:#d9f5e5!important;color:#137443!important;font-weight:800}
 
-/* ===== OPERASYONLAR: TEZGAH BAZLI ===== */
-.opsMachineGrid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:14px;
-  align-items:start;
-}
-.opsMachineCol{
-  background:#f7f9fb;
-  border:1px solid #dfe7ee;
-  border-radius:14px;
-  padding:10px;
-}
-.opsMachineHead{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  margin-bottom:10px;
-  padding:8px 10px;
-  background:#fff;
-  border:1px solid #e2e8ee;
-  border-radius:10px;
-}
-.opsMachineHead b{font-size:15px;color:#173a57}
-.opsMachineHead span{font-size:10px;font-weight:800;color:#168348}
-.opsMachineCol .row{margin-bottom:10px}
-.opsMachineCol .row:last-child{margin-bottom:0}
-.opsEmpty{
-  text-align:center;
-  color:#7b8b98;
-  padding:22px 8px;
-  background:#fff;
-  border:1px dashed #d7e0e8;
-  border-radius:10px;
-}
-@media(max-width:800px){
-  .opsMachineGrid{grid-template-columns:1fr;gap:10px}
-  .opsMachineHead b{font-size:13px}
-}
+/* ===== OPERASYONLAR: 850 / 1000 AYRI ===== */
+.opsMachineGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.opsMachineCol{background:#f7f9fb;border:1px solid #dfe7ee;border-radius:14px;padding:10px;min-width:0}
+.opsMachineHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:9px 10px;background:#fff;border:1px solid #e2e8ee;border-radius:10px}
+.opsMachineHead b{font-size:15px;color:#173a57}.opsMachineHead span{font-size:10px;font-weight:800;color:#168348}
+.opsMachineHead span.wait{color:#8797a5}
+.opsMachineCol .row{margin-bottom:10px}.opsMachineCol .row:last-child{margin-bottom:0}
+.opsEmpty{text-align:center;color:#7b8b98;padding:22px 8px;background:#fff;border:1px dashed #d7e0e8;border-radius:10px}
+@media(max-width:800px){.opsMachineGrid{grid-template-columns:1fr;gap:10px}.opsMachineHead b{font-size:13px}}
 
 </style>
 </head>
@@ -649,10 +618,8 @@ function renderMachines(){
 
   function renderOrders(){$('orderList').innerHTML=state.orders.map(o=>`<div class="row"><b>${esc(o.orderNo)} • ${esc(o.part)}</b><div class="small">${esc(o.machine)} • Sıra ${o.queue} • Stok: ${esc(o.stockStatus)} / ${n(o.stockQty)} adet • Üretilecek ${o.produceQty}</div>${canEdit()?`<div class="inline"><button class="btn alt" onclick="editOrder('${o.id}')">Düzenle</button><button class="btn red" onclick="delOrder('${o.id}')">Sil</button></div>`:''}</div>`).join('')||'<div class="small">Henüz iş emri yok.</div>'}
 function renderOps(){
-  let rowsByMachine={
-    'Tezgâh 1 - 850':[],
-    'Tezgâh 2 - 1000':[]
-  };
+  const machineNames=['Tezgâh 1 - 850','Tezgâh 2 - 1000'];
+  const groups={'Tezgâh 1 - 850':[],'Tezgâh 2 - 1000':[]};
 
   for(let o of state.orders){
     for(let op of (o.ops||[])){
@@ -671,63 +638,114 @@ function renderOps(){
           ${completed?'':op.runState==='running'
             ?`<button class="btn red" onclick="stopOp('${o.id}','${op.id}')">OP'Yİ DURDUR</button>`
             :`<button class="btn green" onclick="startOp('${o.id}','${op.id}')">OP'Yİ BAŞLAT</button>`}
+          ${op.runState==='paused'&&op.pauseReason==='CMM Onayı'?`<button class="btn orange" onclick="cmmApprove('${o.id}','${op.id}')">CMM ONAY • DEVAM</button>`:''}
           <button class="btn alt" onclick="editOp('${o.id}','${op.id}')">Düzenle</button>
           <button class="btn red" onclick="delOp('${o.id}','${op.id}')">Sil</button>
         </div>
-        <div class="inline" style="margin-top:8px">
-          <label style="min-width:220px">Gerçek üretime başlama zamanı
-            <input id="${iid}" type="datetime-local" value="${op.actualStart?String(op.actualStart).slice(0,16):''}">
+        <div class="actualEditor">
+          <label>Gerçek üretime başlama zamanı
+            <input id="${iid}" type="datetime-local" value="${esc(op.actualStart||'')}">
           </label>
-          <button class="btn alt" onclick="setRealStart('${o.id}','${op.id}','${iid}')">BAŞLANGIÇ SAATİNİ KAYDET</button>
+          <button class="btn alt" onclick="setOpStart('${o.id}','${op.id}','${iid}')">BAŞLANGIÇ SAATİNİ KAYDET</button>
         </div>`;
       }
 
-      let card=`<div class="row ${cls}">
-        <div class="rowTop">
-          <div>
-            <b>${esc(o.orderNo)} • ${esc(o.part)} • ${esc(op.name||'OP')}</b>
-            <span class="status ${completed?'':op.runState==='running'?'run':op.runState==='paused'?'pause':''}">${stateText}</span>
-          </div>
+      const card=`<div class="row ${cls}">
+        <b>${esc(o.orderNo)} • ${esc(o.part)} • ${esc(op.name)}</b>
+        <span class="status ${completed?'':op.runState==='running'?'run':op.runState==='paused'?'pause':''}">${stateText}</span>
+        <div class="meta">
+          <div>Toplam<br><b>${target}</b></div>
+          <div>Yapılan<br><b>${op.done||0}</b></div>
+          <div>Kalan<br><b>${remain}</b></div>
+          <div>OP %<br><b>${pct.toFixed(1)}</b></div>
+          <div>Total katkı<br><b>${(opWeight(o,op)*pct/100).toFixed(1)}%</b></div>
         </div>
-
-        <div class="opStats">
-          <div><small>Toplam</small><b>${target}</b></div>
-          <div><small>Yapılan</small><b>${processed}</b></div>
-          <div><small>Kalan</small><b>${remain}</b></div>
-          <div><small>OP %</small><b>${pct.toFixed(1)}</b></div>
-          <div><small>Total katkı</small><b>${(pct/Math.max(1,(o.ops||[]).length)).toFixed(1)}%</b></div>
+        <div class="finishbox">
+          Planlanan başlangıç: ${fmt(op.planStart)}<br>
+          <b>Tahmini OP bitişi: ${fmt(op.planEnd)}</b>
+          ${op.actualStart?`<br>Gerçek başlangıç: ${fmt(op.actualStart)}`:''}
+          ${op.pauseReason?`<br>Duruş nedeni: ${esc(op.pauseReason)}`:''}
         </div>
-
-        <div class="opPlan">
-          <div>Planlanan başlangıç: <b>${op.planStart?fmt(op.planStart):'-'}</b></div>
-          <div>Tahmini OP bitişi: <b>${op.planEnd?fmt(op.planEnd):'-'}</b></div>
-          <div>Gerçek başlangıç: <b>${op.actualStart?fmt(op.actualStart):'-'}</b></div>
-        </div>
-
         ${controls}
       </div>`;
 
-      let machine=rowsByMachine[o.machine] ? o.machine : 'Tezgâh 1 - 850';
-      rowsByMachine[machine].push(card);
+      if(groups[o.machine]) groups[o.machine].push({o,op,card});
     }
   }
 
-  const machineNames=['Tezgâh 1 - 850','Tezgâh 2 - 1000'];
+  for(const m of machineNames){
+    groups[m].sort((a,b)=>
+      ((a.op.runState==='running')?0:1)-((b.op.runState==='running')?0:1) ||
+      n(a.o.queue)-n(b.o.queue) ||
+      String(a.op.name||'').localeCompare(String(b.op.name||''))
+    );
+  }
+
   $('opList').innerHTML=`<div class="opsMachineGrid">
     ${machineNames.map(m=>{
-      const running=state.orders
-        .filter(o=>o.machine===m)
-        .flatMap(o=>o.ops||[])
-        .filter(op=>op.runState==='running'&&opProcessed(op)<opTarget(state.orders.find(x=>(x.ops||[]).includes(op)),op)).length;
+      const active=groups[m].some(x=>x.op.runState==='running' && opProcessed(x.op)<opTarget(x.o,x.op));
       return `<div class="opsMachineCol">
         <div class="opsMachineHead">
           <b>${m}</b>
-          <span>${running?'● Çalışıyor':'● Bekliyor'}</span>
+          <span class="${active?'':'wait'}">${active?'● Çalışıyor':'● Bekliyor'}</span>
         </div>
-        ${rowsByMachine[m].length?rowsByMachine[m].join(''):'<div class="opsEmpty">Bu tezgâhta operasyon yok.</div>'}
+        ${groups[m].length?groups[m].map(x=>x.card).join(''):'<div class="opsEmpty">Bu tezgâhta operasyon yok.</div>'}
       </div>`;
     }).join('')}
   </div>`;
+}
+function renderDaily(){$('dailyList').innerHTML=[...state.daily].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{let o=order(r.orderId),op=opBy(o,r.opId);return `<div class="row"><b>${r.date} • ${esc(o?.part||'-')} • ${esc(op?.name||'-')}</b><div class="small">Sağlam ${r.good} • Hurda ${r.scrap} • Toplam işlenen ${n(r.good)+n(r.scrap)} • Brüt ${r.hours} saat • Duruş ${r.downtime||0} dk</div>${canEdit()?`<div class="inline"><button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button><button class="btn red" onclick="delDaily('${r.id}')">Sil</button></div>`:''}</div>`}).join('')||'<div class="small">Henüz günlük kayıt yok.</div>'}
+function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>`<div><b>${x}</b><label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${state.calendar[i]?.h||0}" ${canEdit()?'':'disabled'}></label><label class="small">Mola<input data-day="${i}" data-k="b" type="number" step="0.25" value="${state.calendar[i]?.b||0}" ${canEdit()?'':'disabled'}></label></div>`).join('')}
+function fillSelects(){let opts='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder','cmmOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=opts;el.value=old});fillDailyOps();syncOpAuto()}
+function fillDailyOps(){let el=$('dailyOp');if(!el)return;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''))}
+function syncOpAuto(){let o=order($('opOrder')?.value);if($('opMachine'))$('opMachine').value=o?.machine||'';if($('opQty'))$('opQty').value=o?.produceQty||''}
+
+
+function tl(v){return '₺'+n(v).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}
+function usd(v){return '$'+n(v).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}
+function renderAccounting(){
+  normalize();
+  const inc=state.accounting.incomes||[], exp=state.accounting.expenses||[], jc=state.accounting.jobCosts||[];
+
+  const collectedUsd=inc.filter(x=>x.status==='Tahsil Edildi').reduce((a,x)=>a+n(x.amount),0);
+  const receivableUsd=inc.filter(x=>x.status!=='Tahsil Edildi').reduce((a,x)=>a+n(x.amount),0);
+  const collectedTl=inc.filter(x=>x.status==='Tahsil Edildi').reduce((a,x)=>a+n(x.amount)*n(x.fx),0);
+  const overhead=exp.reduce((a,x)=>a+n(x.amount),0);
+  const jobCosts=jc.reduce((a,x)=>a+n(x.rawMaterial)+n(x.coating)+n(x.cmm)+n(x.other),0);
+  const totalCost=overhead+jobCosts;
+  const net=collectedTl-totalCost;
+
+  if($('accCollected'))$('accCollected').textContent=usd(collectedUsd);
+  if($('accReceivable'))$('accReceivable').textContent=usd(receivableUsd);
+  if($('accExpense'))$('accExpense').textContent=tl(totalCost);
+  if($('accNet')){$('accNet').textContent=tl(net);$('accNet').style.color=net<0?'#c72e2e':'#168348'}
+
+  const now=new Date(), ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const monthly=exp.filter(x=>(x.date||'').startsWith(ym)).reduce((a,x)=>a+n(x.amount),0);
+  if($('monthlyOverhead'))$('monthlyOverhead').textContent=tl(monthly);
+  if($('paidOverhead'))$('paidOverhead').textContent=tl(exp.filter(x=>x.status==='Ödendi').reduce((a,x)=>a+n(x.amount),0));
+  if($('waitingOverhead'))$('waitingOverhead').textContent=tl(exp.filter(x=>x.status!=='Ödendi').reduce((a,x)=>a+n(x.amount),0));
+
+  if($('accIncomeCount'))$('accIncomeCount').textContent=inc.length+' kayıt';
+  if($('accExpenseCount'))$('accExpenseCount').textContent=exp.length+' kayıt';
+  if($('jobCostCount'))$('jobCostCount').textContent=jc.length+' iş emri maliyeti';
+
+  const opts='<option value="">İş emri seçmeden kayıt</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} • ${esc(o.part)}</option>`).join('');
+  if($('invoiceDate')&&!$('invoiceDate').value)$('invoiceDate').value=ymd(new Date());
+  if($('incomeOrder')){let v=$('incomeOrder').value;$('incomeOrder').innerHTML=opts;if([...$('incomeOrder').options].some(x=>x.value===v))$('incomeOrder').value=v}
+  if($('costOrder')){let v=$('costOrder').value;$('costOrder').innerHTML='<option value="">İş emri seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} • ${esc(o.part)}</option>`).join('');if([...$('costOrder').options].some(x=>x.value===v))$('costOrder').value=v}
+
+  if($('incomeList'))$('incomeList').innerHTML=[...inc].sort((a,b)=>(b.dueDate||'').localeCompare(a.dueDate||'')).map(x=>{
+    let o=order(x.orderId),paid=x.status==='Tahsil Edildi';
+    return `<tr><td>${o?esc(o.orderNo):'-'}</td><td>${x.invoiceDate?fmt(x.invoiceDate):'-'}</td><td>${esc(x.note||'-')}</td><td class="accUsd"><b>${usd(x.amount)}</b></td><td>${n(x.fx).toLocaleString('tr-TR',{maximumFractionDigits:4})}</td><td>${tl(n(x.amount)*n(x.fx))}</td><td>${x.dueDate?fmt(x.dueDate):'-'}</td><td><span class="accPill ${paid?'ok':'wait'}">${esc(x.status)}</span></td>${canEdit()?`<td><button class="btn alt" onclick="toggleIncome('${x.id}')">${paid?'Bekliyor yap':'Tahsil edildi'}</button> <button class="btn red" onclick="delIncome('${x.id}')">Sil</button></td>`:''}</tr>`
+  }).join('')||'<tr><td colspan="9">Henüz satış / tahsilat kaydı yok.</td></tr>';
+
+  if($('jobCostList'))$('jobCostList').innerHTML=jc.length?jc.map(x=>{
+    let o=order(x.orderId),tot=n(x.rawMaterial)+n(x.coating)+n(x.cmm)+n(x.other);
+    return `<div class="orderCostCard"><div class="orderCostHead"><div><b>${o?esc(o.orderNo):'İş emri yok'} • ${o?esc(o.part):''}</b><br><span>${esc(x.note||'')}</span></div><b class="moneyBad">${tl(tot)}</b></div><div class="orderCostGrid"><div><small>Hammadde</small><b>${tl(x.rawMaterial)}</b></div><div><small>Kaplama</small><b>${tl(x.coating)}</b></div><div><small>CMM</small><b>${tl(x.cmm)}</b></div><div><small>Diğer</small><b>${tl(x.other)}</b></div></div>${canEdit()?`<div style="text-align:right;margin-top:7px"><button class="btn red" onclick="delJobCost('${x.id}')">Sil</button></div>`:''}</div>`
+  }).join(''):'<div class="emptyDash">Henüz iş maliyeti kaydı yok.</div>';
+
+  if($('expenseList'))$('expenseList').innerHTML=[...exp].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(x=>`<tr><td>${x.date?fmt(x.date):'-'}</td><td>${esc(x.category||'-')}</td><td>${esc(x.note||'-')}</td><td class="moneyBad">${tl(x.amount)}</td><td><span class="accPill ${x.status==='Ödendi'?'ok':'wait'}">${esc(x.status||'Ödendi')}</span></td><td>${esc(x.recurring||'Hayır')}</td>${canEdit()?`<td><button class="btn red" onclick="delExpense('${x.id}')">Sil</button></td>`:''}</tr>`).join('')||'<tr><td colspan="7">Henüz genel gider kaydı yok.</td></tr>';
 }
 
 window.toggleIncome=async id=>{let x=state.accounting.incomes.find(v=>v.id===id);if(!x)return;x.status=x.status==='Tahsil Edildi'?'Bekliyor':'Tahsil Edildi';x.paidDate=x.status==='Tahsil Edildi'?ymd(new Date()):'';await save()}
