@@ -371,14 +371,18 @@ function renderMachines(){
         <b>${o.dueDate ? fmt(o.dueDate) : '-'}</b>
       </div>
       <span class="termBadge ${
-  o.dueDate && o.planEnd && new Date(o.planEnd) > new Date(o.dueDate)
-    ? 'risk'
-    : ''
+  !o.dueDate
+    ? ''
+    : (o.planEnd && new Date(o.planEnd) > new Date(o.dueDate) ? 'risk' : '')
 }">
   ${
-    o.dueDate && o.planEnd && new Date(o.planEnd) > new Date(o.dueDate)
-      ? '⚠ TERMİN RİSKİ'
-      : 'TERMİNDE ✓'
+    !o.dueDate
+      ? 'Termin girilmedi'
+      : !o.planEnd
+        ? 'Plan hesaplanmadı'
+        : new Date(o.planEnd) > new Date(o.dueDate)
+          ? '⚠ TERMİN RİSKİ'
+          : 'TERMİNDE ✓'
   }
 </span>
     </div>
