@@ -608,7 +608,7 @@ function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate
 function localISO(d){return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function fmt(s){if(!s)return '-';let d=new Date(s);if(String(s).length===10)d=new Date(s+'T12:00');return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+(String(s).includes('T')?' '+pad(d.getHours())+':'+pad(d.getMinutes()):'')}
 function canEdit(){return me.can_edit===true}
-async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block'}
+async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"]').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none'}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
 function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o)})}
@@ -1185,7 +1185,7 @@ window.editDaily=id=>{
    document.body.addEventListener('click',e=>{
      const t=e.target.closest('button,a,[data-tab]');
      if(!t)return;
-     if(/Muhasebe|Maliyet\s*&?\s*Kârlılık/i.test(t.textContent||'')){
+     if(/Muhasebe|Maliyet\s*&?\s*Kârlılık/i.test(t.textContent||'')){ if(typeof canEdit==='function'&&!canEdit())return;
        setTimeout(()=>{
          document.querySelectorAll('main>section,.page,.tab-content').forEach(x=>{if(x.id!=='profitPanel')x.classList.remove('active')});
          profitPanel.classList.add('active'); render(); window.scrollTo({top:0,behavior:'smooth'});
