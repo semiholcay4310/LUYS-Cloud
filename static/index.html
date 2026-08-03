@@ -321,7 +321,8 @@ function renderMachines(){
     const sonraki=aktif
       ? ops.slice(ops.indexOf(aktif)+1).find(op=>opProcessed(op)<opTarget(o,op))
       : ops.find(op=>opProcessed(op)<opTarget(o,op));
-
+const aktifBitis = aktif?.planEnd || '';
+const urunBitis = ops.length ? ops[ops.length-1]?.planEnd || '' : '';
     el.innerHTML=`
   <div class="machineNow">
 
@@ -356,12 +357,12 @@ function renderMachines(){
     <div class="machineDates">
       <div>
         <small>OP Bitiş (Tahmini)</small>
-        <b>${aktif && aktif.end ? fmt(aktif.end) : '-'}</b>
+        <b>${aktifBitis ? fmt(aktifBitis) : '-'}</b>
       </div>
 
       <div>
         <small>Ürün Bitiş (Tahmini)</small>
-        <b>${o.planEnd ? fmt(o.planEnd) : '-'}</b>
+        <b>${urunBitis ? fmt(urunBitis) : '-'}</b>
       </div>
     </div>
 
