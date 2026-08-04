@@ -827,26 +827,9 @@ function actualMinutesPerPiece(o,op){
 }
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
-  const ops=o.ops||[];
-  const started=ops.some(op=>op.actualStart);
-
-  if(!started)return ops[ops.length-1].planEnd||'';
-
-  ensureBaselineProductEnd(o);
-  const base=o.baselineProductEnd||baselineProductEnd(o);
-  if(!base)return ops[ops.length-1].planEnd||'';
-
-  const unfinished=ops.some(op=>opProcessed(op)<opTarget(o,op));
-  if(!unfinished)return ops[ops.length-1].actualEnd||o.currentForecastSnapshot||base;
-
-  // Kritik kural: yeni günlük kayıt yoksa tahmin ASLA kendi kendine değişmez.
+  const lastOp=o.ops[o.ops.length-1];
   if(o.currentForecastSnapshot)return o.currentForecastSnapshot;
-
-  // Eski verilerden gelen işlerde ilk açılış için bir kez hesaplanır.
-  // Bir sonraki günlük kayıtla kalıcı snapshot olarak kaydedilir.
-  const r=calculatePlanReasonInfo(o);
-  if(!r.records)return base;
-  return calculateForecastFromDaily(o);
+  return lastOp?.actualEnd||lastOp?.planEnd||o.baselineProductEnd||baselineProductEnd(o)||'';
 }
 
 function workMinutesBetween(a,b){
@@ -989,34 +972,24 @@ function planReasonInfo(o){
 
 function calculateForecastFromDaily(o){
   if(!o||!(o.ops||[]).length)return '';
-  const ops=o.ops||[];
-  const started=ops.some(op=>op.actualStart);
-
-  if(!started)return ops[ops.length-1].planEnd||'';
-
+  const ops=o.ops||[], lastOp=ops[ops.length-1];
+  const opPlanEnd=lastOp?.planEnd||'';
   ensureBaselineProductEnd(o);
-  const base=o.baselineProductEnd||baselineProductEnd(o);
-  if(!base)return ops[ops.length-1].planEnd||'';
-
-  const unfinished=ops.some(op=>opProcessed(op)<opTarget(o,op));
-  if(!unfinished)return ops[ops.length-1].actualEnd||base;
-
+  const fixedBaseline=o.baselineProductEnd||baselineProductEnd(o)||opPlanEnd;
+  if(!ops.some(op=>op.actualStart))return opPlanEnd||fixedBaseline;
+  if(!ops.some(op=>opProcessed(op)<opTarget(o,op)))
+    return lastOp.actualEnd||opPlanEnd||fixedBaseline;
   const r=calculatePlanReasonInfo(o);
-  if(!r.records)return base;
-  return shiftWorkingMoment(base,-r.netGain);
+  if(!r.records)return opPlanEnd||fixedBaseline;
+  return shiftWorkingMoment(opPlanEnd||fixedBaseline,-r.netGain);
 }
 
 function refreshForecastSnapshot(o){
   if(!o)return;
+  schedule();
   ensureBaselineProductEnd(o);
   const r=calculatePlanReasonInfo(o);
-  o.planReasonSnapshot={
-    speed:r.speed,
-    overtime:r.overtime,
-    downtime:r.downtime,
-    netGain:r.netGain,
-    records:r.records
-  };
+  o.planReasonSnapshot={speed:r.speed,overtime:r.overtime,downtime:r.downtime,netGain:r.netGain,records:r.records};
   o.currentForecastSnapshot=calculateForecastFromDaily(o);
   o.forecastSnapshotAt=localISO(new Date());
 }
