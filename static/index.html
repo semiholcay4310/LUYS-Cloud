@@ -828,21 +828,22 @@ function actualMinutesPerPiece(o,op){
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
   const ops=o.ops||[];
-  const unfinished=ops.findIndex(op=>opProcessed(op)<opTarget(o,op));
-  if(unfinished<0)return ops[ops.length-1].actualEnd||ops[ops.length-1].planEnd||'';
   const started=ops.some(op=>op.actualStart);
+
   if(!started)return ops[ops.length-1].planEnd||'';
 
-  let cursor=nextMoment(new Date());
-  for(let i=unfinished;i<ops.length;i++){
-    const op=ops[i];
-    const remain=Math.max(0,opTarget(o,op)-opProcessed(op));
-    if(remain<=0)continue;
-    if(!op.actualStart)cursor=addWork(cursor,n(op.setup)*60);
-    const minPerPiece=op.actualStart?actualMinutesPerPiece(o,op):Math.max(0,n(op.cycle)+n(op.handling));
-    cursor=addWork(cursor,remain*minPerPiece);
-  }
-  return localISO(cursor);
+  ensureBaselineProductEnd(o);
+  const base=o.baselineProductEnd||baselineProductEnd(o);
+  if(!base)return ops[ops.length-1].planEnd||'';
+
+  const unfinished=ops.some(op=>opProcessed(op)<opTarget(o,op));
+  if(!unfinished)return ops[ops.length-1].actualEnd||base;
+
+  const r=planReasonInfo(o);
+  if(!r.records)return base;
+
+  // Net kazanım kadar başlangıç planını çalışma takvimi içinde erkene/geriye taşı.
+  return shiftWorkingMoment(base,-r.netGain);
 }
 
 function workMinutesBetween(a,b){
@@ -883,30 +884,99 @@ function recordOutsideScheduleMinutes(r){
   const netMin=Math.max(0,n(net)*60);
   return Math.round(Math.min(outsideGross,netMin));
 }
+
+function shiftWorkingMoment(base,deltaMinutes){
+  if(!base||!Number.isFinite(deltaMinutes)||Math.abs(deltaMinutes)<1)return base;
+  let cur=new Date(base);
+  let left=Math.abs(Math.round(deltaMinutes));
+  const dir=deltaMinutes>=0?1:-1;
+
+  for(let guard=0;guard<10000 && left>0;guard++){
+    const ws=windows(ymd(cur));
+
+    if(dir>0){
+      let used=false;
+      for(const [a,b] of ws){
+        if(cur<b){
+          if(cur<a)cur=new Date(a);
+          const avail=Math.max(0,(b-cur)/60000);
+          if(avail>0){
+            const take=Math.min(left,avail);
+            cur=new Date(cur.getTime()+take*60000);
+            left-=take; used=true;
+            if(left<=0)break;
+          }
+        }
+      }
+      if(left>0){
+        cur.setDate(cur.getDate()+1);
+        cur.setHours(0,0,0,0);
+        used=true;
+      }
+      if(!used)break;
+    }else{
+      let used=false;
+      for(let i=ws.length-1;i>=0;i--){
+        const [a,b]=ws[i];
+        if(cur>a){
+          if(cur>b)cur=new Date(b);
+          const avail=Math.max(0,(cur-a)/60000);
+          if(avail>0){
+            const take=Math.min(left,avail);
+            cur=new Date(cur.getTime()-take*60000);
+            left-=take; used=true;
+            if(left<=0)break;
+          }
+        }
+      }
+      if(left>0){
+        cur.setDate(cur.getDate()-1);
+        cur.setHours(23,59,59,999);
+        used=true;
+      }
+      if(!used)break;
+    }
+  }
+  return localISO(cur);
+}
+
 function planReasonInfo(o){
   let speed=0,overtime=0,downtime=0,records=0;
+
   for(const op of (o?.ops||[])){
     const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
     const plannedUnit=Math.max(0,n(op.cycle)+n(op.handling));
+
     for(const r of recs){
       const processed=n(r.good)+n(r.scrap);
+
       let net=r.netHours;
       if(net===undefined)net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
-      const actualRun=Math.max(0,n(net)*60);
+      const actualProductive=Math.max(0,n(net)*60);
+
+      // + = planlanandan hızlı, - = planlanandan yavaş
       if(processed>0&&plannedUnit>0){
-        speed += processed*plannedUnit-actualRun;
+        speed += processed*plannedUnit-actualProductive;
       }
+
+      // Normal takvim dışındaki net çalışma = kazanım
       overtime += recordOutsideScheduleMinutes(r);
+
+      // Duruş = kayıp
       downtime += Math.max(0,n(r.downtime));
       records++;
     }
   }
-  return {
-    speed:Math.round(speed),
-    overtime:Math.round(overtime),
-    downtime:Math.round(downtime),
-    records
-  };
+
+  speed=Math.round(speed);
+  overtime=Math.round(overtime);
+  downtime=Math.round(downtime);
+
+  // Bağlayıcı tek sonuç:
+  // + => önde, - => geride
+  const netGain=speed+overtime-downtime;
+
+  return {speed,overtime,downtime,netGain,records};
 }
 function effectText(mins,positiveLabel,negativeLabel){
   const abs=Math.abs(Math.round(mins)),h=Math.floor(abs/60),m=abs%60;
@@ -917,12 +987,22 @@ function effectText(mins,positiveLabel,negativeLabel){
 function planReasonHTML(o){
   const r=planReasonInfo(o);
   if(!r.records)return `<div class="planReasonNote">Henüz neden analizi için günlük üretim kaydı yok.</div>`;
+
+  const fmtMin=v=>{
+    const a=Math.abs(Math.round(v)),h=Math.floor(a/60),m=a%60;
+    return `${v>0?'+':v<0?'-':''}${h} sa ${m} dk`;
+  };
   const speedCls=r.speed>0?'good':r.speed<0?'bad':'neutral';
+  const totalCls=r.netGain>0?'good':r.netGain<0?'bad':'neutral';
+
   return `
-    <div class="planReasonRow ${speedCls}"><span>⚡ İmalat hızı etkisi</span><b>${r.speed>0?'+':r.speed<0?'-':''}${Math.floor(Math.abs(r.speed)/60)} sa ${Math.abs(r.speed)%60} dk</b></div>
-    <div class="planReasonRow ${r.overtime>0?'good':'neutral'}"><span>🕒 Ek çalışma / mesai</span><b>${r.overtime>0?'+':''}${Math.floor(r.overtime/60)} sa ${r.overtime%60} dk</b></div>
-    <div class="planReasonRow ${r.downtime>0?'bad':'neutral'}"><span>⛔ Duruş etkisi</span><b>${r.downtime>0?'-':''}${Math.floor(r.downtime/60)} sa ${r.downtime%60} dk</b></div>
-    <div class="planReasonNote">Bu satırlar günlük üretim kayıtlarından hesaplanan yaklaşık etkidir. Üstteki “önde/geride” farkı yalnızca çalışma takvimindeki üretim saatleri üzerinden hesaplanır; gece/hafta sonu boş saatleri farkı şişirmez.</div>`;
+    <div class="planReasonRow ${speedCls}"><span>⚡ İmalat hızı etkisi</span><b>${fmtMin(r.speed)}</b></div>
+    <div class="planReasonRow ${r.overtime>0?'good':'neutral'}"><span>🕒 Ek çalışma / mesai</span><b>${fmtMin(r.overtime)}</b></div>
+    <div class="planReasonRow ${r.downtime>0?'bad':'neutral'}"><span>⛔ Duruş etkisi</span><b>${fmtMin(-r.downtime)}</b></div>
+    <div class="planReasonRow ${totalCls}" style="border-top:2px solid #dfe7ed;margin-top:3px;padding-top:6px">
+      <span><b>TOPLAM PLAN ETKİSİ</b></span><b>${fmtMin(r.netGain)}</b>
+    </div>
+    <div class="planReasonNote">Üstteki “önde/geride” sonucu bu üç kalemin toplamıyla birebir aynıdır.</div>`;
 }
 function togglePlanReason(id){
   const el=document.getElementById(id);
@@ -932,22 +1012,25 @@ function togglePlanReason(id){
 function planDeltaInfo(o){
   ensureBaselineProductEnd(o);
   const base=o?.baselineProductEnd||'';
+  if(!base)return null;
+
+  const r=planReasonInfo(o);
   const forecast=currentProductForecast(o);
-  if(!base||!forecast)return null;
+  if(!forecast)return null;
 
-  // Negatif = tahmin başlangıç planından daha erken (önde).
-  const workMins=workMinutesBetween(base,forecast);
-  const abs=Math.abs(workMins);
-  let days=0,hours=0,minutes=0;
+  const netGain=r.records?r.netGain:0;
+  const abs=Math.abs(netGain);
 
-  // "Gün"ü sabit 24 saat değil, mevcut takvimdeki tipik net iş günü üzerinden göster.
-  const netDays=Object.keys(state.calendar||{}).map(k=>n(state.calendar[k]?.h)-n(state.calendar[k]?.b)).filter(x=>x>0);
+  const netDays=Object.keys(state.calendar||{})
+    .map(k=>n(state.calendar[k]?.h)-n(state.calendar[k]?.b))
+    .filter(x=>x>0);
   const typicalDayHours=netDays.length?netDays.reduce((a,b)=>a+b,0)/netDays.length:8;
   const dayMin=Math.max(60,Math.round(typicalDayHours*60));
-  days=Math.floor(abs/dayMin);
+
+  const days=Math.floor(abs/dayMin);
   let rest=abs-days*dayMin;
-  hours=Math.floor(rest/60);
-  minutes=rest%60;
+  const hours=Math.floor(rest/60);
+  const minutes=rest%60;
 
   let parts=[];
   if(days)parts.push(days+' iş günü');
@@ -955,9 +1038,14 @@ function planDeltaInfo(o){
   if(!days&&!hours&&minutes)parts.push(minutes+' dk');
   if(!parts.length)parts.push('aynı');
 
-  const cls=workMins<-1?'ahead':workMins>1?'behind':'same';
-  const text=cls==='ahead'?parts.join(' ')+' önde':cls==='behind'?parts.join(' ')+' geride':'Planla aynı';
-  return {base,forecast,workMins,cls,text};
+  const cls=netGain>1?'ahead':netGain<-1?'behind':'same';
+  const text=cls==='ahead'
+    ?parts.join(' ')+' önde'
+    :cls==='behind'
+      ?parts.join(' ')+' geride'
+      :'Planla aynı';
+
+  return {base,forecast,netGain,cls,text};
 }
 function planTrackHTML(o){
   const p=planDeltaInfo(o);
