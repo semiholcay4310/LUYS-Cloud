@@ -1760,6 +1760,7 @@ window.editDaily=id=>{
       <label>Ay<input id="ohMonth" type="month"></label>
       <label>Açıklama<input id="ohDesc" placeholder="Takım, kira, elektrik, maaş..."></label>
       <label>Tutar (TL, KDV hariç)<input id="ohAmount" type="number" step="0.01" min="0"></label>
+      <label>KDV Oranı<select id="ohVatRate"><option value="0">KDV Yok</option><option value="1">%1</option><option value="10">%10</option><option value="20" selected>%20</option></select></label>
       <label>&nbsp;<button class="profitBtn" id="ohSave" type="button">GİDER EKLE</button></label>
     </div>
     <div id="ohList" style="margin-top:12px"></div>
@@ -1883,13 +1884,15 @@ window.editDaily=id=>{
      }
    });
 
-   const oh=ohs.filter(x=>x.month===month).reduce((a,x)=>a+Number(x.amount||0),0),net=production-direct-oh;
-   pkSales.textContent=money(production);pkDirect.textContent=money(direct);pkOverhead.textContent=money(oh);pkTotalCost.textContent=money(direct+oh);const prodVat=production*.20,directVat=direct*.20,overVat=oh*.20,remainNet=production-direct-oh,vatDifference=prodVat-directVat-overVat,remainGross=remainNet+vatDifference;[['vatProdNet',production],['vatProdVat',prodVat],['vatProdGross',production+prodVat],['vatDirectNet',direct],['vatDirectVat',directVat],['vatDirectGross',direct+directVat],['vatOverNet',oh],['vatOverVat',overVat],['vatOverGross',oh+overVat],['vatRemainNet',remainNet],['vatDiff',vatDifference],['vatRemainGross',remainGross]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=money(v);});
+   const monthOhs=ohs.filter(x=>x.month===month);
+   const oh=monthOhs.reduce((a,x)=>a+Number(x.amount||0),0),net=production-direct-oh;
+   const overVat=monthOhs.reduce((a,x)=>a+Number(x.amount||0)*(Number(x.vatRate ?? 20)/100),0);
+   pkSales.textContent=money(production);pkDirect.textContent=money(direct);pkOverhead.textContent=money(oh);pkTotalCost.textContent=money(direct+oh);const prodVat=production*.20,directVat=direct*.20,remainNet=production-direct-oh,vatDifference=prodVat-directVat-overVat,remainGross=remainNet+vatDifference;[['vatProdNet',production],['vatProdVat',prodVat],['vatProdGross',production+prodVat],['vatDirectNet',direct],['vatDirectVat',directVat],['vatDirectGross',direct+directVat],['vatOverNet',oh],['vatOverVat',overVat],['vatOverGross',oh+overVat],['vatRemainNet',remainNet],['vatDiff',vatDifference],['vatRemainGross',remainGross]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=money(v);});
    pkNet.textContent=money(net);pkNet.className=net>=0?'profitPos':'profitNeg';
    pkSalesVat.textContent=money(production*.20);pkSalesGross.textContent=money(production*1.20);
    profitRows.innerHTML=html||'<tr><td colspan="12">Bu ay için üretim veya maliyet hareketi yok.</td></tr>';
 
-   ohList.innerHTML=ohs.filter(x=>x.month===month).map(x=>`<div style="padding:7px;border-bottom:1px solid #edf1f4">${x.desc||'Genel gider'} <b style="float:right">${money(x.amount)}</b><br><small>KDV dahil: ${money(Number(x.amount||0)*1.20)}</small></div>`).join('')||'<small>Bu ay için genel gider girilmedi.</small>';
+   ohList.innerHTML=monthOhs.map(x=>{const vr=Number(x.vatRate ?? 20),vat=Number(x.amount||0)*vr/100,gross=Number(x.amount||0)+vat;return `<div style="padding:7px;border-bottom:1px solid #edf1f4">${x.desc||'Genel gider'} <b style="float:right">${money(x.amount)}</b><br><small>${vr===0?'KDV yok':'KDV %'+vr+': '+money(vat)} • KDV dahil: ${money(gross)}</small></div>`}).join('')||'<small>Bu ay için genel gider girilmedi.</small>';
 
    renderMoves(MAT,'matList','mat');renderMoves(CMM,'cmmCostList','cmm');renderMoves(EXTRA,'extraList','extra');
  }
@@ -1946,7 +1949,7 @@ window.editDaily=id=>{
 
    ohSave.addEventListener('click',()=>{
      if(!ohAmount.value)return;
-     const a=load(OH,[]);a.push({id:uid(),month:ohMonth.value||ym(),desc:ohDesc.value,amount:+ohAmount.value});save(OH,a);ohDesc.value='';ohAmount.value='';render();
+     const a=load(OH,[]);a.push({id:uid(),month:ohMonth.value||ym(),desc:ohDesc.value,amount:+ohAmount.value,vatRate:+ohVatRate.value||0});save(OH,a);ohDesc.value='';ohAmount.value='';ohVatRate.value='20';render();
    });
    profitMonth.addEventListener('change',render);
 
