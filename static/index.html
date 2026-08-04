@@ -440,6 +440,20 @@
   .planReasonNote{font-size:9px}
 }
 
+
+.profitEditBtn{border:0;border-radius:8px;padding:6px 9px;background:#e7eef4;color:#23445f;font-weight:800;cursor:pointer;font-size:10px}
+.profitDeleteBtn{border:0;border-radius:8px;padding:6px 9px;background:#ffe7e7;color:#b52e2e;font-weight:800;cursor:pointer;font-size:10px;margin-left:4px}
+@media(max-width:800px){.profitTable{min-width:980px}}
+
+
+.costMove{border:1px solid #e1e8ef;border-radius:10px;padding:9px;margin:7px 0;background:#fbfdff}
+.costMoveHead{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.costMoveHead b{font-size:11px;color:#23445f}
+.costMove small{font-size:9px;color:#718491}
+.costMoveActions button{border:0;border-radius:7px;padding:5px 7px;font-size:9px;font-weight:800;cursor:pointer}
+.costMoveActions .edit{background:#e7eef4;color:#23445f}
+.costMoveActions .del{background:#ffe7e7;color:#b52e2e;margin-left:4px}
+
 </style>
 </head>
 <body>
@@ -1682,21 +1696,61 @@ window.editDaily=id=>{
   </div>
 
   <div class="profitCard">
-    <h3>İş / Parça Bilgisi</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <h3 style="margin:0">İş / Parça Bilgisi</h3>
+      <span id="pcEditState" style="font-size:10px;color:#718491">Satış bilgisi</span>
+    </div>
     <div class="profitForm">
       <label>İş Emri / Parça<select id="pcJob"></select></label>
       <label>Satış Fiyatı (USD/adet, KDV hariç)<input id="pcUsd" type="number" step="0.01" min="0"></label>
       <label>USD/TL Kuru<input id="pcRate" type="number" step="0.0001" min="0" placeholder="Kur"></label>
-      <label>Hammadde (USD/toplam, KDV hariç)<input id="pcMat" type="number" step="0.01" min="0"></label>
-      <label>CMM (USD/toplam, KDV hariç)<input id="pcCmm" type="number" step="0.01" min="0"></label>
-      <label>Kaplama / Direkt Ek (TL, KDV hariç)<input id="pcCoat" type="number" step="0.01" min="0"></label>
-      <label>Maliyet Ayı<input id="pcMonth" type="month"></label>
-      <label>&nbsp;<button class="profitBtn green" id="pcSave" type="button">KAYDET</button></label>
+      <label>&nbsp;<button class="profitBtn green" id="pcSave" type="button">SATIŞ BİLGİSİNİ KAYDET</button></label>
     </div>
     <div style="font-size:11px;color:#718491;margin-top:10px">
       Üretim değeri teslimata göre değil, OP süreleri ağırlıklı gerçekleşen üretim yüzdesine göre hesaplanır.
-      Örneğin iş ay sonunda %90 hazırsa, sipariş net satış değerinin %90'ı o ayın üretim değeri sayılır.
     </div>
+  </div>
+
+  <div class="profitCard">
+    <h3>Hammadde Hareketleri</h3>
+    <div class="profitForm">
+      <label>İş Emri / Parça<select id="matJob"></select></label>
+      <label>Tarih<input id="matDate" type="date"></label>
+      <label>Kullanılan Hammadde Adedi<input id="matQty" type="number" step="1" min="0"></label>
+      <label>Hammadde Maliyeti (USD, KDV hariç)<input id="matUsd" type="number" step="0.01" min="0"></label>
+      <label>USD/TL Kuru<input id="matRate" type="number" step="0.0001" min="0"></label>
+      <label>Açıklama<input id="matNote" placeholder="İlk alım / ek malzeme / hurda payı..."></label>
+      <label>&nbsp;<button class="profitBtn green" id="matSave" type="button">HAMMADDE EKLE</button></label>
+    </div>
+    <div id="matList" style="margin-top:12px"></div>
+  </div>
+
+  <div class="profitCard">
+    <h3>CMM Hareketleri</h3>
+    <div class="profitForm">
+      <label>İş Emri / Parça<select id="cmmJobCost"></select></label>
+      <label>Tarih<input id="cmmDateCost" type="date"></label>
+      <label>Gönderilen Adet<input id="cmmSentQty" type="number" step="1" min="0"></label>
+      <label>Onaylanan Adet<input id="cmmOkQty" type="number" step="1" min="0"></label>
+      <label>Red Adet<input id="cmmRedQty" type="number" step="1" min="0"></label>
+      <label>CMM Maliyeti (USD, KDV hariç)<input id="cmmUsdCost" type="number" step="0.01" min="0"></label>
+      <label>USD/TL Kuru<input id="cmmRateCost" type="number" step="0.0001" min="0"></label>
+      <label>Açıklama<input id="cmmNoteCost" placeholder="İlk kontrol / tekrar kontrol..."></label>
+      <label>&nbsp;<button class="profitBtn green" id="cmmSaveCost" type="button">CMM EKLE</button></label>
+    </div>
+    <div id="cmmCostList" style="margin-top:12px"></div>
+  </div>
+
+  <div class="profitCard">
+    <h3>Direkt Ek Maliyetler</h3>
+    <div class="profitForm">
+      <label>İş Emri / Parça<select id="extraJob"></select></label>
+      <label>Tarih<input id="extraDate" type="date"></label>
+      <label>Tutar (TL, KDV hariç)<input id="extraAmount" type="number" step="0.01" min="0"></label>
+      <label>Açıklama<input id="extraNote" placeholder="Kaplama / özel işlem..."></label>
+      <label>&nbsp;<button class="profitBtn" id="extraSave" type="button">EK MALİYET EKLE</button></label>
+    </div>
+    <div id="extraList" style="margin-top:12px"></div>
   </div>
 
   <div class="profitCard">
@@ -1714,8 +1768,8 @@ window.editDaily=id=>{
     <h3 style="margin-top:0">Aylık Parça Bazlı Durum</h3>
     <table class="profitTable" style="margin-top:10px">
       <thead><tr>
-        <th>İş / Parça</th><th>İlerleme</th><th>Sipariş Net</th><th>Bu Aya Üretim</th>
-        <th>Hammadde</th><th>CMM</th><th>Ek</th><th>Direkt Maliyet</th><th>Üretim Kârı</th>
+        <th>İş / Parça</th><th>Satış USD/adet</th><th>Kur</th><th>İlerleme</th><th>Sipariş Net</th><th>Bu Aya Üretim</th>
+        <th>Hammadde</th><th>CMM</th><th>Ek</th><th>Direkt Maliyet</th><th>Üretim Kârı</th><th>İşlem</th>
       </tr></thead>
       <tbody id="profitRows"></tbody>
     </table>
@@ -1724,48 +1778,30 @@ window.editDaily=id=>{
 
 <script>
 (function(){
- const KEY='luys_profit_costs_v2', OLD='luys_profit_costs_v1', OH='luys_overheads_v1';
+ const SALES='luys_profit_sales_v3';
+ const MAT='luys_material_moves_v1';
+ const CMM='luys_cmm_cost_moves_v1';
+ const EXTRA='luys_extra_cost_moves_v1';
+ const OH='luys_overheads_v1';
+
  const money=n=>'₺'+(Number(n)||0).toLocaleString('tr-TR',{maximumFractionDigits:0});
- const usdMoney=n=>'$'+(Number(n)||0).toLocaleString('tr-TR',{maximumFractionDigits:2});
+ const usd=n=>'$'+(Number(n)||0).toLocaleString('tr-TR',{maximumFractionDigits:2});
  const ym=()=>new Date().toISOString().slice(0,7);
+ const today=()=>new Date().toISOString().slice(0,10);
+ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
  const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
  const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
+ function stateNow(){try{return window.__luysGetState?window.__luysGetState():null}catch(e){return null}}
  function jobs(){
-   let arr=[];
-   try{const st=window.__luysGetState?window.__luysGetState():null;if(st&&Array.isArray(st.orders))arr=st.orders}catch(e){}
-   const map=new Map();
-   arr.forEach(j=>{
-     const code=j.orderNo||j.code||j.jobNo||j.isEmri||j.id;
-     const name=j.part||j.partName||j.name||j.parca||j.productName||'';
-     if(code)map.set(String(code),{...j,_code:String(code),_name:name});
-   });
-   return [...map.values()];
+   const st=stateNow(),arr=(st&&Array.isArray(st.orders))?st.orders:[];
+   return arr.map(j=>({...j,_code:String(j.orderNo||j.code||j.jobNo||j.isEmri||j.id),_name:j.part||j.partName||j.name||j.parca||j.productName||''}));
  }
-
  function orderQty(j){return Number(j.qty??j.orderQty??j.requestQty??j.produceQty??0)||0}
 
- function weightedProgress(j){
-   const ops=j.ops||j.operations||[];
-   if(!ops.length)return 0;
-   let total=0,done=0;
-   ops.forEach(op=>{
-     const target=Math.max(1,Number(j.produceQty||orderQty(j)||1));
-     const cyc=Number(op.cycle||0), hand=Number(op.handling||0), setup=Number(op.setup||0)*60;
-     const weight=target*(cyc+hand)+setup;
-     const good=Number(op.done??op.produced??0), scrap=Number(op.scrap||0);
-     const frac=Math.min(1,(good+scrap)/target);
-     total+=weight; done+=weight*frac;
-   });
-   return total?Math.max(0,Math.min(1,done/total)):0;
- }
-
  function monthProgress(j,month){
-   // Günlük kayıtlar seçilen aya aitse o ay sonundaki kümülatif OP ilerlemesini kur.
-   let st=null; try{st=window.__luysGetState?window.__luysGetState():null}catch(e){}
-   const daily=(st&&st.daily)||[];
-   const ops=j.ops||[];
-   if(!ops.length)return weightedProgress(j);
+   const st=stateNow(),daily=(st&&st.daily)||[],ops=j.ops||[];
+   if(!ops.length)return 0;
    const end=month+'-31';
    let total=0,done=0;
    ops.forEach(op=>{
@@ -1774,114 +1810,156 @@ window.editDaily=id=>{
      const weight=target*(cyc+hand)+setup;
      const rec=daily.filter(r=>r.orderId===j.id&&r.opId===op.id&&String(r.date||'')<=end);
      const processed=rec.reduce((a,r)=>a+Number(r.good||0)+Number(r.scrap||0),0);
-     total+=weight; done+=weight*Math.min(1,processed/target);
+     total+=weight;done+=weight*Math.min(1,processed/target);
    });
    return total?Math.max(0,Math.min(1,done/total)):0;
  }
-
- function previousMonthProgress(j,month){
+ function prevProgress(j,month){
    const d=new Date(month+'-01T00:00:00');d.setMonth(d.getMonth()-1);
    return monthProgress(j,d.toISOString().slice(0,7));
  }
-
- function fillJobs(){
-   const sel=document.getElementById('pcJob'); if(!sel)return;
-   const old=sel.value;sel.innerHTML='<option value="">Seçiniz</option>';
-   jobs().forEach(j=>{let o=document.createElement('option');o.value=j._code;o.textContent=j._code+(j._name?' • '+j._name:'');sel.appendChild(o)});
-   if([...sel.options].some(o=>o.value===old))sel.value=old;
+ function fillSelect(id){
+   const el=document.getElementById(id);if(!el)return;
+   const old=el.value;el.innerHTML='<option value="">Seçiniz</option>';
+   jobs().forEach(j=>{const o=document.createElement('option');o.value=j._code;o.textContent=j._code+(j._name?' • '+j._name:'');el.appendChild(o)});
+   if([...el.options].some(x=>x.value===old))el.value=old;
  }
+ function fillAll(){['pcJob','matJob','cmmJobCost','extraJob'].forEach(fillSelect)}
 
- function allCosts(){
-   let v=load(KEY,null);
-   if(v)return v;
-   const old=load(OLD,{});
-   const migrated={};
-   Object.keys(old).forEach(k=>{
-     const c=old[k]||{};
-     migrated[k]={usd:+c.usd||0,rate:+c.rate||0,matUsd:0,cmmUsd:0,coat:+c.coat||0,month:ym(),legacyMatTl:+c.mat||0,legacyCmmTl:+c.cmm||0};
-   });
-   save(KEY,migrated);return migrated;
- }
-
- function loadCost(){
-   const c=allCosts()[pcJob.value]||{};
-   pcUsd.value=c.usd||'';pcRate.value=c.rate||'';pcMat.value=c.matUsd||'';pcCmm.value=c.cmmUsd||'';pcCoat.value=c.coat||'';
-   pcMonth.value=c.month||profitMonth.value||ym();
+ function renderMoves(key,containerId,type){
+   const arr=load(key,[]);
+   const el=document.getElementById(containerId);if(!el)return;
+   el.innerHTML=arr.map(x=>{
+     let desc='';
+     if(type==='mat')desc=`${x.qty||0} adet • ${usd(x.usd)} • Kur ${x.rate||0}`;
+     if(type==='cmm')desc=`Gönderilen ${x.sent||0} • Onay ${x.ok||0} • Red ${x.red||0} • ${usd(x.usd)} • Kur ${x.rate||0}`;
+     if(type==='extra')desc=`${money(x.amount)}`;
+     return `<div class="costMove">
+       <div class="costMoveHead">
+         <div><b>${x.job}</b><br><small>${x.date||''} • ${desc}${x.note?' • '+x.note:''}</small></div>
+         <div class="costMoveActions">
+           <button class="edit" data-move-edit="${type}:${x.id}">Düzenle</button>
+           <button class="del" data-move-del="${type}:${x.id}">Sil</button>
+         </div>
+       </div>
+     </div>`;
+   }).join('')||'<small>Henüz kayıt yok.</small>';
  }
 
  function render(){
-   fillJobs();
-   const month=profitMonth.value||ym(),costs=allCosts(),overheads=load(OH,[]);
+   fillAll();
+   const month=profitMonth.value||ym(),sales=load(SALES,{}),mats=load(MAT,[]),cmms=load(CMM,[]),extras=load(EXTRA,[]),ohs=load(OH,[]);
    let production=0,direct=0,html='';
 
    jobs().forEach(j=>{
-     const c=costs[j._code]||{};
-     const rate=Number(c.rate||0),priceUsd=Number(c.usd||0),qty=orderQty(j);
-     const fullNet=qty*priceUsd*rate;
-     const now=monthProgress(j,month),prev=previousMonthProgress(j,month);
-     const monthShare=Math.max(0,now-prev);
-     const monthProduction=fullNet*monthShare;
+     const sale=sales[j._code]||{},rate=Number(sale.rate||0),price=Number(sale.usd||0),qty=orderQty(j);
+     const fullNet=qty*price*rate;
+     const now=monthProgress(j,month),prev=prevProgress(j,month),share=Math.max(0,now-prev);
+     const monthProduction=fullNet*share;
 
-     const costMonth=c.month||month;
-     const includeCost=costMonth===month;
-     const matTl=includeCost?(Number(c.matUsd||0)*rate+Number(c.legacyMatTl||0)):0;
-     const cmmTl=includeCost?(Number(c.cmmUsd||0)*rate+Number(c.legacyCmmTl||0)):0;
-     const extraTl=includeCost?Number(c.coat||0):0;
-     const total=matTl+cmmTl+extraTl;
-     const p=monthProduction-total;
+     const matRows=mats.filter(x=>x.job===j._code&&String(x.date||'').slice(0,7)===month);
+     const cmmRows=cmms.filter(x=>x.job===j._code&&String(x.date||'').slice(0,7)===month);
+     const extraRows=extras.filter(x=>x.job===j._code&&String(x.date||'').slice(0,7)===month);
+
+     const matTl=matRows.reduce((a,x)=>a+Number(x.usd||0)*Number(x.rate||0),0);
+     const cmmTl=cmmRows.reduce((a,x)=>a+Number(x.usd||0)*Number(x.rate||0),0);
+     const extraTl=extraRows.reduce((a,x)=>a+Number(x.amount||0),0);
+     const total=matTl+cmmTl+extraTl,p=monthProduction-total;
 
      production+=monthProduction;direct+=total;
-     if(monthShare>0||total>0){
+     if(share>0||total>0){
        html+=`<tr>
          <td><b>${j._code}</b><br><small>${j._name||''}</small></td>
-         <td><b>%${(now*100).toFixed(1)}</b><br><small>Bu ay +%${(monthShare*100).toFixed(1)}</small></td>
+         <td>${sale.usd?usd(sale.usd):'-'}</td><td>${rate||'-'}</td>
+         <td><b>%${(now*100).toFixed(1)}</b><br><small>Bu ay +%${(share*100).toFixed(1)}</small></td>
          <td>${money(fullNet)}</td><td>${money(monthProduction)}</td>
-         <td>${money(matTl)}${c.matUsd?`<br><small>${usdMoney(c.matUsd)}</small>`:''}</td>
-         <td>${money(cmmTl)}${c.cmmUsd?`<br><small>${usdMoney(c.cmmUsd)}</small>`:''}</td>
-         <td>${money(extraTl)}</td><td>${money(total)}</td>
-         <td class="${p>=0?'profitPos':'profitNeg'}">${money(p)}</td>
+         <td>${money(matTl)}<br><small>${matRows.length} kayıt</small></td>
+         <td>${money(cmmTl)}<br><small>${cmmRows.length} kayıt</small></td>
+         <td>${money(extraTl)}<br><small>${extraRows.length} kayıt</small></td>
+         <td>${money(total)}</td><td class="${p>=0?'profitPos':'profitNeg'}">${money(p)}</td>
+         <td><button class="profitEditBtn" type="button" data-sale-edit="${j._code}">Satış Düzenle</button></td>
        </tr>`;
      }
    });
 
-   const oh=overheads.filter(x=>x.month===month).reduce((a,x)=>a+Number(x.amount||0),0);
-   const net=production-direct-oh;
-   pkSales.textContent=money(production);
-   pkDirect.textContent=money(direct);
-   pkOverhead.textContent=money(oh);
+   const oh=ohs.filter(x=>x.month===month).reduce((a,x)=>a+Number(x.amount||0),0),net=production-direct-oh;
+   pkSales.textContent=money(production);pkDirect.textContent=money(direct);pkOverhead.textContent=money(oh);
    pkNet.textContent=money(net);pkNet.className=net>=0?'profitPos':'profitNeg';
-   pkSalesVat.textContent=money(production*.20);
-   pkSalesGross.textContent=money(production*1.20);
-   profitRows.innerHTML=html||'<tr><td colspan="9">Bu ay için üretim veya maliyet hareketi yok.</td></tr>';
+   pkSalesVat.textContent=money(production*.20);pkSalesGross.textContent=money(production*1.20);
+   profitRows.innerHTML=html||'<tr><td colspan="12">Bu ay için üretim veya maliyet hareketi yok.</td></tr>';
 
-   ohList.innerHTML=overheads.filter(x=>x.month===month).map(x=>
-     `<div style="padding:7px;border-bottom:1px solid #edf1f4">${x.desc||'Genel gider'} <b style="float:right">${money(x.amount)}</b><br><small>KDV dahil: ${money(Number(x.amount||0)*1.20)}</small></div>`
-   ).join('')||'<small>Bu ay için genel gider girilmedi.</small>';
+   ohList.innerHTML=ohs.filter(x=>x.month===month).map(x=>`<div style="padding:7px;border-bottom:1px solid #edf1f4">${x.desc||'Genel gider'} <b style="float:right">${money(x.amount)}</b><br><small>KDV dahil: ${money(Number(x.amount||0)*1.20)}</small></div>`).join('')||'<small>Bu ay için genel gider girilmedi.</small>';
+
+   renderMoves(MAT,'matList','mat');renderMoves(CMM,'cmmCostList','cmm');renderMoves(EXTRA,'extraList','extra');
+ }
+
+ function editMove(type,id){
+   const cfg={
+     mat:[MAT,'matJob','matDate','matQty','matUsd','matRate','matNote'],
+     cmm:[CMM,'cmmJobCost','cmmDateCost','cmmSentQty','cmmOkQty','cmmRedQty','cmmUsdCost','cmmRateCost','cmmNoteCost'],
+     extra:[EXTRA,'extraJob','extraDate','extraAmount','extraNote']
+   }[type];
+   if(!cfg)return;
+   const arr=load(cfg[0],[]),x=arr.find(r=>r.id===id);if(!x)return;
+   window.__editMove={type,id};
+   if(type==='mat'){matJob.value=x.job;matDate.value=x.date;matQty.value=x.qty;matUsd.value=x.usd;matRate.value=x.rate;matNote.value=x.note||'';matSave.textContent='HAMMADDEYİ GÜNCELLE'}
+   if(type==='cmm'){cmmJobCost.value=x.job;cmmDateCost.value=x.date;cmmSentQty.value=x.sent;cmmOkQty.value=x.ok;cmmRedQty.value=x.red;cmmUsdCost.value=x.usd;cmmRateCost.value=x.rate;cmmNoteCost.value=x.note||'';cmmSaveCost.textContent='CMM GÜNCELLE'}
+   if(type==='extra'){extraJob.value=x.job;extraDate.value=x.date;extraAmount.value=x.amount;extraNote.value=x.note||'';extraSave.textContent='EK MALİYETİ GÜNCELLE'}
+ }
+ function upsert(key,obj,type){
+   let arr=load(key,[]);
+   if(window.__editMove&&window.__editMove.type===type){
+     arr=arr.map(x=>x.id===window.__editMove.id?{...obj,id:x.id}:x);
+   }else arr.push({...obj,id:uid()});
+   save(key,arr);window.__editMove=null;render();
  }
 
  document.addEventListener('DOMContentLoaded',()=>{
-   profitMonth.value=ym();ohMonth.value=ym();pcMonth.value=ym();fillJobs();
-   pcJob.addEventListener('change',loadCost);
-   pcSave.addEventListener('click',()=>{
-     if(!pcJob.value)return alert('Önce iş emri seçin.');
-     const all=allCosts();
-     all[pcJob.value]={usd:+pcUsd.value||0,rate:+pcRate.value||0,matUsd:+pcMat.value||0,cmmUsd:+pcCmm.value||0,coat:+pcCoat.value||0,month:pcMonth.value||profitMonth.value||ym()};
-     save(KEY,all);render();alert('Parça maliyeti kaydedildi.');
+   profitMonth.value=ym();ohMonth.value=ym();
+   matDate.value=today();cmmDateCost.value=today();extraDate.value=today();
+   fillAll();
+
+   pcJob.addEventListener('change',()=>{
+     const c=load(SALES,{})[pcJob.value]||{};pcUsd.value=c.usd||'';pcRate.value=c.rate||'';
    });
+   pcSave.addEventListener('click',()=>{
+     if(!pcJob.value)return alert('İş emri seçin.');
+     const all=load(SALES,{});all[pcJob.value]={usd:+pcUsd.value||0,rate:+pcRate.value||0};save(SALES,all);render();
+   });
+
+   matSave.addEventListener('click',()=>{
+     if(!matJob.value||!matDate.value)return alert('İş emri ve tarih gerekli.');
+     upsert(MAT,{job:matJob.value,date:matDate.value,qty:+matQty.value||0,usd:+matUsd.value||0,rate:+matRate.value||0,note:matNote.value||''},'mat');
+     matQty.value='';matUsd.value='';matNote.value='';matSave.textContent='HAMMADDE EKLE';
+   });
+   cmmSaveCost.addEventListener('click',()=>{
+     if(!cmmJobCost.value||!cmmDateCost.value)return alert('İş emri ve tarih gerekli.');
+     upsert(CMM,{job:cmmJobCost.value,date:cmmDateCost.value,sent:+cmmSentQty.value||0,ok:+cmmOkQty.value||0,red:+cmmRedQty.value||0,usd:+cmmUsdCost.value||0,rate:+cmmRateCost.value||0,note:cmmNoteCost.value||''},'cmm');
+     cmmSentQty.value='';cmmOkQty.value='';cmmRedQty.value='';cmmUsdCost.value='';cmmNoteCost.value='';cmmSaveCost.textContent='CMM EKLE';
+   });
+   extraSave.addEventListener('click',()=>{
+     if(!extraJob.value||!extraDate.value)return alert('İş emri ve tarih gerekli.');
+     upsert(EXTRA,{job:extraJob.value,date:extraDate.value,amount:+extraAmount.value||0,note:extraNote.value||''},'extra');
+     extraAmount.value='';extraNote.value='';extraSave.textContent='EK MALİYET EKLE';
+   });
+
    ohSave.addEventListener('click',()=>{
      if(!ohAmount.value)return;
-     const a=load(OH,[]);a.push({month:ohMonth.value||ym(),desc:ohDesc.value,amount:+ohAmount.value});
-     save(OH,a);ohDesc.value='';ohAmount.value='';render();
+     const a=load(OH,[]);a.push({id:uid(),month:ohMonth.value||ym(),desc:ohDesc.value,amount:+ohAmount.value});save(OH,a);ohDesc.value='';ohAmount.value='';render();
    });
-   profitMonth.addEventListener('change',()=>{pcMonth.value=profitMonth.value;render()});
+   profitMonth.addEventListener('change',render);
+
+   document.addEventListener('click',e=>{
+     const se=e.target.closest('[data-sale-edit]');if(se){pcJob.value=se.dataset.saleEdit;pcJob.dispatchEvent(new Event('change'));pcJob.scrollIntoView({behavior:'smooth',block:'center'})}
+     const ee=e.target.closest('[data-move-edit]');if(ee){const [t,id]=ee.dataset.moveEdit.split(':');editMove(t,id)}
+     const dd=e.target.closest('[data-move-del]');if(dd){const [t,id]=dd.dataset.moveDel.split(':');const key=t==='mat'?MAT:t==='cmm'?CMM:EXTRA;if(confirm('Bu kayıt silinsin mi?')){save(key,load(key,[]).filter(x=>x.id!==id));render()}}
+   });
+
    document.body.addEventListener('click',e=>{
      const t=e.target.closest('button,a,[data-tab]');if(!t)return;
      if(/Muhasebe|Maliyet\s*&?\s*Kârlılık|Aylık Üretim/i.test(t.textContent||'')){
        if(typeof canEdit==='function'&&!canEdit())return;
-       setTimeout(()=>{
-         document.querySelectorAll('main>section,.page,.tab-content').forEach(x=>{if(x.id!=='profitPanel')x.classList.remove('active')});
-         profitPanel.classList.add('active');render();window.scrollTo({top:0,behavior:'smooth'});
-       },0);
+       setTimeout(()=>{document.querySelectorAll('main>section,.page,.tab-content').forEach(x=>{if(x.id!=='profitPanel')x.classList.remove('active')});profitPanel.classList.add('active');render();window.scrollTo({top:0,behavior:'smooth'})},0);
      }else if(t.closest('nav')||t.dataset.tab){profitPanel.classList.remove('active')}
    });
  });
