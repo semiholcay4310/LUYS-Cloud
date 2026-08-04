@@ -424,6 +424,22 @@
   .planMiniDelta{font-size:9px}
 }
 
+
+/* ===== PLAN FARKI NEDEN DETAYI ===== */
+.planTrackDelta{cursor:pointer;user-select:none}
+.planTrackDelta .why{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:99px;background:#ffffff88;font-size:.9em}
+.planReason{display:none;margin-top:6px;border:1px solid #dfe7ed;border-radius:9px;background:#fff;padding:7px}
+.planReason.open{display:block}
+.planReasonRow{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed #e8eef2;font-size:8px}
+.planReasonRow:last-child{border-bottom:0}
+.planReasonRow b{font-size:8px}
+.planReasonRow.good b{color:#168348}.planReasonRow.bad b{color:#c72e2e}.planReasonRow.neutral b{color:#647789}
+.planReasonNote{font-size:7px;color:#7b8c98;line-height:1.35;margin-top:6px}
+@media(min-width:1000px){
+  .planReasonRow,.planReasonRow b{font-size:10px}
+  .planReasonNote{font-size:9px}
+}
+
 </style>
 </head>
 <body>
@@ -828,32 +844,132 @@ function currentProductForecast(o){
   }
   return localISO(cursor);
 }
+
+function workMinutesBetween(a,b){
+  if(!a||!b)return 0;
+  let da=new Date(a),db=new Date(b),sign=1;
+  if(db<da){let t=da;da=db;db=t;sign=-1}
+  let total=0,cursor=new Date(da);
+  cursor.setHours(0,0,0,0);
+  const endDay=new Date(db);endDay.setHours(0,0,0,0);
+  for(let guard=0;guard<3700&&cursor<=endDay;guard++){
+    const day=ymd(cursor),ws=windows(day);
+    for(const [x,y] of ws){
+      const st=new Date(Math.max(x.getTime(),da.getTime()));
+      const en=new Date(Math.min(y.getTime(),db.getTime()));
+      if(en>st)total+=(en-st)/60000;
+    }
+    cursor.setDate(cursor.getDate()+1);
+  }
+  return Math.round(total)*sign;
+}
+function recordOutsideScheduleMinutes(r){
+  if(!r?.date||!r?.startTime||!r?.endTime)return 0;
+  let st=new Date(r.date+'T'+r.startTime),en=new Date(r.date+'T'+r.endTime);
+  if(en<st)en.setDate(en.getDate()+1);
+  const gross=(en-st)/60000;
+  let overlap=0,cursor=new Date(st);cursor.setHours(0,0,0,0);
+  const endDay=new Date(en);endDay.setHours(0,0,0,0);
+  for(let guard=0;guard<3&&cursor<=endDay;guard++){
+    for(const [a,b] of windows(ymd(cursor))){
+      const x=Math.max(a.getTime(),st.getTime()),y=Math.min(b.getTime(),en.getTime());
+      if(y>x)overlap+=(y-x)/60000;
+    }
+    cursor.setDate(cursor.getDate()+1);
+  }
+  const outsideGross=Math.max(0,gross-overlap);
+  let net=r.netHours;
+  if(net===undefined)net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
+  const netMin=Math.max(0,n(net)*60);
+  return Math.round(Math.min(outsideGross,netMin));
+}
+function planReasonInfo(o){
+  let speed=0,overtime=0,downtime=0,records=0;
+  for(const op of (o?.ops||[])){
+    const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
+    const plannedUnit=Math.max(0,n(op.cycle)+n(op.handling));
+    for(const r of recs){
+      const processed=n(r.good)+n(r.scrap);
+      let net=r.netHours;
+      if(net===undefined)net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
+      const actualRun=Math.max(0,n(net)*60);
+      if(processed>0&&plannedUnit>0){
+        speed += processed*plannedUnit-actualRun;
+      }
+      overtime += recordOutsideScheduleMinutes(r);
+      downtime += Math.max(0,n(r.downtime));
+      records++;
+    }
+  }
+  return {
+    speed:Math.round(speed),
+    overtime:Math.round(overtime),
+    downtime:Math.round(downtime),
+    records
+  };
+}
+function effectText(mins,positiveLabel,negativeLabel){
+  const abs=Math.abs(Math.round(mins)),h=Math.floor(abs/60),m=abs%60;
+  let txt=h?(h+' saat'+(m?' '+m+' dk':'')):(m+' dk');
+  if(!abs)txt='0 dk';
+  return (mins>=0?positiveLabel:negativeLabel)+' '+txt;
+}
+function planReasonHTML(o){
+  const r=planReasonInfo(o);
+  if(!r.records)return `<div class="planReasonNote">Henüz neden analizi için günlük üretim kaydı yok.</div>`;
+  const speedCls=r.speed>0?'good':r.speed<0?'bad':'neutral';
+  return `
+    <div class="planReasonRow ${speedCls}"><span>⚡ İmalat hızı etkisi</span><b>${r.speed>0?'+':r.speed<0?'-':''}${Math.floor(Math.abs(r.speed)/60)} sa ${Math.abs(r.speed)%60} dk</b></div>
+    <div class="planReasonRow ${r.overtime>0?'good':'neutral'}"><span>🕒 Ek çalışma / mesai</span><b>${r.overtime>0?'+':''}${Math.floor(r.overtime/60)} sa ${r.overtime%60} dk</b></div>
+    <div class="planReasonRow ${r.downtime>0?'bad':'neutral'}"><span>⛔ Duruş etkisi</span><b>${r.downtime>0?'-':''}${Math.floor(r.downtime/60)} sa ${r.downtime%60} dk</b></div>
+    <div class="planReasonNote">Bu satırlar günlük üretim kayıtlarından hesaplanan yaklaşık etkidir. Üstteki “önde/geride” farkı yalnızca çalışma takvimindeki üretim saatleri üzerinden hesaplanır; gece/hafta sonu boş saatleri farkı şişirmez.</div>`;
+}
+function togglePlanReason(id){
+  const el=document.getElementById(id);
+  if(el)el.classList.toggle('open');
+}
+
 function planDeltaInfo(o){
   ensureBaselineProductEnd(o);
   const base=o?.baselineProductEnd||'';
   const forecast=currentProductForecast(o);
   if(!base||!forecast)return null;
-  const ms=new Date(forecast)-new Date(base);
-  const abs=Math.abs(ms);
-  let mins=Math.round(abs/60000),days=Math.floor(mins/1440),hours=Math.floor((mins%1440)/60),minutes=mins%60;
+
+  // Negatif = tahmin başlangıç planından daha erken (önde).
+  const workMins=workMinutesBetween(base,forecast);
+  const abs=Math.abs(workMins);
+  let days=0,hours=0,minutes=0;
+
+  // "Gün"ü sabit 24 saat değil, mevcut takvimdeki tipik net iş günü üzerinden göster.
+  const netDays=Object.keys(state.calendar||{}).map(k=>n(state.calendar[k]?.h)-n(state.calendar[k]?.b)).filter(x=>x>0);
+  const typicalDayHours=netDays.length?netDays.reduce((a,b)=>a+b,0)/netDays.length:8;
+  const dayMin=Math.max(60,Math.round(typicalDayHours*60));
+  days=Math.floor(abs/dayMin);
+  let rest=abs-days*dayMin;
+  hours=Math.floor(rest/60);
+  minutes=rest%60;
+
   let parts=[];
-  if(days)parts.push(days+' gün');
+  if(days)parts.push(days+' iş günü');
   if(hours)parts.push(hours+' saat');
   if(!days&&!hours&&minutes)parts.push(minutes+' dk');
   if(!parts.length)parts.push('aynı');
-  const cls=ms<-60000?'ahead':ms>60000?'behind':'same';
+
+  const cls=workMins<-1?'ahead':workMins>1?'behind':'same';
   const text=cls==='ahead'?parts.join(' ')+' önde':cls==='behind'?parts.join(' ')+' geride':'Planla aynı';
-  return {base,forecast,ms,cls,text};
+  return {base,forecast,workMins,cls,text};
 }
 function planTrackHTML(o){
   const p=planDeltaInfo(o);
   if(!p)return '';
+  const rid='planReason_'+String(o.id).replace(/[^a-zA-Z0-9_-]/g,'');
   return `<div class="planTrack">
     <div class="planTrackGrid">
       <div class="planTrackItem"><small>Başlangıç Planı</small><b>${fmt(p.base)}</b></div>
       <div class="planTrackItem"><small>Güncel Tahmin</small><b>${fmt(p.forecast)}</b></div>
     </div>
-    <div class="planTrackDelta ${p.cls}">${p.cls==='ahead'?'▲ ':p.cls==='behind'?'▼ ':''}${p.text}</div>
+    <div class="planTrackDelta ${p.cls}" onclick="togglePlanReason('${rid}')">${p.cls==='ahead'?'▲ ':p.cls==='behind'?'▼ ':''}${p.text}<span class="why">Neden?</span></div>
+    <div class="planReason" id="${rid}">${planReasonHTML(o)}</div>
   </div>`;
 }
 function planMiniHTML(o){
