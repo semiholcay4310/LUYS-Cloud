@@ -742,7 +742,7 @@ function cal(d){let c=state.calendar[new Date(d).getDay()]||{h:0,b:0};return {gr
 function windows(day){let c=cal(day);if(c.net<=0)return[];let st=new Date(day+'T08:00'),en=new Date(st.getTime()+c.gross*3600000),bs=new Date(day+'T12:00'),be=new Date(bs.getTime()+c.br*3600000);if(c.br<=0)return[[st,en]];let a=[];if(bs>st)a.push([st,new Date(Math.min(bs,en))]);if(be<en)a.push([be,en]);return a}
 function nextMoment(v){let d=new Date(v);for(let g=0;g<60;g++){let day=ymd(d),ws=windows(day);for(let [a,b] of ws){if(d<=a)return new Date(a);if(d>=a&&d<b)return d}d.setDate(d.getDate()+1);d.setHours(8,0,0,0)}return d}
 function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<2000&&left>0;g++){d=nextMoment(d);let w=windows(ymd(d)).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(8,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
-function schedule(){let groups={};state.orders.filter(o=>o.stage!=='done').forEach(o=>(groups[o.machine]??=[]).push(o));Object.values(groups).forEach(a=>a.sort((x,y)=>n(x.queue)-n(y.queue)));for(let a of Object.values(groups)){let available=null;for(let o of a){let planned=nextMoment(available||new Date(o.start));o.planStart=localISO(planned);let cursor=planned;for(let op of o.ops){let start=nextMoment(cursor);if(op.actualStart)start=nextMoment(new Date(op.actualStart));op.planStart=localISO(start);let setupEnd=op.actualStart?start:addWork(start,n(op.setup)*60);op.setupEnd=localISO(setupEnd);let prodStart=nextMoment(setupEnd);op.prodStart=localISO(prodStart);let remaining=Math.max(0,n(o.produceQty)-n(op.done));let end=addWork(prodStart,remaining*(n(op.cycle)+n(op.handling)));op.planEnd=op.actualEnd||localISO(end);cursor=new Date(op.planEnd)}o.realStart=(o.ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');o.cncEnd=o.ops.length?o.ops[o.ops.length-1].planEnd:o.planStart;available=new Date(o.cncEnd);let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship)}}}
+function schedule(){let groups={};state.orders.filter(o=>o.stage!=='done').forEach(o=>(groups[o.machine]??=[]).push(o));Object.values(groups).forEach(a=>a.sort((x,y)=>n(x.queue)-n(y.queue)));for(let a of Object.values(groups)){let available=null;for(let o of a){let planned=nextMoment(available||new Date(o.start));o.planStart=localISO(planned);let cursor=planned;for(let op of o.ops){let start=nextMoment(cursor);if(op.actualStart)start=nextMoment(new Date(op.actualStart));op.planStart=localISO(start);let setupEnd=op.actualStart?start:addWork(start,n(op.setup)*60);op.setupEnd=localISO(setupEnd);let prodStart=nextMoment(setupEnd);op.prodStart=localISO(prodStart);let remaining=Math.max(0,opTarget(o,op)-opProcessed(op));let forecastStart=prodStart;let recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id&&r.date).sort((x,y)=>String(x.date).localeCompare(String(y.date)));if(recs.length&&remaining>0){let lastDate=recs[recs.length-1].date;let dayClosed=nextMoment(new Date(lastDate+'T23:59:59'));if(dayClosed>forecastStart)forecastStart=dayClosed}let end=addWork(forecastStart,remaining*(n(op.cycle)+n(op.handling)));op.planEnd=op.actualEnd||localISO(end);cursor=new Date(op.planEnd)}o.realStart=(o.ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');o.cncEnd=o.ops.length?o.ops[o.ops.length-1].planEnd:o.planStart;available=new Date(o.cncEnd);let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship)}}}
 function automaticPlanningPDF(){
   syncCompletedOps();
   schedule();
@@ -828,8 +828,9 @@ function actualMinutesPerPiece(o,op){
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
   const lastOp=o.ops[o.ops.length-1];
-  if(o.currentForecastSnapshot)return o.currentForecastSnapshot;
-  return lastOp?.actualEnd||lastOp?.planEnd||o.baselineProductEnd||baselineProductEnd(o)||'';
+  // Canlı tahmin tek kaynaktan gelir: schedule() tarafından hesaplanan son OP bitişi.
+  // Snapshot yalnızca eski veriler için yedek olarak tutulur.
+  return lastOp?.actualEnd||lastOp?.planEnd||o.currentForecastSnapshot||o.baselineProductEnd||baselineProductEnd(o)||'';
 }
 
 function workMinutesBetween(a,b){
@@ -984,15 +985,6 @@ function calculateForecastFromDaily(o){
   return shiftWorkingMoment(opPlanEnd||fixedBaseline,-r.netGain);
 }
 
-function currentOpForecast(o,op){
-  if(!o||!op)return '';
-  const target=opTarget(o,op), processed=opProcessed(op);
-  if(target>0 && processed>=target)return op.actualEnd||op.planEnd||'';
-  const r=planReasonInfo(o);
-  if(!r.records)return op.planEnd||'';
-  return shiftWorkingMoment(op.planEnd||'',-r.netGain);
-}
-
 function refreshForecastSnapshot(o){
   if(!o)return;
   schedule();
@@ -1113,8 +1105,8 @@ function renderMachines(){
   const machines=[{name:'Tezgâh 1 - 850',id:'machine850'},{name:'Tezgâh 2 - 1000',id:'machine1000'}];
   machines.forEach(m=>{const el=$(m.id);if(!el)return;const jobs=state.orders.filter(o=>o.machine===m.name&&o.stage!=='done').sort((a,b)=>n(a.queue)-n(b.queue));
     if(!jobs.length){el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus wait">Planlanan iş yok</div></div></div><div class="emptyDash">Bu tezgâhta sırada iş bulunmuyor.</div>`;return}
-    const o=jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>opProcessed(op)<opTarget(o,op)):null,opEnd=aktif?currentOpForecast(o,aktif):'',urunBitis=currentProductForecast(o)||(ops.length?(ops[ops.length-1]?.planEnd||''):''),pct=Math.round(progress(o)),risk=!!(o.requested&&urunBitis&&new Date(urunBitis)>new Date(o.requested)),queued=jobs.slice(1,3);
-    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span><div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div>${aktif?`<div class="machineMiniGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>Ürün Bitiş (Tahmini)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
+    const o=jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>opProcessed(op)<opTarget(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=currentProductForecast(o)||(ops.length?(ops[ops.length-1]?.planEnd||''):''),pct=Math.round(progress(o)),risk=!!(o.requested&&urunBitis&&new Date(urunBitis)>new Date(o.requested)),queued=jobs.slice(1,3);
+    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span>${aktif?`<div class="machineMiniGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>Ürün Bitiş (Tahmini)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
   });
 }
 
@@ -1133,8 +1125,7 @@ function renderOps(){
           completed=target>0&&processed>=target,
           cls=completed?'done':op.runState==='running'?'running':op.runState==='paused'?'paused':'',
           iid='start_'+o.id+'_'+op.id,
-          stateText=completed?'ÜRETİM TAMAMLANDI ✓':op.runState==='running'?'ÜRETİMDE':op.runState==='paused'?'DURDURULDU':'BEKLİYOR',
-          opForecast=currentOpForecast(o,op);
+          stateText=completed?'ÜRETİM TAMAMLANDI ✓':op.runState==='running'?'ÜRETİMDE':op.runState==='paused'?'DURDURULDU':'BEKLİYOR';
 
       let controls='';
       if(canEdit()){
@@ -1167,7 +1158,7 @@ function renderOps(){
         </div>
         <div class="finishbox">
           Planlanan başlangıç: ${fmt(op.planStart)}<br>
-          <b>Tahmini OP bitişi: ${fmt(opForecast)}</b>
+          <b>Tahmini OP bitişi: ${fmt(op.planEnd)}</b>
           ${op.actualStart?`<br>Gerçek başlangıç: ${fmt(op.actualStart)}`:''}
           ${op.pauseReason?`<br>Duruş nedeni: ${esc(op.pauseReason)}`:''}
         </div>
