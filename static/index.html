@@ -1873,9 +1873,9 @@ window.editDaily=id=>{
          <td>${sale.usd?usd(sale.usd):'-'}</td><td>${rate||'-'}</td>
          <td><b>%${(now*100).toFixed(1)}</b><br><small>Bu ay +%${(share*100).toFixed(1)}</small></td>
          <td>${money(fullNet)}</td><td>${money(monthProduction)}</td>
-         <td>${money(matTl)}<br><small>${matRows.length} kayıt</small></td>
-         <td>${money(cmmTl)}<br><small>${cmmRows.length} kayıt</small></td>
-         <td>${money(extraTl)}<br><small>${extraRows.length} kayıt</small></td>
+         <td>${money(matTl)}<br><small>${matRows.reduce((a,x)=>a+Number(x.qty||0),0)} adet kullanıldı • ${matRows.length} işlem</small></td>
+         <td>${money(cmmTl)}<br><small>${cmmRows.reduce((a,x)=>a+Number(x.sent||0),0)} gönderildi • ${cmmRows.reduce((a,x)=>a+Number(x.ok||0),0)} onay • ${cmmRows.reduce((a,x)=>a+Number(x.red||0),0)} red • ${cmmRows.length} işlem</small></td>
+         <td>${money(extraTl)}<br><small>${extraRows.length} işlem</small></td>
          <td>${money(total)}</td><td class="${p>=0?'profitPos':'profitNeg'}">${money(p)}</td>
          <td><button class="profitEditBtn" type="button" data-sale-edit="${j._code}">Satış Düzenle</button></td>
        </tr>`;
