@@ -1690,6 +1690,7 @@ window.editDaily=id=>{
     <div class="profitKpi"><small>ÜRETİM DEĞERİ (NET)</small><b id="pkSales">₺0</b></div>
     <div class="profitKpi"><small>DİREKT MALİYET (NET)</small><b id="pkDirect">₺0</b></div>
     <div class="profitKpi"><small>GENEL GİDER (NET)</small><b id="pkOverhead">₺0</b></div>
+    <div class="profitKpi"><small>TOPLAM MALİYET (NET)</small><b id="pkTotalCost">₺0</b></div>
     <div class="profitKpi"><small>AYLIK ÜRETİM KÂRI</small><b id="pkNet">₺0</b></div>
     <div class="profitKpi"><small>ÜRETİM KDV %20</small><b id="pkSalesVat">₺0</b></div>
     <div class="profitKpi"><small>ÜRETİM DEĞERİ KDV DAHİL</small><b id="pkSalesGross">₺0</b></div>
@@ -1717,12 +1718,12 @@ window.editDaily=id=>{
       <label>İş Emri / Parça<select id="matJob"></select></label>
       <label>Tarih<input id="matDate" type="date"></label>
       <label>Kullanılan Hammadde Adedi<input id="matQty" type="number" step="1" min="0"></label>
-      <label>Hammadde Maliyeti (USD, KDV hariç)<input id="matUsd" type="number" step="0.01" min="0"></label>
+      <label>Hammadde Birim Maliyeti (USD/adet, KDV hariç)<input id="matUsd" type="number" step="0.01" min="0"></label>
       <label>USD/TL Kuru<input id="matRate" type="number" step="0.0001" min="0"></label>
       <label>Açıklama<input id="matNote" placeholder="İlk alım / ek malzeme / hurda payı..."></label>
       <label>&nbsp;<button class="profitBtn green" id="matSave" type="button">HAMMADDE EKLE</button></label>
     </div>
-    <div id="matList" style="margin-top:12px"></div>
+    <div style="font-size:10px;color:#718491;margin-top:8px">Toplam hammadde = kullanılan adet × USD/adet × kur.</div><div id="matList" style="margin-top:12px"></div>
   </div>
 
   <div class="profitCard">
@@ -1733,12 +1734,12 @@ window.editDaily=id=>{
       <label>Gönderilen Adet<input id="cmmSentQty" type="number" step="1" min="0"></label>
       <label>Onaylanan Adet<input id="cmmOkQty" type="number" step="1" min="0"></label>
       <label>Red Adet<input id="cmmRedQty" type="number" step="1" min="0"></label>
-      <label>CMM Maliyeti (USD, KDV hariç)<input id="cmmUsdCost" type="number" step="0.01" min="0"></label>
+      <label>CMM Birim Maliyeti (USD/adet, KDV hariç)<input id="cmmUsdCost" type="number" step="0.01" min="0"></label>
       <label>USD/TL Kuru<input id="cmmRateCost" type="number" step="0.0001" min="0"></label>
       <label>Açıklama<input id="cmmNoteCost" placeholder="İlk kontrol / tekrar kontrol..."></label>
       <label>&nbsp;<button class="profitBtn green" id="cmmSaveCost" type="button">CMM EKLE</button></label>
     </div>
-    <div id="cmmCostList" style="margin-top:12px"></div>
+    <div style="font-size:10px;color:#718491;margin-top:8px">Toplam CMM = gönderilen adet × USD/adet × kur. Red parçalar da CMM maliyetine dahildir.</div><div id="cmmCostList" style="margin-top:12px"></div>
   </div>
 
   <div class="profitCard">
@@ -1831,8 +1832,8 @@ window.editDaily=id=>{
    const el=document.getElementById(containerId);if(!el)return;
    el.innerHTML=arr.map(x=>{
      let desc='';
-     if(type==='mat')desc=`${x.qty||0} adet • ${usd(x.usd)} • Kur ${x.rate||0}`;
-     if(type==='cmm')desc=`Gönderilen ${x.sent||0} • Onay ${x.ok||0} • Red ${x.red||0} • ${usd(x.usd)} • Kur ${x.rate||0}`;
+     if(type==='mat'){const tl=(Number(x.qty||0)*Number(x.usd||0)*Number(x.rate||0));desc=`${x.qty||0} adet × ${usd(x.usd)}/adet • Kur ${x.rate||0} = ${money(tl)}`;}
+     if(type==='cmm'){const tl=(Number(x.sent||0)*Number(x.usd||0)*Number(x.rate||0));desc=`Gönderilen ${x.sent||0} × ${usd(x.usd)}/adet • Onay ${x.ok||0} • Red ${x.red||0} • Kur ${x.rate||0} = ${money(tl)}`;}
      if(type==='extra')desc=`${money(x.amount)}`;
      return `<div class="costMove">
        <div class="costMoveHead">
@@ -1861,8 +1862,8 @@ window.editDaily=id=>{
      const cmmRows=cmms.filter(x=>x.job===j._code&&String(x.date||'').slice(0,7)===month);
      const extraRows=extras.filter(x=>x.job===j._code&&String(x.date||'').slice(0,7)===month);
 
-     const matTl=matRows.reduce((a,x)=>a+Number(x.usd||0)*Number(x.rate||0),0);
-     const cmmTl=cmmRows.reduce((a,x)=>a+Number(x.usd||0)*Number(x.rate||0),0);
+     const matTl=matRows.reduce((a,x)=>a+Number(x.qty||0)*Number(x.usd||0)*Number(x.rate||0),0);
+     const cmmTl=cmmRows.reduce((a,x)=>a+Number(x.sent||0)*Number(x.usd||0)*Number(x.rate||0),0);
      const extraTl=extraRows.reduce((a,x)=>a+Number(x.amount||0),0);
      const total=matTl+cmmTl+extraTl,p=monthProduction-total;
 
@@ -1873,8 +1874,8 @@ window.editDaily=id=>{
          <td>${sale.usd?usd(sale.usd):'-'}</td><td>${rate||'-'}</td>
          <td><b>%${(now*100).toFixed(1)}</b><br><small>Bu ay +%${(share*100).toFixed(1)}</small></td>
          <td>${money(fullNet)}</td><td>${money(monthProduction)}</td>
-         <td>${money(matTl)}<br><small>${matRows.reduce((a,x)=>a+Number(x.qty||0),0)} adet kullanıldı • ${matRows.length} işlem</small></td>
-         <td>${money(cmmTl)}<br><small>${cmmRows.reduce((a,x)=>a+Number(x.sent||0),0)} gönderildi • ${cmmRows.reduce((a,x)=>a+Number(x.ok||0),0)} onay • ${cmmRows.reduce((a,x)=>a+Number(x.red||0),0)} red • ${cmmRows.length} işlem</small></td>
+         <td><b>${money(matTl)}</b><br><small>${matRows.reduce((a,x)=>a+Number(x.qty||0),0)} adet kullanıldı • ${matRows.length} işlem</small></td>
+         <td><b>${money(cmmTl)}</b><br><small>${cmmRows.reduce((a,x)=>a+Number(x.sent||0),0)} gönderildi • ${cmmRows.reduce((a,x)=>a+Number(x.ok||0),0)} onay • ${cmmRows.reduce((a,x)=>a+Number(x.red||0),0)} red • ${cmmRows.length} işlem</small></td>
          <td>${money(extraTl)}<br><small>${extraRows.length} işlem</small></td>
          <td>${money(total)}</td><td class="${p>=0?'profitPos':'profitNeg'}">${money(p)}</td>
          <td><button class="profitEditBtn" type="button" data-sale-edit="${j._code}">Satış Düzenle</button></td>
@@ -1883,7 +1884,7 @@ window.editDaily=id=>{
    });
 
    const oh=ohs.filter(x=>x.month===month).reduce((a,x)=>a+Number(x.amount||0),0),net=production-direct-oh;
-   pkSales.textContent=money(production);pkDirect.textContent=money(direct);pkOverhead.textContent=money(oh);
+   pkSales.textContent=money(production);pkDirect.textContent=money(direct);pkOverhead.textContent=money(oh);pkTotalCost.textContent=money(direct+oh);
    pkNet.textContent=money(net);pkNet.className=net>=0?'profitPos':'profitNeg';
    pkSalesVat.textContent=money(production*.20);pkSalesGross.textContent=money(production*1.20);
    profitRows.innerHTML=html||'<tr><td colspan="12">Bu ay için üretim veya maliyet hareketi yok.</td></tr>';
