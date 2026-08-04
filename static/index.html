@@ -1761,7 +1761,9 @@ window.editDaily=id=>{
       <label>Açıklama<input id="ohDesc" placeholder="Takım, kira, elektrik, maaş..."></label>
       <label>Tutar (TL, KDV hariç)<input id="ohAmount" type="number" step="0.01" min="0"></label>
       <label>KDV Oranı<select id="ohVatRate"><option value="0">KDV Yok</option><option value="1">%1</option><option value="10">%10</option><option value="20" selected>%20</option></select></label>
+      <label>Gider Tipi<select id="ohRepeat"><option value="once">Tek Seferlik</option><option value="monthly">Her Ay Tekrarla</option></select></label>
       <label>&nbsp;<button class="profitBtn" id="ohSave" type="button">GİDER EKLE</button></label>
+      <label>&nbsp;<button class="profitEditBtn" id="ohCancel" type="button" style="display:none">VAZGEÇ</button></label>
     </div>
     <div id="ohList" style="margin-top:12px"></div>
   </div>
@@ -1791,6 +1793,14 @@ window.editDaily=id=>{
  const ym=()=>new Date().toISOString().slice(0,7);
  const today=()=>new Date().toISOString().slice(0,10);
  const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+ const monthIndex=m=>{const [y,mo]=String(m||'').split('-').map(Number);return y*12+(mo||1)-1};
+ const expenseActiveInMonth=(x,m)=>{
+   if((x.repeat||'once')==='monthly'){
+     const start=x.effectiveFrom||x.month||m,end=x.effectiveTo||'';
+     return monthIndex(m)>=monthIndex(start)&&(!end||monthIndex(m)<=monthIndex(end));
+   }
+   return x.month===m;
+ };
  const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
  const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
@@ -1884,7 +1894,7 @@ window.editDaily=id=>{
      }
    });
 
-   const monthOhs=ohs.filter(x=>x.month===month);
+   const monthOhs=ohs.filter(x=>expenseActiveInMonth(x,month));
    const oh=monthOhs.reduce((a,x)=>a+Number(x.amount||0),0),net=production-direct-oh;
    const overVat=monthOhs.reduce((a,x)=>a+Number(x.amount||0)*(Number(x.vatRate ?? 20)/100),0);
    pkSales.textContent=money(production);pkDirect.textContent=money(direct);pkOverhead.textContent=money(oh);pkTotalCost.textContent=money(direct+oh);const prodVat=production*.20,directVat=direct*.20,remainNet=production-direct-oh,vatDifference=prodVat-directVat-overVat,remainGross=remainNet+vatDifference;[['vatProdNet',production],['vatProdVat',prodVat],['vatProdGross',production+prodVat],['vatDirectNet',direct],['vatDirectVat',directVat],['vatDirectGross',direct+directVat],['vatOverNet',oh],['vatOverVat',overVat],['vatOverGross',oh+overVat],['vatRemainNet',remainNet],['vatDiff',vatDifference],['vatRemainGross',remainGross]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=money(v);});
@@ -1892,7 +1902,7 @@ window.editDaily=id=>{
    pkSalesVat.textContent=money(production*.20);pkSalesGross.textContent=money(production*1.20);
    profitRows.innerHTML=html||'<tr><td colspan="12">Bu ay için üretim veya maliyet hareketi yok.</td></tr>';
 
-   ohList.innerHTML=monthOhs.map(x=>{const vr=Number(x.vatRate ?? 20),vat=Number(x.amount||0)*vr/100,gross=Number(x.amount||0)+vat;return `<div style="padding:7px;border-bottom:1px solid #edf1f4">${x.desc||'Genel gider'} <b style="float:right">${money(x.amount)}</b><br><small>${vr===0?'KDV yok':'KDV %'+vr+': '+money(vat)} • KDV dahil: ${money(gross)}</small></div>`}).join('')||'<small>Bu ay için genel gider girilmedi.</small>';
+   ohList.innerHTML=monthOhs.map(x=>{const vr=Number(x.vatRate ?? 20),vat=Number(x.amount||0)*vr/100,gross=Number(x.amount||0)+vat,monthly=(x.repeat||'once')==='monthly';return `<div style="padding:9px 7px;border-bottom:1px solid #edf1f4"><div>${x.desc||'Genel gider'} <b style="float:right">${money(x.amount)}</b></div><small>${vr===0?'KDV yok':'KDV %'+vr+': '+money(vat)} • KDV dahil: ${money(gross)} • <b>${monthly?'Her Ay Tekrarla':'Tek Seferlik'}</b>${monthly?' • Başlangıç '+(x.effectiveFrom||x.month):''}</small><div style="margin-top:6px;display:flex;gap:6px"><button class="profitEditBtn" type="button" data-oh-edit="${x.id}">Düzenle</button><button class="profitEditBtn" type="button" data-oh-del="${x.id}" style="background:#ffe8e8;color:#b02a37">Sil</button></div></div>`}).join('')||'<small>Bu ay için genel gider girilmedi.</small>';
 
    renderMoves(MAT,'matList','mat');renderMoves(CMM,'cmmCostList','cmm');renderMoves(EXTRA,'extraList','extra');
  }
@@ -1947,13 +1957,29 @@ window.editDaily=id=>{
      extraAmount.value='';extraNote.value='';extraSave.textContent='EK MALİYET EKLE';
    });
 
+   function resetOhForm(){window.__editOh=null;ohDesc.value='';ohAmount.value='';ohVatRate.value='20';ohRepeat.value='once';ohSave.textContent='GİDER EKLE';ohCancel.style.display='none'}
    ohSave.addEventListener('click',()=>{
      if(!ohAmount.value)return;
-     const a=load(OH,[]);a.push({id:uid(),month:ohMonth.value||ym(),desc:ohDesc.value,amount:+ohAmount.value,vatRate:+ohVatRate.value||0});save(OH,a);ohDesc.value='';ohAmount.value='';ohVatRate.value='20';render();
+     let a=load(OH,[]),m=ohMonth.value||ym(),obj={month:m,desc:ohDesc.value,amount:+ohAmount.value,vatRate:+ohVatRate.value||0,repeat:ohRepeat.value};
+     if(window.__editOh){
+       const old=a.find(x=>x.id===window.__editOh);
+       if(old&&(old.repeat||'once')==='monthly'&&ohRepeat.value==='monthly'&&monthIndex(m)>monthIndex(old.effectiveFrom||old.month)){
+         a=a.map(x=>x.id===old.id?{...x,effectiveTo:(()=>{let [y,mo]=m.split('-').map(Number);mo--;if(mo===0){mo=12;y--}return y+'-'+String(mo).padStart(2,'0')})()}:x);
+         a.push({...obj,id:uid(),effectiveFrom:m});
+       }else{
+         a=a.map(x=>x.id===window.__editOh?{...x,...obj,effectiveFrom:ohRepeat.value==='monthly'?(x.effectiveFrom||m):undefined,effectiveTo:ohRepeat.value==='monthly'?x.effectiveTo:undefined}:x);
+       }
+     }else{
+       a.push({...obj,id:uid(),effectiveFrom:ohRepeat.value==='monthly'?m:undefined});
+     }
+     save(OH,a);resetOhForm();render();
    });
+   ohCancel.addEventListener('click',resetOhForm);
    profitMonth.addEventListener('change',render);
 
    document.addEventListener('click',e=>{
+     const oe=e.target.closest('[data-oh-edit]');if(oe){const x=load(OH,[]).find(r=>r.id===oe.dataset.ohEdit);if(x){window.__editOh=x.id;ohMonth.value=profitMonth.value||x.month||ym();ohDesc.value=x.desc||'';ohAmount.value=x.amount||'';ohVatRate.value=String(x.vatRate ?? 20);ohRepeat.value=x.repeat||'once';ohSave.textContent='GİDERİ GÜNCELLE';ohCancel.style.display='inline-block';ohDesc.scrollIntoView({behavior:'smooth',block:'center'})}return}
+     const od=e.target.closest('[data-oh-del]');if(od){if(confirm('Bu gider kaydı silinsin mi?')){save(OH,load(OH,[]).filter(x=>x.id!==od.dataset.ohDel));render()}return}
      const se=e.target.closest('[data-sale-edit]');if(se){pcJob.value=se.dataset.saleEdit;pcJob.dispatchEvent(new Event('change'));pcJob.scrollIntoView({behavior:'smooth',block:'center'})}
      const ee=e.target.closest('[data-move-edit]');if(ee){const [t,id]=ee.dataset.moveEdit.split(':');editMove(t,id)}
      const dd=e.target.closest('[data-move-del]');if(dd){const [t,id]=dd.dataset.moveDel.split(':');const key=t==='mat'?MAT:t==='cmm'?CMM:EXTRA;if(confirm('Bu kayıt silinsin mi?')){save(key,load(key,[]).filter(x=>x.id!==id));render()}}
