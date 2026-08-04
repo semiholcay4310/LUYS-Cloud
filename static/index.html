@@ -837,13 +837,16 @@ function currentProductForecast(o){
   if(!base)return ops[ops.length-1].planEnd||'';
 
   const unfinished=ops.some(op=>opProcessed(op)<opTarget(o,op));
-  if(!unfinished)return ops[ops.length-1].actualEnd||base;
+  if(!unfinished)return ops[ops.length-1].actualEnd||o.currentForecastSnapshot||base;
 
-  const r=planReasonInfo(o);
+  // Kritik kural: yeni günlük kayıt yoksa tahmin ASLA kendi kendine değişmez.
+  if(o.currentForecastSnapshot)return o.currentForecastSnapshot;
+
+  // Eski verilerden gelen işlerde ilk açılış için bir kez hesaplanır.
+  // Bir sonraki günlük kayıtla kalıcı snapshot olarak kaydedilir.
+  const r=calculatePlanReasonInfo(o);
   if(!r.records)return base;
-
-  // Net kazanım kadar başlangıç planını çalışma takvimi içinde erkene/geriye taşı.
-  return shiftWorkingMoment(base,-r.netGain);
+  return calculateForecastFromDaily(o);
 }
 
 function workMinutesBetween(a,b){
@@ -940,7 +943,7 @@ function shiftWorkingMoment(base,deltaMinutes){
   return localISO(cur);
 }
 
-function planReasonInfo(o){
+function calculatePlanReasonInfo(o){
   let speed=0,overtime=0,downtime=0,records=0;
 
   for(const op of (o?.ops||[])){
@@ -978,6 +981,47 @@ function planReasonInfo(o){
 
   return {speed,overtime,downtime,netGain,records};
 }
+
+function planReasonInfo(o){
+  if(o?.planReasonSnapshot)return o.planReasonSnapshot;
+  return calculatePlanReasonInfo(o);
+}
+
+function calculateForecastFromDaily(o){
+  if(!o||!(o.ops||[]).length)return '';
+  const ops=o.ops||[];
+  const started=ops.some(op=>op.actualStart);
+
+  if(!started)return ops[ops.length-1].planEnd||'';
+
+  ensureBaselineProductEnd(o);
+  const base=o.baselineProductEnd||baselineProductEnd(o);
+  if(!base)return ops[ops.length-1].planEnd||'';
+
+  const unfinished=ops.some(op=>opProcessed(op)<opTarget(o,op));
+  if(!unfinished)return ops[ops.length-1].actualEnd||base;
+
+  const r=calculatePlanReasonInfo(o);
+  if(!r.records)return base;
+  return shiftWorkingMoment(base,-r.netGain);
+}
+
+function refreshForecastSnapshot(o){
+  if(!o)return;
+  ensureBaselineProductEnd(o);
+  const r=calculatePlanReasonInfo(o);
+  o.planReasonSnapshot={
+    speed:r.speed,
+    overtime:r.overtime,
+    downtime:r.downtime,
+    netGain:r.netGain,
+    records:r.records
+  };
+  o.currentForecastSnapshot=calculateForecastFromDaily(o);
+  o.forecastSnapshotAt=localISO(new Date());
+}
+
+
 function effectText(mins,positiveLabel,negativeLabel){
   const abs=Math.abs(Math.round(mins)),h=Math.floor(abs/60),m=abs%60;
   let txt=h?(h+' saat'+(m?' '+m+' dk':'')):(m+' dk');
@@ -1291,14 +1335,14 @@ $('opOrder').onchange=syncOpAuto;
 $('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
 window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
 window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
-window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});op.runState='running';if(!op.actualStart)op.actualStart=localISO(new Date());op.pauseReason='';o.stage='production';schedule();ensureBaselineProductEnd(o);syncCompletedOps();await save()}
+window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});op.runState='running';if(!op.actualStart)op.actualStart=localISO(new Date());op.pauseReason='';o.stage='production';schedule();ensureBaselineProductEnd(o);if(!o.currentForecastSnapshot)o.currentForecastSnapshot=o.baselineProductEnd||baselineProductEnd(o);if(!o.planReasonSnapshot)o.planReasonSnapshot={speed:0,overtime:0,downtime:0,netGain:0,records:0};o.forecastSnapshotAt=op.actualStart||localISO(new Date());syncCompletedOps();await save()}
 window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());o.stage='paused';await save()}
-window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart=''}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production';schedule();ensureBaselineProductEnd(o)}await save()}
+window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart=''}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production';schedule();ensureBaselineProductEnd(o);if(!o.currentForecastSnapshot)o.currentForecastSnapshot=o.baselineProductEnd||baselineProductEnd(o);if(!o.planReasonSnapshot)o.planReasonSnapshot={speed:0,overtime:0,downtime:0,netGain:0,records:0};o.forecastSnapshotAt=op.actualStart||localISO(new Date())}await save()}
 window.cmmApprove=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);op.runState='running';op.pauseReason='';op.cmmApprovedAt=localISO(new Date());o.stage='production';if(o.cmm)o.cmm.status='Onay';await save()}
 $('dailyOrder').onchange=fillDailyOps;
 $('dailyForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('recId'),key=r=>r.orderId===f.get('orderId')&&r.opId===f.get('opId')&&r.date===f.get('date'),existing=state.daily.find(key),obj={id:id||existing?.id||uid(),orderId:f.get('orderId'),opId:f.get('opId'),date:f.get('date'),hours:n(f.get('hours')),good:n(f.get('good')),scrap:n(f.get('scrap')),downtime:n(f.get('downtime')),reason:f.get('reason')};if(existing&&!id){if(!confirm('Bu tarih için kayıt var. Mevcut kayıt güncellensin mi?'))return;Object.assign(existing,obj)}else if(id){let r=state.daily.find(x=>x.id===id);Object.assign(r,obj)}else state.daily.push(obj);if(await save()){e.target.reset();e.target.recId.value='';e.target.date.value=ymd(new Date());e.target.hours.value=10;$('dailyTitle').textContent='Günlük Üretim Kaydı'}}
 window.editDaily=id=>{if(!canEdit())return;let r=state.daily.find(x=>x.id===id),f=$('dailyForm');for(let k of ['recId','orderId','opId','date','hours','good','scrap','downtime','reason'])if(f.elements[k])f.elements[k].value=r[k]??'';fillDailyOps();f.opId.value=r.opId;$('dailyTitle').textContent='Günlük Kaydı Düzenle';document.querySelector('[data-p="daily"]').click();window.scrollTo(0,0)}
-window.delDaily=async id=>{if(!canEdit())return;if(confirm('Günlük kayıt silinsin mi?')){state.daily=state.daily.filter(r=>r.id!==id);await save()}}
+window.delDaily=async id=>{if(!canEdit())return;if(confirm('Günlük kayıt silinsin mi?')){let old=state.daily.find(r=>r.id===id),oid=old?.orderId||'';state.daily=state.daily.filter(r=>r.id!==id);syncCompletedOps();let o=order(oid);if(o)refreshForecastSnapshot(o);await save()}}
 $('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;o.cmm={firm:f.get('firm'),sent:f.get('sent'),sentDate:f.get('sentDate'),expected:f.get('expected'),returned:f.get('returned'),status:f.get('status'),reportNo:f.get('reportNo')};await save()}
 $('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
 Promise.all([loadMe(),load()]).then(()=>{if(canEdit())newOrderForm();if($('dailyForm')){$('dailyForm').date.value=ymd(new Date());$('dailyForm').hours.value=0}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
@@ -1360,6 +1404,7 @@ $('dailyForm').onsubmit=async e=>{
 
   let f=new FormData(e.target);
   let id=f.get('recId');
+  let oldOrderId=id?(state.daily.find(x=>x.id===id)?.orderId||''):'';
   let key=r=>r.orderId===f.get('orderId') &&
              r.opId===f.get('opId') &&
              r.date===f.get('date');
@@ -1396,6 +1441,15 @@ $('dailyForm').onsubmit=async e=>{
   }
 
   syncCompletedOps();
+
+  // Tahmin sadece günlük üretim kaydı kaydedildiğinde güncellenir.
+  const affectedOrder=order(obj.orderId);
+  if(affectedOrder)refreshForecastSnapshot(affectedOrder);
+  if(oldOrderId && oldOrderId!==obj.orderId){
+    const oldOrder=order(oldOrderId);
+    if(oldOrder)refreshForecastSnapshot(oldOrder);
+  }
+
   await save();
 
   e.target.reset();
