@@ -549,10 +549,12 @@
   <h3>Üretim Verimi</h3>
   <div id="verimBilgi">
     <p>Brüt Çalışma Süresi: <b id="brutSure">0 saat</b></p>
-    <p>Net Üretim Süresi: <b id="netSure">0 saat</b></p>
-    <p>Teorik Hedef: <b id="teorikAdet">0 adet</b></p>
-    <p>Verim: <b id="verimYuzde">%0</b></p>
+    <p>Gerçek Net Üretim Süresi: <b id="netSure">0 saat</b></p>
+    <p>Plan Net Çalışma Süresi: <b id="planNetSure">0 saat</b></p>
+    <p>Teorik Hedef (girilen net süreye göre): <b id="teorikAdet">0 adet</b></p>
+    <p>Vardiya Verimi: <b id="verimYuzde">%0</b></p>
   </div>
+  <div id="smartTimeAnalysis" style="margin-top:10px;padding-top:10px;border-top:1px solid #dfe7ed"></div>
 </div>
     <button class="btn full">GÜNLÜK KAYDI KAYDET</button>
   </form></div>
@@ -928,7 +930,7 @@ function shiftWorkingMoment(base,deltaMinutes){
 }
 
 function calculatePlanReasonInfo(o){
-  let speed=0,overtime=0,downtime=0,records=0;
+  let speed=0,overtime=0,downtime=0,records=0,normalMinutes=0,attendedMinutes=0;
 
   for(const op of (o?.ops||[])){
     const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
@@ -936,22 +938,34 @@ function calculatePlanReasonInfo(o){
 
     for(const r of recs){
       const processed=n(r.good)+n(r.scrap);
+      const normalPlanMin=Math.max(0,cal(r.date).net*60);
+      const stopMin=Math.max(0,n(r.downtime));
 
-      let net=r.netHours;
-      if(net===undefined)net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
-      const actualProductive=Math.max(0,n(net)*60);
+      // Gerçek net üretim süresi: giriş-çıkıştan mola ve duruş düşülmüş süre.
+      let productiveMin;
+      if(r.netHours!==undefined) productiveMin=Math.max(0,n(r.netHours)*60);
+      else productiveMin=Math.max(0,n(r.hours)*60-n(r.breaktime)-stopMin);
 
-      // + = planlanandan hızlı, - = planlanandan yavaş
-      if(processed>0&&plannedUnit>0){
-        speed += processed*plannedUnit-actualProductive;
+      // Çalışma süresi etkisi için duruşu ayrıca ayırıyoruz:
+      // gerçek çalışma = brüt - mola (duruş burada hâlâ çalışma süresinin içindedir).
+      const attendedNetMin=Math.max(0,productiveMin+stopMin);
+
+      if(processed>0&&plannedUnit>0&&normalPlanMin>0){
+        // Tezgâh/imalat performansı: aynı gerçek üretim süresinde standarttan
+        // ne kadar fazla/az iş çıkarıldığı. + hızlı, - yavaş.
+        speed += processed*plannedUnit-productiveMin;
+
+        // Ek/eksik çalışma etkisi: sadece toplam net çalışma süresinin
+        // normal takvimdeki net süreden farkıdır. Geç çıkış tek başına mesai değildir;
+        // gün toplamı normal 8,5 saati aşıyorsa artı etki oluşur.
+        overtime += attendedNetMin-normalPlanMin;
+        normalMinutes += normalPlanMin;
+        attendedMinutes += attendedNetMin;
+
+        // Duruş ayrı kayıp olarak gösterilir.
+        downtime += stopMin;
+        records++;
       }
-
-      // Normal takvim dışındaki net çalışma = kazanım
-      overtime += recordOutsideScheduleMinutes(r);
-
-      // Duruş = kayıp
-      downtime += Math.max(0,n(r.downtime));
-      records++;
     }
   }
 
@@ -959,15 +973,14 @@ function calculatePlanReasonInfo(o){
   overtime=Math.round(overtime);
   downtime=Math.round(downtime);
 
-  // Bağlayıcı tek sonuç:
-  // + => önde, - => geride
+  // Matematiksel olarak: standart kazanılmış dakika - normal günlük plan dakikası.
+  // Böylece toplam fark; çalışma süresi + imalat performansı - duruş olarak ayrışır.
   const netGain=speed+overtime-downtime;
-
-  return {speed,overtime,downtime,netGain,records};
+  return {speed,overtime,downtime,netGain,records,normalMinutes:Math.round(normalMinutes),attendedMinutes:Math.round(attendedMinutes)};
 }
 
 function planReasonInfo(o){
-  if(o?.planReasonSnapshot)return o.planReasonSnapshot;
+  // Plan farkı her ekranda güncel günlük kayıtlar ve güncel takvimle canlı hesaplanır.
   return calculatePlanReasonInfo(o);
 }
 
@@ -1015,12 +1028,13 @@ function planReasonHTML(o){
 
   return `
     <div class="planReasonRow ${speedCls}"><span>⚡ İmalat hızı etkisi</span><b>${fmtMin(r.speed)}</b></div>
-    <div class="planReasonRow ${r.overtime>0?'good':'neutral'}"><span>🕒 Ek çalışma / mesai</span><b>${fmtMin(r.overtime)}</b></div>
+    <div class="planReasonRow ${r.overtime>0?'good':r.overtime<0?'bad':'neutral'}"><span>🕒 Çalışma süresi etkisi</span><b>${fmtMin(r.overtime)}</b></div>
+    <div class="planReasonNote" style="margin-top:0">Normal takvim: <b>${fmtMin(Math.max(0,r.normalMinutes)).replace('+','')}</b> • Gerçek çalışma: <b>${fmtMin(Math.max(0,r.attendedMinutes)).replace('+','')}</b></div>
     <div class="planReasonRow ${r.downtime>0?'bad':'neutral'}"><span>⛔ Duruş etkisi</span><b>${fmtMin(-r.downtime)}</b></div>
     <div class="planReasonRow ${totalCls}" style="border-top:2px solid #dfe7ed;margin-top:3px;padding-top:6px">
       <span><b>TOPLAM PLAN ETKİSİ</b></span><b>${fmtMin(r.netGain)}</b>
     </div>
-    <div class="planReasonNote">Üstteki “önde/geride” sonucu bu üç kalemin toplamıyla birebir aynıdır.</div>`;
+    <div class="planReasonNote">“Önde/geride” normal takvim planına göre hesaplanır. Çalışma süresi etkisi, gün içindeki toplam net çalışma ile normal net takvim süresi arasındaki farktır; imalat hızı etkisi ise tezgâhın gerçek üretim temposundan gelir.</div>`;
 }
 function togglePlanReason(id){
   const el=document.getElementById(id);
@@ -1052,8 +1066,8 @@ function planDeltaInfo(o){
 
   let parts=[];
   if(days)parts.push(days+' iş günü');
-  if(hours)parts.push(hours+' saat');
-  if(!days&&!hours&&minutes)parts.push(minutes+' dk');
+  if(hours)parts.push(hours+' sa');
+  if(minutes)parts.push(minutes+' dk');
   if(!parts.length)parts.push('aynı');
 
   const cls=netGain>1?'ahead':netGain<-1?'behind':'same';
@@ -1333,45 +1347,96 @@ function saatFarki(startTime,endTime){
 }
 function gunlukHesap(f){
   let brut=saatFarki(f.startTime?.value,f.endTime?.value);
-  // Eski kayıtları düzenlerken giriş/çıkış yoksa mevcut brüt saati koru.
   if(!brut && (!f.startTime?.value || !f.endTime?.value))brut=n(f.hours.value);
   if(f.hours)f.hours.value=brut.toFixed(2);
 
   const mola=n(f.breaktime ? f.breaktime.value : 0);
   const durus=n(f.downtime.value);
   const saglam=n(f.good.value);
-
   const netSaat=Math.max(0,brut-((mola+durus)/60));
 
   const o=order(f.orderId.value);
   const op=opBy(o,f.opId.value);
   const dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
+  const tarih=f.date?.value||ymd(new Date());
+  const planNetSaat=Math.max(0,cal(tarih).net);
 
+  // Günlük ekran kendi vardiyasını ölçer: hedef gerçek giriş-çıkıştan bulunan
+  // net üretim süresine göre hesaplanır.
   const teorik=dakikaAdet>0 ? (netSaat*60)/dakikaAdet : 0;
   const verim=teorik>0 ? (saglam/teorik)*100 : 0;
 
-  return {brut,mola,durus,saglam,netSaat,teorik,verim};
+  return {brut,mola,durus,saglam,netSaat,planNetSaat,teorik,verim};
 }
+
+function smartTimeStats(o,op){
+  if(!o||!op)return null;
+  const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id&&n(r.good)+n(r.scrap)>0&&r.date);
+  if(!recs.length)return {count:0};
+  let eqMinutes=0,processed=0;
+  for(const r of recs){
+    const qty=n(r.good)+n(r.scrap);
+    let actualProductiveMin;
+    if(r.netHours!==undefined) actualProductiveMin=Math.max(0,n(r.netHours)*60);
+    else actualProductiveMin=Math.max(0,n(r.hours)*60-n(r.breaktime)-n(r.downtime));
+    if(qty<=0||actualProductiveMin<=0)continue;
+    // Süre doğruluğu gerçek üretim süresi / işlenen adet üzerinden öğrenilir.
+    // Sök-tak kullanıcı tarafından ayrı gerçekçilik payı olarak girildiği için korunur.
+    eqMinutes+=actualProductiveMin;
+    processed+=qty;
+  }
+  const count=recs.length;
+  if(!processed||!eqMinutes)return {count};
+  const observedTotal=eqMinutes/processed;
+  const plannedTotal=Math.max(0,n(op.cycle)+n(op.handling));
+  const suggestedCycle=Math.max(0,observedTotal-n(op.handling));
+  const diffPct=plannedTotal>0?(observedTotal-plannedTotal)/plannedTotal*100:0;
+  const confidence=count>=5?'Yüksek':count>=3?'Orta':'Düşük';
+  return {count,processed,observedTotal,plannedTotal,suggestedCycle,diffPct,confidence};
+}
+
+function renderSmartTimeAnalysis(){
+  const box=$('smartTimeAnalysis');if(!box)return;
+  const o=order($('dailyOrder')?.value),op=opBy(o,$('dailyOp')?.value);
+  if(!o||!op){box.innerHTML='<div class="small">Akıllı süre analizi için iş emri ve operasyon seç.</div>';return}
+  const a=smartTimeStats(o,op);
+  if(!a||a.count<3){box.innerHTML=`<b>🧠 Akıllı Süre Analizi</b><div class="small" style="margin-top:5px">Sağlıklı öneri için en az 3 üretim günü gerekir. Mevcut kayıt: ${a?.count||0}.</div>`;return}
+  const direction=a.diffPct<-3?'Girilen süre yüksek görünüyor':a.diffPct>3?'Girilen süre düşük görünüyor':'Girilen süre gerçek üretimle uyumlu';
+  box.innerHTML=`<b>🧠 Akıllı Süre Analizi</b>
+    <div class="small" style="margin-top:6px">${a.count} günlük üretim kaydına göre • Güven: <b>${a.confidence}</b></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div class="finishbox"><small>Girilen toplam süre</small><br><b>${a.plannedTotal.toFixed(1)} dk/adet</b></div>
+      <div class="finishbox"><small>Gerçek tempo karşılığı</small><br><b>${a.observedTotal.toFixed(1)} dk/adet</b></div>
+    </div>
+    <div class="small" style="margin-top:7px"><b>${direction}</b> (${a.diffPct>0?'+':''}${a.diffPct.toFixed(1)}%). Sök-tak ${n(op.handling).toFixed(1)} dk/adet korunarak önerilen işleme süresi <b>${a.suggestedCycle.toFixed(1)} dk/adet</b>.</div>
+    ${canEdit()?`<button type="button" class="btn alt" style="margin-top:8px" onclick="applySmartCycle('${o.id}','${op.id}',${a.suggestedCycle.toFixed(2)})">ÖNERİLEN İŞLEME SÜRESİNİ UYGULA</button>`:''}`;
+}
+
+window.applySmartCycle=async(oid,opid,val)=>{
+  if(!canEdit())return;let o=order(oid),op=opBy(o,opid);if(!op)return;
+  if(!confirm(`İşleme süresi ${n(op.cycle).toFixed(1)} dk/adet → ${n(val).toFixed(1)} dk/adet olarak güncellensin mi?\nSök-tak süresi değişmeyecek.`))return;
+  op.cycle=Math.max(0,n(val));await save();renderSmartTimeAnalysis();
+};
 
 function hesaplaVerim(){
   const f=$('dailyForm');
   if(!f)return;
-
   const x=gunlukHesap(f);
-
   if($('brutSure'))$('brutSure').textContent=x.brut.toFixed(2)+' saat';
   $('netSure').textContent=x.netSaat.toFixed(2)+' saat';
+  if($('planNetSure'))$('planNetSure').textContent=x.planNetSaat.toFixed(2)+' saat';
   $('teorikAdet').textContent=Math.floor(x.teorik)+' adet';
   $('verimYuzde').textContent='%'+x.verim.toFixed(1);
+  renderSmartTimeAnalysis();
 }
 
-['startTime','endTime','breaktime','good','downtime'].forEach(k=>{
+['date','startTime','endTime','breaktime','good','downtime'].forEach(k=>{
   const el=$('dailyForm').elements[k];
   if(el)el.addEventListener('input',hesaplaVerim);
 });
 
-$('dailyOrder').addEventListener('change',()=>setTimeout(hesaplaVerim,50));
-$('dailyOp').addEventListener('change',hesaplaVerim);
+$('dailyOrder').addEventListener('change',()=>{fillDailyOps();setTimeout(()=>{hesaplaVerim();renderSmartTimeAnalysis()},50)});
+$('dailyOp').addEventListener('change',()=>{hesaplaVerim();renderSmartTimeAnalysis()});
 
 $('dailyForm').onsubmit=async e=>{
   e.preventDefault();
