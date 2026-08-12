@@ -1077,10 +1077,9 @@ function calculatePlanReasonInfo(o){
         // ne kadar fazla/az iş çıkarıldığı. + hızlı, - yavaş.
         speed += processed*plannedUnit-productiveMin;
 
-        // Ek/eksik çalışma etkisi: sadece toplam net çalışma süresinin
-        // normal takvimdeki net süreden farkıdır. Geç çıkış tek başına mesai değildir;
-        // gün toplamı normal 8,5 saati aşıyorsa artı etki oluşur.
-        overtime += attendedNetMin-normalPlanMin;
+        // Çalışma süresi etkisi yalnızca normal net takvimin ÜZERİNDEKİ
+        // ek çalışmayı gösterir. Kısa çalışma ayrıca eksi mesai yazılmaz.
+        overtime += Math.max(0,attendedNetMin-normalPlanMin);
         normalMinutes += normalPlanMin;
         attendedMinutes += attendedNetMin;
 
@@ -1145,18 +1144,31 @@ function planReasonHTML(o){
     const a=Math.abs(Math.round(v)),h=Math.floor(a/60),m=a%60;
     return `${v>0?'+':v<0?'-':''}${h} sa ${m} dk`;
   };
+
+  ensureBaselineProductEnd(o);
+  const base=o?.baselineProductEnd||'';
+  const forecast=currentProductForecast(o)||'';
+  // + = tahmin başlangıç planından erken (önde), - = geç (geride)
+  const actualDelta=(base&&forecast)?workMinutesBetween(forecast,base):r.netGain;
+
+  const known=r.speed+r.overtime-r.downtime;
+  // Sıra değişikliği / aktif OP zinciri / güncel takvim nedeniyle oluşan kalan fark.
+  const queueCalendar=actualDelta-known;
+
   const speedCls=r.speed>0?'good':r.speed<0?'bad':'neutral';
-  const totalCls=r.netGain>0?'good':r.netGain<0?'bad':'neutral';
+  const totalCls=actualDelta>0?'good':actualDelta<0?'bad':'neutral';
+  const queueCls=queueCalendar>0?'good':queueCalendar<0?'bad':'neutral';
 
   return `
     <div class="planReasonRow ${speedCls}"><span>⚡ İmalat hızı etkisi</span><b>${fmtMin(r.speed)}</b></div>
-    <div class="planReasonRow ${r.overtime>0?'good':r.overtime<0?'bad':'neutral'}"><span>🕒 Çalışma süresi etkisi</span><b>${fmtMin(r.overtime)}</b></div>
+    <div class="planReasonRow ${r.overtime>0?'good':'neutral'}"><span>🕒 Ek çalışma etkisi</span><b>${fmtMin(r.overtime)}</b></div>
     <div class="planReasonNote" style="margin-top:0">Normal takvim: <b>${fmtMin(Math.max(0,r.normalMinutes)).replace('+','')}</b> • Gerçek çalışma: <b>${fmtMin(Math.max(0,r.attendedMinutes)).replace('+','')}</b></div>
     <div class="planReasonRow ${r.downtime>0?'bad':'neutral'}"><span>⛔ Duruş etkisi</span><b>${fmtMin(-r.downtime)}</b></div>
+    <div class="planReasonRow ${queueCls}"><span>↕ Sıra / takvim etkisi</span><b>${fmtMin(queueCalendar)}</b></div>
     <div class="planReasonRow ${totalCls}" style="border-top:2px solid #dfe7ed;margin-top:3px;padding-top:6px">
-      <span><b>TOPLAM PLAN ETKİSİ</b></span><b>${fmtMin(r.netGain)}</b>
+      <span><b>GERÇEK PLAN FARKI</b></span><b>${fmtMin(actualDelta)}</b>
     </div>
-    <div class="planReasonNote">“Önde/geride” normal takvim planına göre hesaplanır. Çalışma süresi etkisi, gün içindeki toplam net çalışma ile normal net takvim süresi arasındaki farktır; imalat hızı etkisi ise tezgâhın gerçek üretim temposundan gelir.</div>`;
+    <div class="planReasonNote">Üstteki “önde/geride”, doğrudan Başlangıç Planı ile Güncel Tahmin arasındaki çalışma süresi farkıdır. İmalat hızı, ek çalışma, duruş ve sıra/takvim etkileri bu farkın nedenlerini açıklar.</div>`;
 }
 function togglePlanReason(id){
   const el=document.getElementById(id);
@@ -1168,11 +1180,13 @@ function planDeltaInfo(o){
   const base=o?.baselineProductEnd||'';
   if(!base)return null;
 
-  const r=planReasonInfo(o);
   const forecast=currentProductForecast(o);
   if(!forecast)return null;
 
-  const netGain=r.records?r.netGain:0;
+  // GERÇEK plan farkı:
+  // forecast < base => pozitif dakika => önde
+  // forecast > base => negatif dakika => geride
+  const netGain=workMinutesBetween(forecast,base);
   const abs=Math.abs(netGain);
 
   const netDays=Object.keys(state.calendar||{})
