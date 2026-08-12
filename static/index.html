@@ -1138,37 +1138,28 @@ function effectText(mins,positiveLabel,negativeLabel){
 }
 function planReasonHTML(o){
   const r=planReasonInfo(o);
-  if(!r.records)return `<div class="planReasonNote">Henüz neden analizi için günlük üretim kaydı yok.</div>`;
+  const started=(o.ops||[]).some(op=>!!op.actualStart);
+  if(!started)return `<div class="planReasonNote">Önde/geride hesabı, operasyon gerçek üretime alındığında başlar.</div>`;
+  if(!r.records)return `<div class="planReasonNote">İmalat başladı. İlk günlük üretim kaydından sonra performans hesabı oluşacak.</div>`;
 
   const fmtMin=v=>{
     const a=Math.abs(Math.round(v)),h=Math.floor(a/60),m=a%60;
     return `${v>0?'+':v<0?'-':''}${h} sa ${m} dk`;
   };
 
-  ensureBaselineProductEnd(o);
-  const base=o?.baselineProductEnd||'';
-  const forecast=currentProductForecast(o)||'';
-  // + = tahmin başlangıç planından erken (önde), - = geç (geride)
-  const actualDelta=(base&&forecast)?workMinutesBetween(forecast,base):r.netGain;
-
-  const known=r.speed+r.overtime-r.downtime;
-  // Sıra değişikliği / aktif OP zinciri / güncel takvim nedeniyle oluşan kalan fark.
-  const queueCalendar=actualDelta-known;
-
+  const total=r.speed+r.overtime-r.downtime;
   const speedCls=r.speed>0?'good':r.speed<0?'bad':'neutral';
-  const totalCls=actualDelta>0?'good':actualDelta<0?'bad':'neutral';
-  const queueCls=queueCalendar>0?'good':queueCalendar<0?'bad':'neutral';
+  const totalCls=total>0?'good':total<0?'bad':'neutral';
 
   return `
     <div class="planReasonRow ${speedCls}"><span>⚡ İmalat hızı etkisi</span><b>${fmtMin(r.speed)}</b></div>
     <div class="planReasonRow ${r.overtime>0?'good':'neutral'}"><span>🕒 Ek çalışma etkisi</span><b>${fmtMin(r.overtime)}</b></div>
-    <div class="planReasonNote" style="margin-top:0">Normal takvim: <b>${fmtMin(Math.max(0,r.normalMinutes)).replace('+','')}</b> • Gerçek çalışma: <b>${fmtMin(Math.max(0,r.attendedMinutes)).replace('+','')}</b></div>
+    <div class="planReasonNote" style="margin-top:0">Normal çalışma: <b>${fmtMin(Math.max(0,r.normalMinutes)).replace('+','')}</b> • Kaydedilen çalışma: <b>${fmtMin(Math.max(0,r.attendedMinutes)).replace('+','')}</b></div>
     <div class="planReasonRow ${r.downtime>0?'bad':'neutral'}"><span>⛔ Duruş etkisi</span><b>${fmtMin(-r.downtime)}</b></div>
-    <div class="planReasonRow ${queueCls}"><span>↕ Sıra / takvim etkisi</span><b>${fmtMin(queueCalendar)}</b></div>
     <div class="planReasonRow ${totalCls}" style="border-top:2px solid #dfe7ed;margin-top:3px;padding-top:6px">
-      <span><b>GERÇEK PLAN FARKI</b></span><b>${fmtMin(actualDelta)}</b>
+      <span><b>TOPLAM İMALAT PERFORMANSI</b></span><b>${fmtMin(total)}</b>
     </div>
-    <div class="planReasonNote">Üstteki “önde/geride”, doğrudan Başlangıç Planı ile Güncel Tahmin arasındaki çalışma süresi farkıdır. İmalat hızı, ek çalışma, duruş ve sıra/takvim etkileri bu farkın nedenlerini açıklar.</div>`;
+    <div class="planReasonNote">Önde/geride hesabı gerçek üretim başladıktan sonraki imalat verisidir. Hızlı/yavaş üretim, normal çalışma süresinin üzerindeki ek çalışma ve duruşlar hesaba girer. İş sırası ve eski plan tarihleri performans hesabına girmez.</div>`;
 }
 function togglePlanReason(id){
   const el=document.getElementById(id);
@@ -1176,27 +1167,19 @@ function togglePlanReason(id){
 }
 
 function planDeltaInfo(o){
-  ensureBaselineProductEnd(o);
-  const base=o?.baselineProductEnd||'';
-  if(!base)return null;
+  const r=planReasonInfo(o);
+  // Önde/geride yalnızca gerçek imalat başladıktan sonra anlamlıdır.
+  const started=(o.ops||[]).some(op=>!!op.actualStart);
+  if(!started || !r.records)return null;
 
-  const forecast=currentProductForecast(o);
-  if(!forecast)return null;
+  // Performans farkı = imalat hızı + normal mesai üstü ek çalışma - duruş.
+  // İş sırası, eski plan başlangıcı ve takvim kaydırmaları bu hesaba girmez.
+  const netGain=r.speed+r.overtime-r.downtime;
+  const abs=Math.abs(Math.round(netGain));
 
-  // GERÇEK plan farkı:
-  // forecast < base => pozitif dakika => önde
-  // forecast > base => negatif dakika => geride
-  const netGain=workMinutesBetween(forecast,base);
-  const abs=Math.abs(netGain);
-
-  const netDays=Object.keys(state.calendar||{})
-    .map(k=>n(state.calendar[k]?.h)-n(state.calendar[k]?.b))
-    .filter(x=>x>0);
-  const typicalDayHours=netDays.length?netDays.reduce((a,b)=>a+b,0)/netDays.length:8;
-  const dayMin=Math.max(60,Math.round(typicalDayHours*60));
-
-  const days=Math.floor(abs/dayMin);
-  let rest=abs-days*dayMin;
+  const normalDaily=(r.normalMinutes&&r.records)?Math.max(60,Math.round(r.normalMinutes/r.records)):510;
+  const days=Math.floor(abs/normalDaily);
+  let rest=abs-days*normalDaily;
   const hours=Math.floor(rest/60);
   const minutes=rest%60;
 
@@ -1204,16 +1187,11 @@ function planDeltaInfo(o){
   if(days)parts.push(days+' iş günü');
   if(hours)parts.push(hours+' sa');
   if(minutes)parts.push(minutes+' dk');
-  if(!parts.length)parts.push('aynı');
+  if(!parts.length)parts.push('0 dk');
 
   const cls=netGain>1?'ahead':netGain<-1?'behind':'same';
-  const text=cls==='ahead'
-    ?parts.join(' ')+' önde'
-    :cls==='behind'
-      ?parts.join(' ')+' geride'
-      :'Planla aynı';
-
-  return {base,forecast,netGain,cls,text};
+  const label=cls==='ahead'?parts.join(' ')+' önde':cls==='behind'?parts.join(' ')+' geride':'Planla aynı';
+  return {base:'',forecast:'',netGain,cls,text:label};
 }
 function planTrackHTML(o){
   const p=planDeltaInfo(o);
