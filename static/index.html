@@ -474,7 +474,7 @@
     <button data-p="daily">Günlük Üretim</button>
     <button data-p="cmm">CMM</button>
     <button data-p="calendar">Takvim</button>
-    <button data-p="accounting">Maliyet & Kârlılık</button>
+    <button data-p="accounting">İşçilik Değeri</button>
   </div>
 
 <section id="dash" class="page active">
@@ -1782,50 +1782,31 @@ window.editDaily=id=>{
 };</script>
 
 <div id="profitPanel" class="profitWrap">
-  <h2 style="margin:0;color:#173f5b">Maliyet &amp; Kârlılık</h2>
-  <div style="color:#718491;margin-top:5px">Üretilen adetlere göre aylık iş kârlılığı</div>
+  <h2 style="margin:0;color:#173f5b">İşçilik Değeri</h2>
+  <div style="color:#718491;margin-top:5px">Üretilen adetlere göre işçilik satış değeri</div>
 
   <div class="profitGrid">
-    <div class="profitKpi"><small>ÜRETİLEN DEĞER</small><b id="pkSales">₺0</b></div>
-    <div class="profitKpi"><small>DİREKT MALİYET</small><b id="pkDirect">₺0</b></div>
-    <div class="profitKpi"><small>BRÜT KÂR</small><b id="pkGross">₺0</b></div>
-    <div class="profitKpi"><small>GENEL GİDER</small><b id="pkOverhead">₺0</b></div>
-    <div class="profitKpi"><small>NET KÂR</small><b id="pkNet">₺0</b></div>
+    <div class="profitKpi"><small>ÜRETİLEN İŞÇİLİK DEĞERİ</small><b id="pkSales">₺0</b></div>
   </div>
 
   <div class="profitCard">
-    <h3>İş / Parça Maliyet Bilgisi</h3>
+    <h3>İş / Parça İşçilik Fiyatı</h3>
     <div class="profitForm">
       <label>İş Emri / Parça<select id="pcJob"></select></label>
-      <label>Satış Fiyatı (USD/adet)<input id="pcUsd" type="number" step="0.01" min="0"></label>
+      <label>İşçilik Fiyatı (USD/adet)<input id="pcUsd" type="number" step="0.01" min="0"></label>
       <label>Güncel USD/TL<input id="pcRate" type="number" step="0.0001" min="0" placeholder="Kur"></label>
-      <label>Hammadde (TL/toplam)<input id="pcMat" type="number" step="0.01" min="0"></label>
-      <label>Kaplama (TL/toplam)<input id="pcCoat" type="number" step="0.01" min="0"></label>
-      <label>CMM (TL/toplam)<input id="pcCmm" type="number" step="0.01" min="0"></label>
-      <label>Takım Maliyeti (TL/toplam)<input id="pcTool" type="number" step="0.01" min="0"></label>
-      <label>&nbsp;<button class="profitBtn green" id="pcSave" type="button">MALİYETİ KAYDET</button></label>
+      <label>&nbsp;<button class="profitBtn green" id="pcSave" type="button">İŞÇİLİK FİYATINI KAYDET</button></label>
     </div>
-    <div style="font-size:11px;color:#718491;margin-top:10px">Satış değeri sipariş adedinden değil, operasyonlarda gerçekleşen üretilen adetten hesaplanır.</div>
-  </div>
-
-  <div class="profitCard">
-    <h3>Genel Giderler</h3>
-    <div class="profitForm">
-      <label>Ay<input id="ohMonth" type="month"></label>
-      <label>Açıklama<input id="ohDesc" placeholder="Kira, elektrik, maaş..."></label>
-      <label>Tutar (TL)<input id="ohAmount" type="number" step="0.01" min="0"></label>
-      <label>&nbsp;<button class="profitBtn" id="ohSave" type="button">GİDER EKLE</button></label>
-    </div>
-    <div id="ohList" style="margin-top:12px"></div>
+    <div style="font-size:11px;color:#718491;margin-top:10px">Değer, gerçekleşen üretilen adet × işçilik fiyatı × kur üzerinden hesaplanır.</div>
   </div>
 
   <div class="profitCard">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-      <h3 style="margin:0">Aylık Parça Kârlılığı</h3>
+      <h3 style="margin:0">Parça İşçilik Değeri</h3>
       <input id="profitMonth" type="month" style="padding:8px;border:1px solid #b9c8d2;border-radius:9px">
     </div>
     <table class="profitTable" style="margin-top:10px">
-      <thead><tr><th>İş / Parça</th><th>Üretilen</th><th>USD/adet</th><th>Satış Değeri</th><th>Birim Maliyet</th><th>Toplam Maliyet</th><th>Kâr</th><th>Kâr %</th></tr></thead>
+      <thead><tr><th>İş / Parça</th><th>Üretilen</th><th>İşçilik USD/adet</th><th>Üretilen Değer</th></tr></thead>
       <tbody id="profitRows"></tbody>
     </table>
   </div>
@@ -1833,7 +1814,7 @@ window.editDaily=id=>{
 
 <script>
 (function(){
- const KEY='luys_profit_costs_v1', OH='luys_overheads_v1';
+ const KEY='luys_profit_costs_v1';
  const money=n=>'₺'+(Number(n)||0).toLocaleString('tr-TR',{maximumFractionDigits:0});
  const ym=()=>new Date().toISOString().slice(0,7);
  const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
@@ -1841,82 +1822,66 @@ window.editDaily=id=>{
 
  function jobs(){
    let arr=[];
-   try{
-     const st=window.__luysGetState?window.__luysGetState():null;
-     if(st&&Array.isArray(st.orders)) arr=st.orders;
-   }catch(e){}
+   try{const st=window.__luysGetState?window.__luysGetState():null;if(st&&Array.isArray(st.orders))arr=st.orders}catch(e){}
    const map=new Map();
    arr.forEach(j=>{
      const code=j.orderNo||j.code||j.jobNo||j.isEmri||j.id;
      const name=j.part||j.partName||j.name||j.parca||j.productName||'';
-     if(code) map.set(String(code),{...j,_code:String(code),_name:name});
+     if(code)map.set(String(code),{...j,_code:String(code),_name:name});
    });
    return [...map.values()];
  }
  function produced(j){
    const ops=j.ops||j.operations||j.operasyonlar||[];
    let vals=ops.map(o=>Number(o.done??o.produced??o.yapilan??o.completedQty??0)).filter(x=>x>=0);
-   if(vals.length) return Math.max(...vals);
+   if(vals.length)return Math.max(...vals);
    return Number(j.done??j.produced??j.yapilan??j.completedQty??0);
  }
  function fillJobs(){
-   const sel=document.getElementById('pcJob'); if(!sel)return;
-   const old=sel.value; sel.innerHTML='<option value="">Seçiniz</option>';
+   const sel=document.getElementById('pcJob');if(!sel)return;
+   const old=sel.value;sel.innerHTML='<option value="">Seçiniz</option>';
    jobs().forEach(j=>{let o=document.createElement('option');o.value=j._code;o.textContent=j._code+(j._name?' • '+j._name:'');sel.appendChild(o)});
    if([...sel.options].some(o=>o.value===old))sel.value=old;
  }
  function loadCost(){
    const c=load(KEY,{})[document.getElementById('pcJob').value]||{};
-   pcUsd.value=c.usd||''; pcRate.value=c.rate||''; pcMat.value=c.mat||''; pcCoat.value=c.coat||''; pcCmm.value=c.cmm||''; pcTool.value=c.tool||'';
+   pcUsd.value=c.usd||'';pcRate.value=c.rate||'';
  }
  function render(){
    fillJobs();
-   const month=profitMonth.value||ym(), costs=load(KEY,{}), overheads=load(OH,[]);
-   let sales=0,direct=0, html='';
+   const costs=load(KEY,{});
+   let sales=0,html='';
    jobs().forEach(j=>{
-     const c=costs[j._code]||{}, q=produced(j);
-     const rate=Number(c.rate||0), usd=Number(c.usd||0);
-     const sv=q*usd*rate;
-     const total=Number(c.mat||0)+Number(c.coat||0)+Number(c.cmm||0)+Number(c.tool||0);
-     const unit=q?total/q:0, p=sv-total, pct=sv?p/sv*100:0;
-     sales+=sv; direct+=total;
-     html+=`<tr><td><b>${j._code}</b><br><small>${j._name||''}</small></td><td>${q}</td><td>$${usd.toFixed(2)}</td><td>${money(sv)}</td><td>${money(unit)}</td><td>${money(total)}</td><td class="${p>=0?'profitPos':'profitNeg'}">${money(p)}</td><td class="${p>=0?'profitPos':'profitNeg'}">${pct.toFixed(1)}%</td></tr>`;
+     const c=costs[j._code]||{},q=produced(j),rate=Number(c.rate||0),usd=Number(c.usd||0);
+     const sv=q*usd*rate;sales+=sv;
+     html+=`<tr><td><b>${j._code}</b><br><small>${j._name||''}</small></td><td>${q}</td><td>$${usd.toFixed(2)}</td><td>${money(sv)}</td></tr>`;
    });
-   profitRows.innerHTML=html||'<tr><td colspan="8">Henüz maliyet kaydı yok.</td></tr>';
-   const oh=overheads.filter(x=>x.month===month).reduce((a,x)=>a+Number(x.amount||0),0);
-   pkSales.textContent=money(sales); pkDirect.textContent=money(direct); pkGross.textContent=money(sales-direct); pkOverhead.textContent=money(oh); pkNet.textContent=money(sales-direct-oh);
-   pkNet.className=(sales-direct-oh)>=0?'profitPos':'profitNeg';
-   ohList.innerHTML=overheads.filter(x=>x.month===month).map((x,i)=>`<div style="padding:7px;border-bottom:1px solid #edf1f4">${x.desc||'Genel gider'} <b style="float:right">${money(x.amount)}</b></div>`).join('')||'<small>Bu ay için genel gider girilmedi.</small>';
+   profitRows.innerHTML=html||'<tr><td colspan="4">Henüz işçilik fiyatı kaydı yok.</td></tr>';
+   pkSales.textContent=money(sales);
  }
  document.addEventListener('DOMContentLoaded',()=>{
-   profitMonth.value=ym(); ohMonth.value=ym(); fillJobs();
+   profitMonth.value=ym();fillJobs();
    pcJob.addEventListener('change',loadCost);
    pcSave.addEventListener('click',()=>{
      if(!pcJob.value)return alert('Önce iş emri seçin.');
-     const all=load(KEY,{});
-     all[pcJob.value]={usd:+pcUsd.value||0,rate:+pcRate.value||0,mat:+pcMat.value||0,coat:+pcCoat.value||0,cmm:+pcCmm.value||0,tool:+pcTool.value||0};
-     save(KEY,all); render(); alert('Maliyet bilgisi kaydedildi.');
-   });
-   ohSave.addEventListener('click',()=>{
-     if(!ohAmount.value)return;
-     const a=load(OH,[]);a.push({month:ohMonth.value||ym(),desc:ohDesc.value,amount:+ohAmount.value});save(OH,a);ohDesc.value='';ohAmount.value='';render();
+     const all=load(KEY,{}),old=all[pcJob.value]||{};
+     // Eski maliyet alanlarını sil: bu ekran yalnızca işçilik fiyatını tutar.
+     all[pcJob.value]={usd:+pcUsd.value||0,rate:+pcRate.value||0};
+     save(KEY,all);render();alert('İşçilik fiyatı kaydedildi.');
    });
    profitMonth.addEventListener('change',render);
-   // Muhasebe/Maliyet menüsünü yakala
    document.body.addEventListener('click',e=>{
-     const t=e.target.closest('button,a,[data-tab]');
-     if(!t)return;
-     if(/Muhasebe|Maliyet\s*&?\s*Kârlılık/i.test(t.textContent||'')){ if(typeof canEdit==='function'&&!canEdit())return;
+     const x=e.target.closest('button,a,[data-tab]');if(!x)return;
+     if(/Muhasebe|Maliyet\s*&?\s*Kârlılık|İşçilik Değeri/i.test(x.textContent||'')){
+       if(typeof canEdit==='function'&&!canEdit())return;
        setTimeout(()=>{
-         document.querySelectorAll('main>section,.page,.tab-content').forEach(x=>{if(x.id!=='profitPanel')x.classList.remove('active')});
-         profitPanel.classList.add('active'); render(); window.scrollTo({top:0,behavior:'smooth'});
+         document.querySelectorAll('main>section,.page,.tab-content').forEach(y=>{if(y.id!=='profitPanel')y.classList.remove('active')});
+         profitPanel.classList.add('active');render();window.scrollTo({top:0,behavior:'smooth'});
        },0);
-     } else if(t.closest('nav') || t.dataset.tab){
-       profitPanel.classList.remove('active');
-     }
+     }else if(x.closest('nav')||x.dataset.tab){profitPanel.classList.remove('active')}
    });
-   render();
  });
+ window.__luysRenderProfit=render;
 })();
 </script>
 
