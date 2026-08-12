@@ -1250,7 +1250,12 @@ function renderMachines(){
   function historyDateLabel(dateStr){if(!dateStr)return 'Tarih bilinmiyor';let d=new Date(String(dateStr).slice(0,10)+'T12:00:00');return d.toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'})}
   function historyDateKey(v){return v?String(v).slice(0,10):'0000-00-00'}
   function historyGroups(items,getDate){let map={};items.forEach(x=>{let k=historyDateKey(getDate(x));(map[k]??=[]).push(x)});return Object.keys(map).sort((a,b)=>b.localeCompare(a)).map(k=>({date:k,items:map[k]}))}
-  function toggleHistoryDay(id){let el=$(id);if(el)el.classList.toggle('open')}
+  function toggleHistoryDay(id){
+  let el=$(id);
+  if(!el)return;
+  let box=el.closest('.historyDay');
+  if(box)box.classList.toggle('open');
+}
 
   function orderCardHTML(o,archived=false){
     let doneMoment=o.completedAt||orderCompletedMoment(o);
@@ -1403,6 +1408,43 @@ document.addEventListener('click',e=>{
 });
 
 $('tabs').onclick=e=>{if(e.target.dataset.p){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b===e.target));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===e.target.dataset.p))}}
+
+function openMainPage(pageId){
+  const btn=document.querySelector(`#tabs [data-p="${pageId}"]`);
+  if(btn)btn.click();
+  else{
+    document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.p===pageId));
+    document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===pageId));
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function dashboardAction(action){
+  if(action==='machines'){
+    openMainPage('ops');
+    return;
+  }
+  if(action==='products'){
+    openMainPage('orders');
+    return;
+  }
+  if(action==='cmm'){
+    openMainPage('cmm');
+    return;
+  }
+  if(action==='due'){
+    // Yaklaşan terminlerin tam listesi zaten Ana Paneldeki Ürün Terminleri tablosudur.
+    const el=document.querySelector('.planCard');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-dash-action]');
+  if(!a)return;
+  e.preventDefault();
+  dashboardAction(a.dataset.dashAction);
+});
+
 $('orderForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('id'),no=f.get('orderNo').trim();if(state.orders.some(o=>o.orderNo===no&&o.id!==id)){alert('Bu iş emri numarası zaten kullanılıyor.');return}let obj={id:id||uid(),orderNo:no,customerOrderNo:f.get('customerOrderNo'),customer:f.get('customer'),part:f.get('part'),revision:f.get('revision'),qty:n(f.get('qty')),produceQty:n(f.get('produceQty')),stockStatus:f.get('stockStatus'),stockQty:n(f.get('stockQty')),machine:f.get('machine'),queue:n(f.get('queue')),start:f.get('start'),requested:f.get('requested'),cmmRequired:f.get('cmmRequired'),cmmDays:n(f.get('cmmDays')),shipDays:n(f.get('shipDays')),note:f.get('note'),stage:'plan',ops:[],cmm:{}};let old=order(id);if(old){let oldMachine=old.machine;obj.ops=old.ops||[];obj.cmm=old.cmm||{};obj.stage=old.stage||'plan';obj.completedAt=old.completedAt||'';Object.assign(old,obj);if(old.stage!=='done')placeActiveOrder(old,obj.machine,obj.queue,oldMachine);else{compactQueues(oldMachine);compactQueues(obj.machine)}}else{state.orders.push(obj);placeActiveOrder(obj,obj.machine,obj.queue,'')}compactAllQueues();schedule();if(await save())newOrderForm()}
 function newOrderForm(){if(!canEdit())return;let f=$('orderForm');f.reset();f.id.value='';f.orderNo.value=autoNo();f.customer.value='Lucas';f.machine.value='Tezgâh 1 - 850';f.stockStatus.value='Geldi';f.stockQty.value=0;f.queue.value=nextQueue(f.machine.value);f.start.value=localISO(new Date()).slice(0,16);$('orderTitle').textContent='Yeni İş Emri'}
 window.editOrder=id=>{if(!canEdit())return;let o=order(id),f=$('orderForm');for(let k of ['id','orderNo','customerOrderNo','customer','part','revision','qty','produceQty','stockStatus','stockQty','machine','queue','start','requested','cmmRequired','cmmDays','shipDays','note'])if(f.elements[k])f.elements[k].value=o[k]??'';$('orderTitle').textContent='İş Emri Düzenle';document.querySelector('[data-p="orders"]').click();window.scrollTo(0,0)}
