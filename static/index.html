@@ -455,6 +455,16 @@
 .archiveRow{background:#fbfcfd}
 @media(max-width:800px){.historyDayHead{padding:9px 10px;font-size:11px}.historyTitle b{font-size:12px}}
 
+.partTimeTable{min-width:900px}
+.partTimeTable th{white-space:nowrap}
+.partTimeTable td{vertical-align:middle}
+.partTimeMain{font-size:13px;font-weight:900;color:#173f5b}
+.partTimeSub{display:block;font-size:9px;color:#718394;margin-top:3px;line-height:1.35}
+.partTimeVal{font-weight:900;color:#173f5b;white-space:nowrap}
+.partTimeDiff.ahead{color:#14804a}.partTimeDiff.behind{color:#c53b3b}.partTimeDiff.same{color:#718394}
+.partTimeCoverage{font-size:10px;line-height:1.45;color:#536b7c}
+@media(max-width:800px){.partTimeTable{min-width:820px}.partTimeMain{font-size:12px}}
+
 </style>
 </head>
 <body>
@@ -475,6 +485,7 @@
     <button data-p="cmm">CMM</button>
     <button data-p="calendar">Takvim</button>
     <button data-p="accounting">İşçilik Değeri</button>
+    <button data-p="parttimes">Parça Süresi</button>
   </div>
 
 <section id="dash" class="page active">
@@ -682,6 +693,18 @@
         <tbody id="expenseList"></tbody>
       </table></div>
     </div>
+  </div>
+</section>
+
+
+<section id="parttimes" class="page">
+  <div class="card">
+    <div class="dashCardHead"><b>1 ADET ÜRÜN TOPLAM İMALAT SÜRESİ</b><span id="partTimeCount"></span></div>
+    <div class="small" style="margin:5px 0 12px">Tüm operasyonlar birlikte hesaplanır. Planlanan süreye işleme + sök-tak + ayarın parça başına payı dahildir. “Mevcut tempon” günlük üretim verini, “Akıllı tahmin” ise yeterli veri oluşan operasyonlarda öğrenilen gerçek temponu kullanır.</div>
+    <div class="tablewrap"><table class="partTimeTable">
+      <thead><tr><th>İş Emri / Parça</th><th>OP</th><th>Planlanan 1 Adet</th><th>Mevcut Tempona Göre</th><th>Akıllı Tahmin</th><th>Plan / Akıllı Fark</th><th>Veri</th></tr></thead>
+      <tbody id="partTimeRows"></tbody>
+    </table></div>
   </div>
 </section>
 
@@ -1236,7 +1259,61 @@ function planMiniHTML(o){
 }
 
 
-function render(){syncCompletedOps();schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal();renderAccounting()}
+function fmtUnitMinutes(v){
+  if(v===null||v===undefined||!isFinite(v))return '-';
+  const total=Math.max(0,Math.round(v));
+  const h=Math.floor(total/60),m=total%60;
+  return h?(h+' sa '+m+' dk'):(m+' dk');
+}
+function productUnitTimeSummary(o){
+  const ops=o?.ops||[];
+  if(!ops.length)return {ops:0,planned:0,pace:null,smart:null,diff:null,actualOps:0,smartOps:0,smartDays:0,cls:'same'};
+  let planned=0,pace=0,smart=0,actualOps=0,smartOps=0,smartDays=0;
+  for(const op of ops){
+    const uc=opUnitComparison(o,op);
+    planned+=uc.planned;
+
+    // Mevcut tempo: veri olan OP'de gerçekleşen ortalama, henüz veri olmayan OP'de plan değeri.
+    if(uc.actual!==null){pace+=uc.actual;actualOps++}else pace+=uc.planned;
+
+    // Akıllı tahmin: en az 3 üretim günü olan OP'de öğrenilen tempo, diğer OP'lerde plan değeri.
+    const ai=smartTimeStats(o,op);
+    if(ai&&ai.count>=3&&isFinite(ai.observedTotal)){
+      smart+=ai.observedTotal;smartOps++;smartDays+=ai.count;
+    }else smart+=uc.planned;
+  }
+  const diff=planned-smart; // + = planlanandan hızlı
+  const cls=diff>0.05?'ahead':diff<-0.05?'behind':'same';
+  return {ops:ops.length,planned,pace,smart,diff,actualOps,smartOps,smartDays,cls};
+}
+function renderPartTimes(){
+  const body=$('partTimeRows');if(!body)return;
+  const rows=[...state.orders].sort((a,b)=>{
+    const ad=a.stage==='done'?1:0,bd=b.stage==='done'?1:0;
+    return ad-bd||String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue);
+  });
+  if($('partTimeCount'))$('partTimeCount').textContent='Toplam '+rows.length+' iş emri';
+  if(!rows.length){body.innerHTML='<tr><td colspan="7">Henüz iş emri yok.</td></tr>';return}
+  body.innerHTML=rows.map(o=>{
+    const x=productUnitTimeSummary(o);
+    if(!x.ops)return `<tr><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>0</td><td colspan="5">Operasyon girilmemiş.</td></tr>`;
+    const diffText=x.cls==='same'?'Planla aynı':fmtUnitMinutes(Math.abs(x.diff))+' '+(x.cls==='ahead'?'daha hızlı':'daha yavaş');
+    const paceNote=x.actualOps===x.ops?'Tüm OP gerçek verisi':x.actualOps+' / '+x.ops+' OP gerçek • kalan plan';
+    const aiNote=x.smartOps===x.ops?'Tüm OP öğrenildi':x.smartOps+' / '+x.ops+' OP öğrenildi • kalan plan';
+    return `<tr>
+      <td><span class="partTimeMain">${esc(o.orderNo)}</span><span class="partTimeSub">${esc(o.part)} • ${o.stage==='done'?'Tamamlandı':'Aktif'}</span></td>
+      <td><b>${x.ops}</b></td>
+      <td><span class="partTimeVal">${fmtUnitMinutes(x.planned)}</span><span class="partTimeSub">İşleme + sök-tak + ayar payı</span></td>
+      <td><span class="partTimeVal">${fmtUnitMinutes(x.pace)}</span><span class="partTimeSub">${paceNote}</span></td>
+      <td><span class="partTimeVal">${fmtUnitMinutes(x.smart)}</span><span class="partTimeSub">${aiNote}${x.smartDays?' • '+x.smartDays+' günlük kayıt':''}</span></td>
+      <td><span class="partTimeVal partTimeDiff ${x.cls}">${diffText}</span></td>
+      <td><span class="partTimeCoverage">Gerçek veri: <b>${x.actualOps}/${x.ops} OP</b><br>Akıllı veri: <b>${x.smartOps}/${x.ops} OP</b></span></td>
+    </tr>`;
+  }).join('');
+}
+
+
+function render(){syncCompletedOps();schedule();fillSelects();renderBoard();renderMachines();renderOrders();renderOps();renderDaily();renderCal();renderAccounting();renderPartTimes()}
 function renderBoard(){
   let a=[...state.orders].filter(o=>o.stage!=='done').sort((x,y)=>x.machine.localeCompare(y.machine)||n(x.queue)-n(y.queue));
   $('m1').textContent=a.length;
