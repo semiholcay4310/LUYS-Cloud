@@ -1204,7 +1204,17 @@ function planDeltaInfo(o){
 
   const cls=netGain>1?'ahead':netGain<-1?'behind':'same';
   const label=cls==='ahead'?parts.join(' ')+' önde':cls==='behind'?parts.join(' ')+' geride':'Planla aynı';
-  return {base:'',forecast:'',netGain,cls,text:label};
+
+  // Başlangıç Planı: üretim başladığı anda sabitlenen ilk ürün bitiş tarihi.
+  // Eski kayıtlarda sabit değer yoksa mevcut veriden bir kez türetip gösterir.
+  ensureBaselineProductEnd(o);
+  const base=o.baselineProductEnd||baselineProductEnd(o)||'';
+
+  // Güncel Tahmin: günlük üretim, imalat hızı, ek çalışma ve duruş etkileriyle
+  // hesaplanan canlı ürün bitiş tahmini.
+  const forecast=calculateForecastFromDaily(o)||currentProductForecast(o)||base;
+
+  return {base,forecast,netGain,cls,text:label};
 }
 function planTrackHTML(o){
   const p=planDeltaInfo(o);
