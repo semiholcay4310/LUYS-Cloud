@@ -463,7 +463,21 @@
 .partTimeVal{font-weight:900;color:#173f5b;white-space:nowrap}
 .partTimeDiff.ahead{color:#14804a}.partTimeDiff.behind{color:#c53b3b}.partTimeDiff.same{color:#718394}
 .partTimeCoverage{font-size:10px;line-height:1.45;color:#536b7c}
-@media(max-width:800px){.partTimeTable{min-width:820px}.partTimeMain{font-size:12px}}
+@media(max-width:800px){.partTimeTable{min-width:1120px}.partTimeMain{font-size:12px}}
+.partRateTop{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 12px}
+.partRateKpi{border:1px solid #dce6ed;border-radius:12px;background:#f9fcfe;padding:11px 12px}
+.partRateKpi small{display:block;color:#728594;font-size:9px;font-weight:800;margin-bottom:4px}
+.partRateKpi b{font-size:17px;color:#173f5b}
+.partRateKpi .good{color:#168348}.partRateKpi .muted{color:#718394}
+.partRateActions{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0 10px}
+.partRateBtn{border:1px solid #bfd0db;background:white;color:#24516d;border-radius:9px;padding:7px 10px;font-weight:800;font-size:10px;cursor:pointer}
+.partRateCheck{width:18px;height:18px;accent-color:#1683b7;cursor:pointer}
+.partRateInput{width:92px;padding:7px 8px;border:1px solid #bfd0db;border-radius:8px;font-weight:800;color:#173f5b;background:#fff}
+.partRateHourly{font-weight:900;color:#168348;white-space:nowrap}.partRateHourly.na{color:#8a9aa6}
+.partRateGroupWrap{margin-top:12px;border-top:1px solid #e4ebf0;padding-top:10px}
+.partRateGroupTable{min-width:620px}
+.partRateMonth{display:inline-block;margin-top:4px;padding:2px 6px;border-radius:99px;background:#eef6fb;color:#33708f;font-size:8px;font-weight:800}
+@media(max-width:800px){.partRateTop{grid-template-columns:1fr}.partRateKpi b{font-size:15px}.partRateInput{width:82px}}
 
 </style>
 </head>
@@ -699,12 +713,30 @@
 
 <section id="parttimes" class="page">
   <div class="card">
-    <div class="dashCardHead"><b>1 ADET ÜRÜN TOPLAM İMALAT SÜRESİ</b><span id="partTimeCount"></span></div>
-    <div class="small" style="margin:5px 0 12px">Tüm operasyonlar birlikte hesaplanır. Planlanan süreye işleme + sök-tak + ayarın parça başına payı dahildir. “Mevcut tempon” günlük üretim verini, “Akıllı tahmin” ise yeterli veri oluşan operasyonlarda öğrenilen gerçek temponu kullanır.</div>
+    <div class="dashCardHead"><b>1 ADET ÜRÜN TOPLAM İMALAT SÜRESİ + CNC SAAT ÜCRETİ</b><span id="partTimeCount"></span></div>
+    <div class="small" style="margin:5px 0 8px">Tüm operasyonlar birlikte hesaplanır. Planlanan süreye işleme + sök-tak + ayarın parça başına payı dahildir. Akıllı süre, senin günlük üretim verinden öğrenilir. İşçilik fiyatına yalnızca USD/adet girmen yeterlidir.</div>
+    <div class="partRateActions">
+      <button type="button" class="partRateBtn" onclick="partRateSelectAll(true)">TÜMÜNÜ SEÇ</button>
+      <button type="button" class="partRateBtn" onclick="partRateSelectAll(false)">SEÇİMİ TEMİZLE</button>
+      <span class="small" style="align-self:center">-2 ve -3 ile biten parça adları sırasıyla 2. ve 3. ay siparişi olarak aynı parça grubunda değerlendirilir.</span>
+    </div>
+    <div class="partRateTop">
+      <div class="partRateKpi"><small>SEÇİLİ SİPARİŞ</small><b id="partRateSelected">0</b></div>
+      <div class="partRateKpi"><small>SEÇİLİ TOPLAM CNC SAATİ • AKILLI</small><b id="partRateHours">0 sa</b></div>
+      <div class="partRateKpi"><small>GENEL ORT. CNC SAAT ÜCRETİ</small><b id="partRateAverage" class="good">-</b></div>
+    </div>
     <div class="tablewrap"><table class="partTimeTable">
-      <thead><tr><th>İş Emri / Parça</th><th>OP</th><th>Planlanan 1 Adet</th><th>Mevcut Tempona Göre</th><th>Akıllı Tahmin</th><th>Plan / Akıllı Fark</th><th>Veri</th></tr></thead>
+      <thead><tr><th>Seç</th><th>İş Emri / Parça</th><th>OP</th><th>Planlanan 1 Adet</th><th>Mevcut Tempona Göre</th><th>Akıllı Tahmin</th><th>İşçilik USD/adet</th><th>CNC Saat Ücreti</th><th>Plan / Akıllı Fark</th><th>Veri</th></tr></thead>
       <tbody id="partTimeRows"></tbody>
     </table></div>
+    <div class="partRateGroupWrap">
+      <div class="dashCardHead"><b>SEÇİME GÖRE PARÇA BAZLI ORTALAMA CNC SAAT ÜCRETİ</b><span id="partRateGroupCount"></span></div>
+      <div class="small" style="margin:4px 0 8px">Aynı parçanın farklı ay siparişleri birlikte hesaplanır. Ortalama = seçili siparişlerin toplam işçilik değeri ÷ toplam akıllı CNC saati.</div>
+      <div class="tablewrap"><table class="partRateGroupTable">
+        <thead><tr><th>Parça</th><th>Seçili Sipariş</th><th>Toplam Adet</th><th>Toplam CNC Saati</th><th>Ort. CNC Saat Ücreti</th></tr></thead>
+        <tbody id="partRateGroupRows"></tbody>
+      </table></div>
+    </div>
   </div>
 </section>
 
@@ -1286,30 +1318,102 @@ function productUnitTimeSummary(o){
   const cls=diff>0.05?'ahead':diff<-0.05?'behind':'same';
   return {ops:ops.length,planned,pace,smart,diff,actualOps,smartOps,smartDays,cls};
 }
+
+const PART_RATE_PRICE_KEY='luys_profit_costs_v1';
+const PART_RATE_SELECT_KEY='luys_part_rate_selection_v1';
+function partRateJsonLoad(key,def={}){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(def))}catch(e){return def}}
+function partRateJsonSave(key,val){try{localStorage.setItem(key,JSON.stringify(val))}catch(e){}}
+function partRateOrderCode(o){return String(o?.orderNo||o?.code||o?.id||'')}
+function partRateMonthInfo(o){
+  const raw=String(o?.part||'').trim();
+  const m=raw.match(/^(.*?)[\s-]+([23])\s*$/);
+  if(!m)return {base:raw||'Parça',month:'1. Ay / Ana sipariş'};
+  return {base:m[1].trim()||raw,month:m[2]+'. Ay siparişi'};
+}
+function partRatePrice(o){
+  const all=partRateJsonLoad(PART_RATE_PRICE_KEY,{}),c=all[partRateOrderCode(o)]||{};
+  return Math.max(0,Number(c.usd||0));
+}
+function partRateIsSelected(o){return !!partRateJsonLoad(PART_RATE_SELECT_KEY,{})[String(o.id)]}
+window.partRateToggle=(oid,checked)=>{
+  const all=partRateJsonLoad(PART_RATE_SELECT_KEY,{});all[String(oid)]=!!checked;partRateJsonSave(PART_RATE_SELECT_KEY,all);renderPartTimes();
+};
+window.partRateSetPrice=(oid,val)=>{
+  const o=order(oid);if(!o)return;
+  const all=partRateJsonLoad(PART_RATE_PRICE_KEY,{}),code=partRateOrderCode(o),old=all[code]||{};
+  all[code]={...old,usd:Math.max(0,Number(val)||0)};partRateJsonSave(PART_RATE_PRICE_KEY,all);
+  if(window.__luysRenderProfit)try{window.__luysRenderProfit()}catch(e){}
+  renderPartTimes();
+};
+window.partRateSelectAll=checked=>{
+  const all=partRateJsonLoad(PART_RATE_SELECT_KEY,{});(state.orders||[]).forEach(o=>all[String(o.id)]=!!checked);partRateJsonSave(PART_RATE_SELECT_KEY,all);renderPartTimes();
+};
+function partRateMetrics(rows){
+  const selected=rows.filter(o=>partRateIsSelected(o));
+  let totalHours=0,totalRevenue=0,priced=0;
+  const groups=new Map();
+  for(const o of selected){
+    const x=productUnitTimeSummary(o),qty=Math.max(0,n(o.produceQty)),price=partRatePrice(o);
+    const hours=(Math.max(0,x.smart)/60)*qty;
+    const revenue=price*qty;
+    totalHours+=hours;
+    if(price>0){totalRevenue+=revenue;priced++}
+    const mi=partRateMonthInfo(o),key=mi.base.toLocaleUpperCase('tr-TR');
+    if(!groups.has(key))groups.set(key,{name:mi.base,orders:0,qty:0,hours:0,revenue:0,priced:0});
+    const g=groups.get(key);g.orders++;g.qty+=qty;g.hours+=hours;if(price>0){g.revenue+=revenue;g.priced++}
+  }
+  const average=(totalHours>0&&priced===selected.length&&selected.length)?totalRevenue/totalHours:null;
+  return {selected,totalHours,totalRevenue,average,priced,groups:[...groups.values()]};
+}
+function renderPartRateSummary(rows){
+  const m=partRateMetrics(rows);
+  if($('partRateSelected'))$('partRateSelected').textContent=m.selected.length;
+  if($('partRateHours'))$('partRateHours').textContent=m.totalHours?m.totalHours.toFixed(1)+' sa':'0 sa';
+  if($('partRateAverage')){
+    $('partRateAverage').textContent=m.average===null?'-':'$'+m.average.toFixed(2)+'/sa';
+    $('partRateAverage').title=(m.selected.length&&m.priced<m.selected.length)?'Seçili tüm siparişlere işçilik fiyatı girildiğinde genel ortalama hesaplanır.':'';
+  }
+  if($('partRateGroupCount'))$('partRateGroupCount').textContent=m.groups.length+' parça grubu';
+  const gb=$('partRateGroupRows');if(!gb)return;
+  if(!m.groups.length){gb.innerHTML='<tr><td colspan="5">Hesaplamak için siparişlerin yanındaki tikleri seç.</td></tr>';return}
+  gb.innerHTML=m.groups.map(g=>{
+    const rate=(g.hours>0&&g.priced===g.orders)?g.revenue/g.hours:null;
+    const note=g.priced<g.orders?'<br><small>Fiyatı eksik sipariş var</small>':'';
+    return `<tr><td><b>${esc(g.name)}</b></td><td>${g.orders}</td><td>${g.qty}</td><td>${g.hours.toFixed(1)} sa</td><td><b class="partRateHourly ${rate===null?'na':''}">${rate===null?'-':'$'+rate.toFixed(2)+'/sa'}</b>${note}</td></tr>`;
+  }).join('');
+}
 function renderPartTimes(){
   const body=$('partTimeRows');if(!body)return;
   const rows=[...state.orders].sort((a,b)=>{
+    const aa=partRateMonthInfo(a),bb=partRateMonthInfo(b),partCmp=aa.base.localeCompare(bb.base,'tr');
+    if(partCmp)return partCmp;
     const ad=a.stage==='done'?1:0,bd=b.stage==='done'?1:0;
-    return ad-bd||String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue);
+    return ad-bd||String(a.part||'').localeCompare(String(b.part||''),'tr')||String(a.orderNo||'').localeCompare(String(b.orderNo||''),'tr');
   });
   if($('partTimeCount'))$('partTimeCount').textContent='Toplam '+rows.length+' iş emri';
-  if(!rows.length){body.innerHTML='<tr><td colspan="7">Henüz iş emri yok.</td></tr>';return}
+  if(!rows.length){body.innerHTML='<tr><td colspan="10">Henüz iş emri yok.</td></tr>';renderPartRateSummary(rows);return}
   body.innerHTML=rows.map(o=>{
-    const x=productUnitTimeSummary(o);
-    if(!x.ops)return `<tr><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>0</td><td colspan="5">Operasyon girilmemiş.</td></tr>`;
+    const x=productUnitTimeSummary(o),mi=partRateMonthInfo(o),price=partRatePrice(o),selected=partRateIsSelected(o);
+    if(!x.ops)return `<tr><td><input class="partRateCheck" type="checkbox" ${selected?'checked':''} onchange="partRateToggle('${o.id}',this.checked)"></td><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>0</td><td colspan="7">Operasyon girilmemiş.</td></tr>`;
     const diffText=x.cls==='same'?'Planla aynı':fmtUnitMinutes(Math.abs(x.diff))+' '+(x.cls==='ahead'?'daha hızlı':'daha yavaş');
     const paceNote=x.actualOps===x.ops?'Tüm OP gerçek verisi':x.actualOps+' / '+x.ops+' OP gerçek • kalan plan';
     const aiNote=x.smartOps===x.ops?'Tüm OP öğrenildi':x.smartOps+' / '+x.ops+' OP öğrenildi • kalan plan';
+    const hourly=(price>0&&x.smart>0)?price/(x.smart/60):null;
+    const hourlyNote=x.smartOps===0?'Plan süresi bazlı':x.smartOps===x.ops?'Akıllı süre bazlı':'Akıllı + kalan plan';
     return `<tr>
-      <td><span class="partTimeMain">${esc(o.orderNo)}</span><span class="partTimeSub">${esc(o.part)} • ${o.stage==='done'?'Tamamlandı':'Aktif'}</span></td>
+      <td><input class="partRateCheck" type="checkbox" ${selected?'checked':''} onchange="partRateToggle('${o.id}',this.checked)" title="Bu siparişi ortalama CNC saat ücreti hesabına dahil et"></td>
+      <td><span class="partTimeMain">${esc(o.orderNo)}</span><span class="partTimeSub">${esc(mi.base)} • ${o.stage==='done'?'Tamamlandı':'Aktif'}</span><span class="partRateMonth">${esc(mi.month)}</span></td>
       <td><b>${x.ops}</b></td>
       <td><span class="partTimeVal">${fmtUnitMinutes(x.planned)}</span><span class="partTimeSub">İşleme + sök-tak + ayar payı</span></td>
       <td><span class="partTimeVal">${fmtUnitMinutes(x.pace)}</span><span class="partTimeSub">${paceNote}</span></td>
       <td><span class="partTimeVal">${fmtUnitMinutes(x.smart)}</span><span class="partTimeSub">${aiNote}${x.smartDays?' • '+x.smartDays+' günlük kayıt':''}</span></td>
+      <td><input class="partRateInput" type="number" min="0" step="0.01" value="${price||''}" placeholder="USD/adet" onchange="partRateSetPrice('${o.id}',this.value)"></td>
+      <td><span class="partRateHourly ${hourly===null?'na':''}">${hourly===null?'-':'$'+hourly.toFixed(2)+'/sa'}</span><span class="partTimeSub">${hourlyNote}</span></td>
       <td><span class="partTimeVal partTimeDiff ${x.cls}">${diffText}</span></td>
       <td><span class="partTimeCoverage">Gerçek veri: <b>${x.actualOps}/${x.ops} OP</b><br>Akıllı veri: <b>${x.smartOps}/${x.ops} OP</b></span></td>
     </tr>`;
   }).join('');
+  renderPartRateSummary(rows);
 }
 
 
