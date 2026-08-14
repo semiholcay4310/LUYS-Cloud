@@ -464,7 +464,7 @@
 .partTimeDiff.ahead{color:#14804a}.partTimeDiff.behind{color:#c53b3b}.partTimeDiff.same{color:#718394}
 .partTimeCoverage{font-size:10px;line-height:1.45;color:#536b7c}
 @media(max-width:800px){.partTimeTable{min-width:1120px}.partTimeMain{font-size:12px}}
-.partRateTop{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px 0 12px}
+.partRateTop{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:10px 0 12px}
 .partRateKpi{border:1px solid #dce6ed;border-radius:12px;background:#f9fcfe;padding:11px 12px}
 .partRateKpi small{display:block;color:#728594;font-size:9px;font-weight:800;margin-bottom:4px}
 .partRateKpi b{font-size:17px;color:#173f5b}
@@ -714,15 +714,16 @@
 <section id="parttimes" class="page">
   <div class="card">
     <div class="dashCardHead"><b>1 ADET ÜRÜN TOPLAM İMALAT SÜRESİ + CNC SAAT ÜCRETİ</b><span id="partTimeCount"></span></div>
-    <div class="small" style="margin:5px 0 8px">Tüm operasyonlar birlikte hesaplanır. Planlanan süreye işleme + sök-tak + ayarın parça başına payı dahildir. Akıllı süre, senin günlük üretim verinden öğrenilir. İşçilik fiyatına yalnızca USD/adet girmen yeterlidir.</div>
+    <div class="small" style="margin:5px 0 8px">Tüm operasyonlar birlikte hesaplanır. Planlanan süreye işleme + sök-tak + ayarın parça başına payı dahildir. Akıllı süre, senin günlük üretim verinden öğrenilir. İşçilik fiyatına yalnızca USD/adet girmen yeterlidir. Üstteki 1 set hesabı, seçtiğin her üründen 1 adet alınarak yapılır.</div>
     <div class="partRateActions">
       <button type="button" class="partRateBtn" onclick="partRateSelectAll(true)">TÜMÜNÜ SEÇ</button>
       <button type="button" class="partRateBtn" onclick="partRateSelectAll(false)">SEÇİMİ TEMİZLE</button>
       <span class="small" style="align-self:center">-2 ve -3 ile biten parça adları sırasıyla 2. ve 3. ay siparişi olarak aynı parça grubunda değerlendirilir.</span>
     </div>
     <div class="partRateTop">
-      <div class="partRateKpi"><small>SEÇİLİ SİPARİŞ</small><b id="partRateSelected">0</b></div>
-      <div class="partRateKpi"><small>SEÇİLİ TOPLAM CNC SAATİ • AKILLI</small><b id="partRateHours">0 sa</b></div>
+      <div class="partRateKpi"><small>SEÇİLİ ÜRÜN</small><b id="partRateSelected">0</b></div>
+      <div class="partRateKpi"><small>1 SET TOPLAM SÜRE • 1'ER ADET • AKILLI</small><b id="partRateHours">0 sa</b></div>
+      <div class="partRateKpi"><small>1 SET TOPLAM İŞÇİLİK</small><b id="partRateSetPrice" class="good">-</b></div>
       <div class="partRateKpi"><small>GENEL ORT. CNC SAAT ÜCRETİ</small><b id="partRateAverage" class="good">-</b></div>
     </div>
     <div class="tablewrap"><table class="partTimeTable">
@@ -731,9 +732,9 @@
     </table></div>
     <div class="partRateGroupWrap">
       <div class="dashCardHead"><b>SEÇİME GÖRE PARÇA BAZLI ORTALAMA CNC SAAT ÜCRETİ</b><span id="partRateGroupCount"></span></div>
-      <div class="small" style="margin:4px 0 8px">Aynı parçanın farklı ay siparişleri birlikte hesaplanır. Ortalama = seçili siparişlerin toplam işçilik değeri ÷ toplam akıllı CNC saati.</div>
+      <div class="small" style="margin:4px 0 8px">Aynı parçanın farklı ay siparişleri birlikte değerlendirilir. Hesap üretim sipariş adediyle değil, seçilen her siparişten 1 adet üzerinden yapılır.</div>
       <div class="tablewrap"><table class="partRateGroupTable">
-        <thead><tr><th>Parça</th><th>Seçili Sipariş</th><th>Toplam Adet</th><th>Toplam CNC Saati</th><th>Ort. CNC Saat Ücreti</th></tr></thead>
+        <thead><tr><th>Parça</th><th>Seçili Sipariş</th><th>1'er Adet Toplam Süre</th><th>1'er Adet Toplam İşçilik</th><th>Ort. CNC Saat Ücreti</th></tr></thead>
         <tbody id="partRateGroupRows"></tbody>
       </table></div>
     </div>
@@ -1350,36 +1351,43 @@ window.partRateSelectAll=checked=>{
 };
 function partRateMetrics(rows){
   const selected=rows.filter(o=>partRateIsSelected(o));
+  // SET hesabı: sipariş toplam adediyle çarpılmaz. Seçilen her satırdan yalnızca 1 adet alınır.
   let totalHours=0,totalRevenue=0,priced=0;
   const groups=new Map();
   for(const o of selected){
-    const x=productUnitTimeSummary(o),qty=Math.max(0,n(o.produceQty)),price=partRatePrice(o);
-    const hours=(Math.max(0,x.smart)/60)*qty;
-    const revenue=price*qty;
+    const x=productUnitTimeSummary(o),price=partRatePrice(o);
+    const hours=Math.max(0,x.smart)/60; // 1 adet ürünün tüm operasyonlarının akıllı süresi
+    const revenue=price;               // 1 adet ürünün işçilik fiyatı
     totalHours+=hours;
     if(price>0){totalRevenue+=revenue;priced++}
     const mi=partRateMonthInfo(o),key=mi.base.toLocaleUpperCase('tr-TR');
-    if(!groups.has(key))groups.set(key,{name:mi.base,orders:0,qty:0,hours:0,revenue:0,priced:0});
-    const g=groups.get(key);g.orders++;g.qty+=qty;g.hours+=hours;if(price>0){g.revenue+=revenue;g.priced++}
+    if(!groups.has(key))groups.set(key,{name:mi.base,orders:0,hours:0,revenue:0,priced:0});
+    const g=groups.get(key);g.orders++;g.hours+=hours;if(price>0){g.revenue+=revenue;g.priced++}
   }
   const average=(totalHours>0&&priced===selected.length&&selected.length)?totalRevenue/totalHours:null;
-  return {selected,totalHours,totalRevenue,average,priced,groups:[...groups.values()]};
+  const setPrice=(priced===selected.length&&selected.length)?totalRevenue:null;
+  return {selected,totalHours,totalRevenue,setPrice,average,priced,groups:[...groups.values()]};
 }
 function renderPartRateSummary(rows){
   const m=partRateMetrics(rows);
   if($('partRateSelected'))$('partRateSelected').textContent=m.selected.length;
-  if($('partRateHours'))$('partRateHours').textContent=m.totalHours?m.totalHours.toFixed(1)+' sa':'0 sa';
+  if($('partRateHours'))$('partRateHours').textContent=m.totalHours?m.totalHours.toFixed(2)+' sa':'0 sa';
+  if($('partRateSetPrice')){
+    $('partRateSetPrice').textContent=m.setPrice===null?'-':'$'+m.setPrice.toFixed(2);
+    $('partRateSetPrice').title=(m.selected.length&&m.priced<m.selected.length)?'1 set toplamı için seçili tüm ürünlere USD/adet işçilik fiyatı gir.':'';
+  }
   if($('partRateAverage')){
     $('partRateAverage').textContent=m.average===null?'-':'$'+m.average.toFixed(2)+'/sa';
-    $('partRateAverage').title=(m.selected.length&&m.priced<m.selected.length)?'Seçili tüm siparişlere işçilik fiyatı girildiğinde genel ortalama hesaplanır.':'';
+    $('partRateAverage').title=(m.selected.length&&m.priced<m.selected.length)?'Seçili tüm ürünlere işçilik fiyatı girildiğinde genel ortalama hesaplanır.':'';
   }
   if($('partRateGroupCount'))$('partRateGroupCount').textContent=m.groups.length+' parça grubu';
   const gb=$('partRateGroupRows');if(!gb)return;
-  if(!m.groups.length){gb.innerHTML='<tr><td colspan="5">Hesaplamak için siparişlerin yanındaki tikleri seç.</td></tr>';return}
+  if(!m.groups.length){gb.innerHTML='<tr><td colspan="5">Hesaplamak için ürünlerin yanındaki tikleri seç.</td></tr>';return}
   gb.innerHTML=m.groups.map(g=>{
     const rate=(g.hours>0&&g.priced===g.orders)?g.revenue/g.hours:null;
+    const money=g.priced===g.orders?'$'+g.revenue.toFixed(2):'-';
     const note=g.priced<g.orders?'<br><small>Fiyatı eksik sipariş var</small>':'';
-    return `<tr><td><b>${esc(g.name)}</b></td><td>${g.orders}</td><td>${g.qty}</td><td>${g.hours.toFixed(1)} sa</td><td><b class="partRateHourly ${rate===null?'na':''}">${rate===null?'-':'$'+rate.toFixed(2)+'/sa'}</b>${note}</td></tr>`;
+    return `<tr><td><b>${esc(g.name)}</b></td><td>${g.orders}</td><td>${g.hours.toFixed(2)} sa</td><td><b>${money}</b>${note}</td><td><b class="partRateHourly ${rate===null?'na':''}">${rate===null?'-':'$'+rate.toFixed(2)+'/sa'}</b></td></tr>`;
   }).join('');
 }
 function renderPartTimes(){
