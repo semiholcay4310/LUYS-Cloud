@@ -332,9 +332,9 @@
 .profitKpi{background:#fff;border:1px solid #dfe8ef;border-radius:16px;padding:16px;box-shadow:0 4px 14px #173b5b12}
 .profitKpi small{display:block;color:#738695;font-weight:700;margin-bottom:7px}
 .profitKpi b{font-size:23px;color:#123d5b}
-.profitMonthBar{display:flex;align-items:center;gap:12px;margin:16px 0 2px;background:#fff;border:1px solid #dfe8ef;border-radius:14px;padding:12px 14px;max-width:360px;box-shadow:0 4px 14px #173b5b0d}
-.profitMonthBar label{font-weight:800;color:#173f5b;white-space:nowrap}
-.profitMonthBar input{width:100%;padding:10px 12px;border:1px solid #b9c8d2;border-radius:10px;background:#fff;color:#173f5b;font:inherit;font-weight:700}
+.profitMonthBar{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:16px 0 2px;background:#fff;border:1px solid #dfe8ef;border-radius:14px;padding:12px 14px;max-width:620px;box-shadow:0 4px 14px #173b5b0d}
+.profitMonthBar label{font-weight:800;color:#173f5b;white-space:nowrap;display:flex;flex-direction:column;gap:5px;min-width:190px}
+.profitMonthBar input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #b9c8d2;border-radius:10px;background:#fff;color:#173f5b;font:inherit;font-weight:700}
 .profitCard{background:#fff;border:1px solid #dfe8ef;border-radius:16px;padding:16px;margin:12px 0}
 .profitForm{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .profitForm label{font-size:12px;font-weight:700;color:#415969}
@@ -2097,12 +2097,13 @@ window.editDaily=id=>{
   <div style="color:#718491;margin-top:5px">Üretilen adetlere göre işçilik satış değeri</div>
 
   <div class="profitMonthBar">
-    <label for="profitMonth">Rapor Ayı</label>
-    <input id="profitMonth" type="month">
+    <label>Rapor Ayı<input id="profitMonth" type="month"></label>
+    <label>USD/TL Kuru<input id="profitFx" type="number" step="0.0001" min="0" placeholder="Örn. 41,20"></label>
   </div>
 
   <div class="profitGrid">
     <div class="profitKpi"><small>AYLIK İŞÇİLİK CİROSU</small><b id="pkSales">$0.00</b></div>
+    <div class="profitKpi"><small>AYLIK İŞÇİLİK CİROSU • TL</small><b id="pkSalesTl">₺0,00</b></div>
     <div class="profitKpi"><small>TOPLAM İŞÇİLİK SÜRESİ</small><b id="pkHours">0.00 sa</b></div>
     <div class="profitKpi"><small>ORTALAMA İŞÇİLİK DEĞERİ</small><b id="pkHourly">-</b></div>
   </div>
@@ -2112,7 +2113,6 @@ window.editDaily=id=>{
     <div class="profitForm">
       <label>Parça<select id="pcJob"></select></label>
       <label>İşçilik Fiyatı (USD/adet)<input id="pcUsd" type="number" step="0.01" min="0"></label>
-      <label>USD/TL (opsiyonel)<input id="pcRate" type="number" step="0.0001" min="0" placeholder="Kur"></label>
       <label>&nbsp;<button class="profitBtn green" id="pcSave" type="button">İŞÇİLİK FİYATINI KAYDET</button></label>
     </div>
     <div style="font-size:11px;color:#718491;margin-top:10px">Fiyatı parça için bir kez gir. -2, -3 ve diğer ay siparişleri aynı işçilik fiyatını otomatik kullanır. Aylık ciro, o ayın sağlam üretim adetlerinden hesaplanır.</div>
@@ -2132,7 +2132,9 @@ window.editDaily=id=>{
 <script>
 (function(){
  const KEY='luys_profit_costs_v1';
+ const FX_KEY='luys_profit_month_fx_v1';
  const usd=n=>'$'+(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const tl=n=>'₺'+(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
  const ym=()=>new Date().toISOString().slice(0,7);
  const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
  const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
@@ -2161,14 +2163,15 @@ window.editDaily=id=>{
  }
  function loadCost(){
    const key=document.getElementById('pcJob').value,costs=load(KEY,{}),f=families().find(x=>x.key===key),c=f?costForFamily(f,costs):{};
-   pcUsd.value=c.usd||'';pcRate.value=c.rate||'';
+   pcUsd.value=c.usd||'';
  }
  function recNetHours(r){
    if(r.netHours!==undefined&&r.netHours!==null&&r.netHours!=='')return Math.max(0,Number(r.netHours)||0);
    return Math.max(0,(Number(r.hours)||0)-(((Number(r.breaktime)||0)+(Number(r.downtime)||0))/60));
  }
  function render(){
-   fillJobs();const costs=load(KEY,{}),month=profitMonth.value||ym(),orders=jobs(),orderMap=new Map(orders.map(j=>[String(j.id),j])),groups=new Map();
+   fillJobs();const costs=load(KEY,{}),month=profitMonth.value||ym(),fxMap=load(FX_KEY,{}),fx=Math.max(0,Number(fxMap[month])||0),orders=jobs(),orderMap=new Map(orders.map(j=>[String(j.id),j])),groups=new Map();
+   if(document.activeElement!==profitFx)profitFx.value=fx||'';
    records().filter(r=>String(r.date||'').startsWith(month)).forEach(r=>{
      const j=orderMap.get(String(r.orderId));if(!j)return;const key=familyKey(j._name);if(!groups.has(key))groups.set(key,{key,name:j._base,orders:new Set(),good:0,hours:0});
      const g=groups.get(key);g.orders.add(j._code);g.hours+=recNetHours(r);
@@ -2184,14 +2187,15 @@ window.editDaily=id=>{
      html+=`<tr><td><b>${g.name}</b></td><td>${[...g.orders].join(', ')}</td><td>${g.good}</td><td>${usd(price)}</td><td><b>${usd(sales)}</b></td><td>${g.hours.toFixed(2)} sa</td><td><b>${hourly===null?'-':usd(hourly)+'/sa'}</b></td></tr>`;
    });
    profitRows.innerHTML=html||'<tr><td colspan="7">Seçilen ayda günlük üretim kaydı yok.</td></tr>';
-   pkSales.textContent=usd(totalSales);pkHours.textContent=totalHours.toFixed(2)+' sa';pkHourly.textContent=totalHours>0?usd(totalSales/totalHours)+'/sa':'-';
+   pkSales.textContent=usd(totalSales);pkSalesTl.textContent=fx>0?tl(totalSales*fx):'-';pkSalesTl.title=fx>0?('Kur: '+fx.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:4})+' TL/USD'):'Bu ay için USD/TL kuru girin';pkHours.textContent=totalHours.toFixed(2)+' sa';pkHourly.textContent=totalHours>0?usd(totalSales/totalHours)+'/sa':'-';
  }
  document.addEventListener('DOMContentLoaded',()=>{
    profitMonth.value=ym();fillJobs();pcJob.addEventListener('change',loadCost);
    pcSave.addEventListener('click',()=>{
-     if(!pcJob.value)return alert('Önce parça seçin.');const all=load(KEY,{}),old=all[pcJob.value]||{};all[pcJob.value]={...old,usd:+pcUsd.value||0,rate:+pcRate.value||0};save(KEY,all);render();if(window.renderPartTimes)try{window.renderPartTimes()}catch(e){}alert('Parça işçilik fiyatı kaydedildi. Tüm ay siparişleri aynı fiyatı kullanacak.');
+     if(!pcJob.value)return alert('Önce parça seçin.');const all=load(KEY,{}),old=all[pcJob.value]||{};all[pcJob.value]={...old,usd:+pcUsd.value||0};save(KEY,all);render();if(window.renderPartTimes)try{window.renderPartTimes()}catch(e){}alert('Parça işçilik fiyatı kaydedildi. Tüm ay siparişleri aynı fiyatı kullanacak.');
    });
    profitMonth.addEventListener('change',render);
+   profitFx.addEventListener('input',()=>{const month=profitMonth.value||ym(),m=load(FX_KEY,{}),v=Math.max(0,Number(profitFx.value)||0);if(v>0)m[month]=v;else delete m[month];save(FX_KEY,m);render();});
    document.body.addEventListener('click',e=>{
      const x=e.target.closest('button,a,[data-tab]');if(!x)return;
      if(/Muhasebe|Maliyet\s*&?\s*Kârlılık|İşçilik Değeri/i.test(x.textContent||'')){
