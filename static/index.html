@@ -332,6 +332,9 @@
 .profitKpi{background:#fff;border:1px solid #dfe8ef;border-radius:16px;padding:16px;box-shadow:0 4px 14px #173b5b12}
 .profitKpi small{display:block;color:#738695;font-weight:700;margin-bottom:7px}
 .profitKpi b{font-size:23px;color:#123d5b}
+.profitMonthBar{display:flex;align-items:center;gap:12px;margin:16px 0 2px;background:#fff;border:1px solid #dfe8ef;border-radius:14px;padding:12px 14px;max-width:360px;box-shadow:0 4px 14px #173b5b0d}
+.profitMonthBar label{font-weight:800;color:#173f5b;white-space:nowrap}
+.profitMonthBar input{width:100%;padding:10px 12px;border:1px solid #b9c8d2;border-radius:10px;background:#fff;color:#173f5b;font:inherit;font-weight:700}
 .profitCard{background:#fff;border:1px solid #dfe8ef;border-radius:16px;padding:16px;margin:12px 0}
 .profitForm{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .profitForm label{font-size:12px;font-weight:700;color:#415969}
@@ -2093,6 +2096,11 @@ window.editDaily=id=>{
   <h2 style="margin:0;color:#173f5b">İşçilik Değeri</h2>
   <div style="color:#718491;margin-top:5px">Üretilen adetlere göre işçilik satış değeri</div>
 
+  <div class="profitMonthBar">
+    <label for="profitMonth">Rapor Ayı</label>
+    <input id="profitMonth" type="month">
+  </div>
+
   <div class="profitGrid">
     <div class="profitKpi"><small>AYLIK İŞÇİLİK CİROSU</small><b id="pkSales">$0.00</b></div>
     <div class="profitKpi"><small>TOPLAM İŞÇİLİK SÜRESİ</small><b id="pkHours">0.00 sa</b></div>
@@ -2113,7 +2121,6 @@ window.editDaily=id=>{
   <div class="profitCard">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
       <h3 style="margin:0">Parça İşçilik Değeri</h3>
-      <input id="profitMonth" type="month" style="padding:8px;border:1px solid #b9c8d2;border-radius:9px">
     </div>
     <table class="profitTable" style="margin-top:10px">
       <thead><tr><th>Parça</th><th>İş Emirleri</th><th>Sağlam Üretim</th><th>İşçilik USD/adet</th><th>İşçilik Cirosu</th><th>Toplam İşçilik Süresi</th><th>Ort. $/sa</th></tr></thead>
