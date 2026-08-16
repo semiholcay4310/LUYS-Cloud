@@ -2180,17 +2180,16 @@ window.editDaily=id=>{
    return Math.max(0,(Number(r.hours)||0)-(((Number(r.breaktime)||0)+(Number(r.downtime)||0))/60));
  }
  function render(){
-   fillJobs();const costs=load(KEY,{}),month=profitMonth.value||ym(),fxMap=load(FX_KEY,{}),fx=Math.max(0,Number(fxMap[month])||0),orders=jobs(),orderMap=new Map(orders.map(j=>[String(j.id),j])),groups=new Map();
+   fillJobs();const costs=load(KEY,{}),month=profitMonth.value||ym(),fxMap=load(FX_KEY,{}),fx=Math.max(0,Number(fxMap[month])||0),orders=jobs(),orderMap=new Map(orders.map(j=>[String(j.id),j])),orderRows=new Map();
    if(document.activeElement!==profitFx)profitFx.value=fx||'';
    records().filter(r=>String(r.date||'').startsWith(month)).forEach(r=>{
      const j=orderMap.get(String(r.orderId));if(!j)return;
-     const key=familyKey(j._name);
-     if(!groups.has(key))groups.set(key,{key,name:j._base,orders:new Map(),earnedUnits:0,hours:0});
-     const g=groups.get(key);g.orders.set(j._code,j);g.hours+=recNetHours(r);
+     const key=String(j.id);
+     if(!orderRows.has(key))orderRows.set(key,{job:j,earnedUnits:0,hours:0});
+     const row=orderRows.get(key);row.hours+=recNetHours(r);
 
-     // Aylık işçilik değeri = o ay kazanılan üretim ilerlemesi kadar.
-     // Ana ekrandaki progress() ile aynı operasyon-süre ağırlığını kullanır.
-     // Örn. toplam iş %30 ilerlediyse toplam sipariş işçilik değerinin %30'u kazanılmış olur.
+     // Aylık işçilik değeri sipariş bazında hesaplanır; aynı parçanın 2./3. ay siparişleri birleştirilmez.
+     // Fiyat yine parça ailesinden tek kez alınır, yalnızca ilerleme ve ciro her iş emri için ayrı tutulur.
      const op=(j.ops||[]).find(x=>String(x.id)===String(r.opId));
      if(!op)return;
      const good=Math.max(0,Number(r.good)||0);
@@ -2198,15 +2197,21 @@ window.editDaily=id=>{
      if(typeof window.opWeight==='function')weight=Math.max(0,Number(window.opWeight(j,op))||0)/100;
      else if(typeof opWeight==='function')weight=Math.max(0,Number(opWeight(j,op))||0)/100;
      else weight=(j.ops||[]).length?1/(j.ops||[]).length:1;
-     g.earnedUnits+=good*weight; // eşdeğer tamamlanmış ürün adedi
+     row.earnedUnits+=good*weight; // bu iş emrinin bu ay kazandığı eşdeğer tamamlanmış ürün adedi
    });
    let totalSales=0,totalHours=0,html='';
-   [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'tr')).forEach(g=>{
-     const f=families().find(x=>x.key===g.key)||{key:g.key,name:g.name,jobs:orders.filter(j=>familyKey(j._name)===g.key)},c=costForFamily(f,costs),price=Math.max(0,Number(c.usd)||0),sales=g.earnedUnits*price,hourly=g.hours>0?sales/g.hours:null;
-     const monthQty=[...g.orders.values()].reduce((t,j)=>t+Math.max(0,Number(j.produceQty)||0),0);
-     const monthProgress=monthQty>0?Math.min(100,(g.earnedUnits/monthQty)*100):0;
-     totalSales+=sales;totalHours+=g.hours;
-     html+=`<tr><td><b>${g.name}</b></td><td>${[...g.orders.keys()].join(', ')}</td><td><b>%${monthProgress.toFixed(1)}</b><br><small>${g.earnedUnits.toFixed(2)} eşd. adet</small></td><td>${usd(price)}</td><td><b>${usd(sales)}</b></td><td>${g.hours.toFixed(2)} sa</td><td><b>${hourly===null?'-':usd(hourly)+'/sa'}</b></td></tr>`;
+   [...orderRows.values()].sort((a,b)=>{
+     const baseCmp=a.job._base.localeCompare(b.job._base,'tr');
+     if(baseCmp)return baseCmp;
+     const am=info(a.job._name).monthNo||1,bm=info(b.job._name).monthNo||1;
+     return am-bm||a.job._code.localeCompare(b.job._code,'tr');
+   }).forEach(row=>{
+     const j=row.job,c=costForJob(j,costs),price=Math.max(0,Number(c.usd)||0),sales=row.earnedUnits*price,hourly=row.hours>0?sales/row.hours:null;
+     const qty=Math.max(0,Number(j.produceQty)||0);
+     const monthProgress=qty>0?Math.min(100,(row.earnedUnits/qty)*100):0;
+     const mi=info(j._name),orderLabel=mi.monthNo>1?(mi.monthNo+'. Ay Siparişi'):'Ana Sipariş';
+     totalSales+=sales;totalHours+=row.hours;
+     html+=`<tr><td><b>${j._name}</b><br><small>${orderLabel}</small></td><td>${j._code}</td><td><b>%${monthProgress.toFixed(1)}</b><br><small>${row.earnedUnits.toFixed(2)} eşd. adet</small></td><td>${usd(price)}</td><td><b>${usd(sales)}</b></td><td>${row.hours.toFixed(2)} sa</td><td><b>${hourly===null?'-':usd(hourly)+'/sa'}</b></td></tr>`;
    });
    profitRows.innerHTML=html||'<tr><td colspan="7">Seçilen ayda günlük üretim kaydı yok.</td></tr>';
    pkSales.textContent=usd(totalSales);pkSalesTl.textContent=fx>0?tl(totalSales*fx):'-';pkSalesTl.title=fx>0?('Kur: '+fx.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:4})+' TL/USD'):'Bu ay için USD/TL kuru girin';pkHours.textContent=totalHours.toFixed(2)+' sa';pkHourly.textContent=totalHours>0?usd(totalSales/totalHours)+'/sa':'-';
