@@ -1571,7 +1571,31 @@ function renderDaily(){$('dailyList').innerHTML=[...state.daily].sort((a,b)=>b.d
 function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>`<div><b>${x}</b><label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${state.calendar[i]?.h||0}" ${canEdit()?'':'disabled'}></label><label class="small">Mola<input data-day="${i}" data-k="b" type="number" step="0.25" value="${state.calendar[i]?.b||0}" ${canEdit()?'':'disabled'}></label></div>`).join('')}
 function fillSelects(){let active=state.orders.filter(o=>o.stage!=='done').sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));let activeOpts='<option value="">Seç</option>'+active.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=activeOpts;if([...el.options].some(x=>x.value===old))el.value=old});let cmm=$('cmmOrder');if(cmm){let old=cmm.value;cmm.innerHTML='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');if([...cmm.options].some(x=>x.value===old))cmm.value=old}fillDailyOps();syncOpAuto()}
 function fillDailyOps(){let el=$('dailyOp');if(!el)return;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''))}
-function syncOpAuto(){let o=order($('opOrder')?.value);if($('opMachine'))$('opMachine').value=o?.machine||'';if($('opQty'))$('opQty').value=o?.produceQty||''}
+function opNameKey(v){return String(v||'').trim().replace(/\s+/g,'').toLocaleUpperCase('tr-TR')}
+function previousSavedOp(o,opName=''){
+  if(!o)return null;
+  const src=orderTemplateSource(o.part,o.id);
+  if(!src||!(src.ops||[]).length)return null;
+  const wanted=opNameKey(opName);
+  if(wanted){
+    const exact=(src.ops||[]).find(x=>opNameKey(x.name)===wanted);
+    if(exact)return exact;
+  }
+  // Yeni OP ekleniyorsa, mevcut OP sayısına göre önceki siparişteki sıradaki OP'yi öner.
+  const idx=Math.max(0,(o.ops||[]).length);
+  return (src.ops||[])[idx]||null;
+}
+function fillSavedOpValues(force=false){
+  const f=$('opForm'),o=order($('opOrder')?.value);
+  if(!f||!o||f.opId?.value)return;
+  const tpl=previousSavedOp(o,f.name?.value||'');
+  if(!tpl)return;
+  if(!String(f.name.value||'').trim())f.name.value=tpl.name||('OP'+((o.ops||[]).length+1));
+  if(force||f.cycle.value==='')f.cycle.value=n(tpl.cycle);
+  if(force||f.handling.value===''||n(f.handling.value)===0)f.handling.value=n(tpl.handling);
+  if(force||f.setup.value===''||n(f.setup.value)===1)f.setup.value=n(tpl.setup);
+}
+function syncOpAuto(){let o=order($('opOrder')?.value);if($('opMachine'))$('opMachine').value=o?.machine||'';if($('opQty'))$('opQty').value=o?.produceQty||'';if(o)fillSavedOpValues(true)}
 
 
 function tl(v){return '₺'+n(v).toLocaleString('tr-TR',{minimumFractionDigits:0,maximumFractionDigits:2})}
@@ -1761,6 +1785,10 @@ function newOrderForm(){if(!canEdit())return;let f=$('orderForm');f.reset();f.el
 window.editOrder=id=>{if(!canEdit())return;let o=order(id),f=$('orderForm'),pi=orderPartFamily(o.part);fillPartTemplates(pi.base);for(let k of ['id','orderNo','customerOrderNo','customer','revision','qty','produceQty','stockStatus','stockQty','machine','queue','start','requested','cmmRequired','cmmDays','shipDays','note'])if(f.elements[k])f.elements[k].value=o[k]??'';f.part.value=pi.base;if(f.orderMonth)f.orderMonth.value=String(o.orderMonth||pi.monthNo||1);if(f.copyTemplateOps)f.copyTemplateOps.value='no';if($('partTemplate')&&[...$('partTemplate').options].some(x=>x.value===pi.base))$('partTemplate').value=pi.base;renderPartTemplateInfo(pi.base);$('orderTitle').textContent='İş Emri Düzenle';document.querySelector('[data-p="orders"]').click();window.scrollTo(0,0)}
 window.delOrder=async id=>{if(!canEdit())return;if(confirm('İş emri silinsin mi?')){let old=order(id),m=old?.machine;state.orders=state.orders.filter(o=>o.id!==id);state.daily=state.daily.filter(r=>r.orderId!==id);if(m)compactQueues(m);schedule();await save()}}
 $('opOrder').onchange=syncOpAuto;
+if($('opForm')?.name){
+  $('opForm').name.addEventListener('change',()=>fillSavedOpValues(true));
+  $('opForm').name.addEventListener('blur',()=>fillSavedOpValues(false));
+}
 $('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
 window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
 window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
