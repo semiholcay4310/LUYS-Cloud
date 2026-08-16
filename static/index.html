@@ -537,8 +537,14 @@
     <label>İş Emri No<input name="orderNo" required></label>
     <label>Müşteri Sipariş No<input name="customerOrderNo"></label>
     <label>Müşteri<input name="customer" value="Lucas" required></label>
-    <label>Parça<input name="part" required></label>
-    <label>Revizyon<input name="revision"></label>
+    <label>Parça Şablonu<select id="partTemplate"><option value="">Yeni / şablonsuz</option></select></label>
+    <label>Parça<input name="part" required placeholder="Örn. Pozitif İzolatör"></label>
+    <label>Sipariş Ayı<select name="orderMonth" id="orderMonth">
+      <option value="1">1. Ay / Ana sipariş</option><option value="2">2. Ay</option><option value="3">3. Ay</option><option value="4">4. Ay</option><option value="5">5. Ay</option><option value="6">6. Ay</option><option value="7">7. Ay</option><option value="8">8. Ay</option><option value="9">9. Ay</option><option value="10">10. Ay</option><option value="11">11. Ay</option><option value="12">12. Ay</option>
+    </select></label>
+    <label>Operasyon Süreleri<select name="copyTemplateOps" id="copyTemplateOps"><option value="yes">Şablondan otomatik getir</option><option value="no">Boş başlat</option></select></label>
+    <label>Revizyon<input name="revision" placeholder="Gerekirse değiştir"></label>
+    <div class="full small" id="partTemplateInfo" style="padding:10px 12px;border:1px dashed #c9d7e0;border-radius:10px;background:#f8fbfd">Parça seçildiğinde önceki iş emrindeki işleme, sök-tak ve ayar süreleri otomatik hazırlanır.</div>
     <label>Talep Edilen Adet<input name="qty" type="number" min="1" required></label>
     <label>Üretilecek Adet<input name="produceQty" type="number" min="1" required></label>
     <label>Stok Durumu<select name="stockStatus"><option value="Geldi">Geldi</option><option value="Kısmi">Kısmi Geldi</option><option value="Bekleniyor">Bekleniyor</option></select></label>
@@ -1325,15 +1331,29 @@ const PART_RATE_SELECT_KEY='luys_part_rate_selection_v1';
 function partRateJsonLoad(key,def={}){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(def))}catch(e){return def}}
 function partRateJsonSave(key,val){try{localStorage.setItem(key,JSON.stringify(val))}catch(e){}}
 function partRateOrderCode(o){return String(o?.orderNo||o?.code||o?.id||'')}
-function partRateMonthInfo(o){
-  const raw=String(o?.part||'').trim();
-  const m=raw.match(/^(.*?)[\s-]+([23])\s*$/);
-  if(!m)return {base:raw||'Parça',month:'1. Ay / Ana sipariş'};
-  return {base:m[1].trim()||raw,month:m[2]+'. Ay siparişi'};
+function partFamilyInfoFromName(name){
+  const raw=String(name||'').trim();
+  const m=raw.match(/^(.*?)\s*-\s*(1[0-2]|[2-9])\s*$/);
+  if(!m)return {base:raw||'Parça',monthNo:1,month:'1. Ay / Ana sipariş'};
+  const monthNo=Math.max(2,Math.min(12,Number(m[2])||1));
+  return {base:m[1].trim()||raw,monthNo,month:monthNo+'. Ay siparişi'};
+}
+window.partFamilyInfoFromName=partFamilyInfoFromName;
+function partRateMonthInfo(o){return partFamilyInfoFromName(o?.part||'')}
+function partRateFamilyKey(o){
+  const base=partRateMonthInfo(o).base.trim().toLocaleUpperCase('tr-TR');
+  return 'PART::'+base;
 }
 function partRatePrice(o){
-  const all=partRateJsonLoad(PART_RATE_PRICE_KEY,{}),c=all[partRateOrderCode(o)]||{};
-  return Math.max(0,Number(c.usd||0));
+  const all=partRateJsonLoad(PART_RATE_PRICE_KEY,{}),familyKey=partRateFamilyKey(o);
+  let c=all[familyKey];
+  if(!c)c=all[partRateOrderCode(o)];
+  if(!c){
+    const base=partRateMonthInfo(o).base.toLocaleUpperCase('tr-TR');
+    const sibling=(state.orders||[]).find(x=>partRateMonthInfo(x).base.toLocaleUpperCase('tr-TR')===base && all[partRateOrderCode(x)]);
+    if(sibling)c=all[partRateOrderCode(sibling)];
+  }
+  return Math.max(0,Number(c?.usd||0));
 }
 function partRateIsSelected(o){return !!partRateJsonLoad(PART_RATE_SELECT_KEY,{})[String(o.id)]}
 window.partRateToggle=(oid,checked)=>{
@@ -1341,7 +1361,7 @@ window.partRateToggle=(oid,checked)=>{
 };
 window.partRateSetPrice=(oid,val)=>{
   const o=order(oid);if(!o)return;
-  const all=partRateJsonLoad(PART_RATE_PRICE_KEY,{}),code=partRateOrderCode(o),old=all[code]||{};
+  const all=partRateJsonLoad(PART_RATE_PRICE_KEY,{}),code=partRateFamilyKey(o),old=all[code]||{};
   all[code]={...old,usd:Math.max(0,Number(val)||0)};partRateJsonSave(PART_RATE_PRICE_KEY,all);
   if(window.__luysRenderProfit)try{window.__luysRenderProfit()}catch(e){}
   renderPartTimes();
@@ -1685,9 +1705,49 @@ document.addEventListener('click',e=>{
   dashboardAction(a.dataset.dashAction);
 });
 
-$('orderForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('id'),no=f.get('orderNo').trim();if(state.orders.some(o=>o.orderNo===no&&o.id!==id)){alert('Bu iş emri numarası zaten kullanılıyor.');return}let obj={id:id||uid(),orderNo:no,customerOrderNo:f.get('customerOrderNo'),customer:f.get('customer'),part:f.get('part'),revision:f.get('revision'),qty:n(f.get('qty')),produceQty:n(f.get('produceQty')),stockStatus:f.get('stockStatus'),stockQty:n(f.get('stockQty')),machine:f.get('machine'),queue:n(f.get('queue')),start:f.get('start'),requested:f.get('requested'),cmmRequired:f.get('cmmRequired'),cmmDays:n(f.get('cmmDays')),shipDays:n(f.get('shipDays')),note:f.get('note'),stage:'plan',ops:[],cmm:{}};let old=order(id);if(old){let oldMachine=old.machine;obj.ops=old.ops||[];obj.cmm=old.cmm||{};obj.stage=old.stage||'plan';obj.completedAt=old.completedAt||'';Object.assign(old,obj);if(old.stage!=='done')placeActiveOrder(old,obj.machine,obj.queue,oldMachine);else{compactQueues(oldMachine);compactQueues(obj.machine)}}else{state.orders.push(obj);placeActiveOrder(obj,obj.machine,obj.queue,'')}compactAllQueues();schedule();if(await save())newOrderForm()}
-function newOrderForm(){if(!canEdit())return;let f=$('orderForm');f.reset();f.id.value='';f.orderNo.value=autoNo();f.customer.value='Lucas';f.machine.value='Tezgâh 1 - 850';f.stockStatus.value='Geldi';f.stockQty.value=0;f.queue.value=nextQueue(f.machine.value);f.start.value=localISO(new Date()).slice(0,16);$('orderTitle').textContent='Yeni İş Emri'}
-window.editOrder=id=>{if(!canEdit())return;let o=order(id),f=$('orderForm');for(let k of ['id','orderNo','customerOrderNo','customer','part','revision','qty','produceQty','stockStatus','stockQty','machine','queue','start','requested','cmmRequired','cmmDays','shipDays','note'])if(f.elements[k])f.elements[k].value=o[k]??'';$('orderTitle').textContent='İş Emri Düzenle';document.querySelector('[data-p="orders"]').click();window.scrollTo(0,0)}
+function orderPartFamily(name){return partFamilyInfoFromName(name)}
+function orderPartKey(name){return orderPartFamily(name).base.trim().toLocaleUpperCase('tr-TR')}
+function orderPartName(base,monthNo){
+  base=orderPartFamily(base).base.trim();monthNo=Math.max(1,Math.min(12,Number(monthNo)||1));
+  return monthNo>1?base+'-'+monthNo:base;
+}
+function orderTemplateSource(base,excludeId=''){
+  const key=orderPartKey(base),arr=[...(state.orders||[])].reverse().filter(o=>o.id!==excludeId&&orderPartKey(o.part)===key);
+  return arr.find(o=>(o.ops||[]).length)||arr[0]||null;
+}
+function fillPartTemplates(selected=''){
+  const el=$('partTemplate');if(!el)return;const old=selected||el.value,map=new Map();
+  (state.orders||[]).forEach(o=>{const x=orderPartFamily(o.part);if(x.base)map.set(orderPartKey(x.base),x.base)});
+  el.innerHTML='<option value="">Yeni / şablonsuz</option>'+[...map.values()].sort((a,b)=>a.localeCompare(b,'tr')).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+  if([...el.options].some(x=>x.value===old))el.value=old;
+}
+function cloneTemplateOps(src){
+  return (src?.ops||[]).map(op=>({id:uid(),name:op.name||'OP',cycle:n(op.cycle),handling:n(op.handling),setup:n(op.setup),runState:'waiting'}));
+}
+function renderPartTemplateInfo(base){
+  const box=$('partTemplateInfo');if(!box)return;const f=$('orderForm'),src=orderTemplateSource(base,f?.elements?.id?.value||'');
+  const monthNo=n(f?.orderMonth?.value)||1,finalName=orderPartName(base,monthNo);
+  if(!String(base||'').trim()){box.innerHTML='Parça seçildiğinde önceki iş emrindeki <b>işleme, sök-tak ve ayar süreleri</b> otomatik hazırlanır.';return}
+  if(!src){box.innerHTML=`Kaydedilecek parça: <b>${esc(finalName)}</b> • Bu parça için eski iş emri bulunamadı; operasyonlar boş başlayacak.`;return}
+  const ops=(src.ops||[]).map(op=>`${esc(op.name||'OP')}: ${n(op.cycle).toFixed(1)} dk işleme + ${n(op.handling).toFixed(1)} dk sök-tak + ${n(op.setup).toFixed(2)} sa ayar`).join('<br>');
+  box.innerHTML=`Kaydedilecek parça: <b>${esc(finalName)}</b> • Şablon: <b>${esc(src.orderNo||'')}</b>${src.revision?` • Rev. ${esc(src.revision)}`:''}<br>${ops||'Operasyon kaydı yok.'}`;
+}
+function applyPartTemplate(base){
+  const f=$('orderForm');if(!f)return;base=orderPartFamily(base).base;f.part.value=base;
+  const src=orderTemplateSource(base,f.elements.id.value||'');
+  if(src){
+    for(const k of ['customer','revision','qty','produceQty','machine','cmmRequired','cmmDays','shipDays'])if(f.elements[k]&&src[k]!==undefined&&src[k]!==null&&src[k]!=='')f.elements[k].value=src[k];
+    if(!f.id.value)f.queue.value=nextQueue(f.machine.value);
+  }
+  renderPartTemplateInfo(base);
+}
+if($('partTemplate'))$('partTemplate').addEventListener('change',e=>{if(e.target.value)applyPartTemplate(e.target.value)});
+if($('orderMonth'))$('orderMonth').addEventListener('change',()=>renderPartTemplateInfo($('orderForm').part.value));
+if($('orderForm')?.part)$('orderForm').part.addEventListener('change',()=>{const f=$('orderForm'),x=orderPartFamily(f.part.value);f.part.value=x.base;if(x.monthNo>1&&n(f.orderMonth.value)===1)f.orderMonth.value=x.monthNo;fillPartTemplates(x.base);if(orderTemplateSource(x.base,f.elements.id.value||''))applyPartTemplate(x.base);else renderPartTemplateInfo(x.base)});
+
+$('orderForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('id'),no=f.get('orderNo').trim();if(state.orders.some(o=>o.orderNo===no&&o.id!==id)){alert('Bu iş emri numarası zaten kullanılıyor.');return}const base=orderPartFamily(f.get('part')).base,monthNo=Math.max(1,Math.min(12,n(f.get('orderMonth'))||1)),finalPart=orderPartName(base,monthNo),template=(!id&&f.get('copyTemplateOps')==='yes')?orderTemplateSource(base):null;let obj={id:id||uid(),orderNo:no,customerOrderNo:f.get('customerOrderNo'),customer:f.get('customer'),part:finalPart,basePart:base,orderMonth:monthNo,revision:f.get('revision'),qty:n(f.get('qty')),produceQty:n(f.get('produceQty')),stockStatus:f.get('stockStatus'),stockQty:n(f.get('stockQty')),machine:f.get('machine'),queue:n(f.get('queue')),start:f.get('start'),requested:f.get('requested'),cmmRequired:f.get('cmmRequired'),cmmDays:n(f.get('cmmDays')),shipDays:n(f.get('shipDays')),note:f.get('note'),stage:'plan',ops:template?cloneTemplateOps(template):[],cmm:{},templateSourceOrderNo:template?.orderNo||''};let old=order(id);if(old){let oldMachine=old.machine;obj.ops=old.ops||[];obj.cmm=old.cmm||{};obj.stage=old.stage||'plan';obj.completedAt=old.completedAt||'';obj.templateSourceOrderNo=old.templateSourceOrderNo||'';Object.assign(old,obj);if(old.stage!=='done')placeActiveOrder(old,obj.machine,obj.queue,oldMachine);else{compactQueues(oldMachine);compactQueues(obj.machine)}}else{state.orders.push(obj);placeActiveOrder(obj,obj.machine,obj.queue,'')}compactAllQueues();schedule();if(await save())newOrderForm()}
+function newOrderForm(){if(!canEdit())return;let f=$('orderForm');f.reset();f.elements.id.value='';f.orderNo.value=autoNo();f.customer.value='Lucas';f.machine.value='Tezgâh 1 - 850';f.stockStatus.value='Geldi';f.stockQty.value=0;f.queue.value=nextQueue(f.machine.value);f.start.value=localISO(new Date()).slice(0,16);if(f.orderMonth)f.orderMonth.value='1';if(f.copyTemplateOps)f.copyTemplateOps.value='yes';fillPartTemplates();renderPartTemplateInfo('');$('orderTitle').textContent='Yeni İş Emri'}
+window.editOrder=id=>{if(!canEdit())return;let o=order(id),f=$('orderForm'),pi=orderPartFamily(o.part);fillPartTemplates(pi.base);for(let k of ['id','orderNo','customerOrderNo','customer','revision','qty','produceQty','stockStatus','stockQty','machine','queue','start','requested','cmmRequired','cmmDays','shipDays','note'])if(f.elements[k])f.elements[k].value=o[k]??'';f.part.value=pi.base;if(f.orderMonth)f.orderMonth.value=String(o.orderMonth||pi.monthNo||1);if(f.copyTemplateOps)f.copyTemplateOps.value='no';if($('partTemplate')&&[...$('partTemplate').options].some(x=>x.value===pi.base))$('partTemplate').value=pi.base;renderPartTemplateInfo(pi.base);$('orderTitle').textContent='İş Emri Düzenle';document.querySelector('[data-p="orders"]').click();window.scrollTo(0,0)}
 window.delOrder=async id=>{if(!canEdit())return;if(confirm('İş emri silinsin mi?')){let old=order(id),m=old?.machine;state.orders=state.orders.filter(o=>o.id!==id);state.daily=state.daily.filter(r=>r.orderId!==id);if(m)compactQueues(m);schedule();await save()}}
 $('opOrder').onchange=syncOpAuto;
 $('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
@@ -2034,18 +2094,20 @@ window.editDaily=id=>{
   <div style="color:#718491;margin-top:5px">Üretilen adetlere göre işçilik satış değeri</div>
 
   <div class="profitGrid">
-    <div class="profitKpi"><small>ÜRETİLEN İŞÇİLİK DEĞERİ</small><b id="pkSales">₺0</b></div>
+    <div class="profitKpi"><small>AYLIK İŞÇİLİK CİROSU</small><b id="pkSales">$0.00</b></div>
+    <div class="profitKpi"><small>TOPLAM İŞÇİLİK SÜRESİ</small><b id="pkHours">0.00 sa</b></div>
+    <div class="profitKpi"><small>ORTALAMA İŞÇİLİK DEĞERİ</small><b id="pkHourly">-</b></div>
   </div>
 
   <div class="profitCard">
     <h3>İş / Parça İşçilik Fiyatı</h3>
     <div class="profitForm">
-      <label>İş Emri / Parça<select id="pcJob"></select></label>
+      <label>Parça<select id="pcJob"></select></label>
       <label>İşçilik Fiyatı (USD/adet)<input id="pcUsd" type="number" step="0.01" min="0"></label>
-      <label>Güncel USD/TL<input id="pcRate" type="number" step="0.0001" min="0" placeholder="Kur"></label>
+      <label>USD/TL (opsiyonel)<input id="pcRate" type="number" step="0.0001" min="0" placeholder="Kur"></label>
       <label>&nbsp;<button class="profitBtn green" id="pcSave" type="button">İŞÇİLİK FİYATINI KAYDET</button></label>
     </div>
-    <div style="font-size:11px;color:#718491;margin-top:10px">Değer, gerçekleşen üretilen adet × işçilik fiyatı × kur üzerinden hesaplanır.</div>
+    <div style="font-size:11px;color:#718491;margin-top:10px">Fiyatı parça için bir kez gir. -2, -3 ve diğer ay siparişleri aynı işçilik fiyatını otomatik kullanır. Aylık ciro, o ayın sağlam üretim adetlerinden hesaplanır.</div>
   </div>
 
   <div class="profitCard">
@@ -2054,7 +2116,7 @@ window.editDaily=id=>{
       <input id="profitMonth" type="month" style="padding:8px;border:1px solid #b9c8d2;border-radius:9px">
     </div>
     <table class="profitTable" style="margin-top:10px">
-      <thead><tr><th>İş / Parça</th><th>Üretilen</th><th>İşçilik USD/adet</th><th>Üretilen Değer</th></tr></thead>
+      <thead><tr><th>Parça</th><th>İş Emirleri</th><th>Sağlam Üretim</th><th>İşçilik USD/adet</th><th>İşçilik Cirosu</th><th>Toplam İşçilik Süresi</th><th>Ort. $/sa</th></tr></thead>
       <tbody id="profitRows"></tbody>
     </table>
   </div>
@@ -2063,69 +2125,70 @@ window.editDaily=id=>{
 <script>
 (function(){
  const KEY='luys_profit_costs_v1';
- const money=n=>'₺'+(Number(n)||0).toLocaleString('tr-TR',{maximumFractionDigits:0});
+ const usd=n=>'$'+(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
  const ym=()=>new Date().toISOString().slice(0,7);
  const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
  const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
-
+ const norm=x=>String(x||'').trim().toLocaleUpperCase('tr-TR');
+ const info=name=>window.partFamilyInfoFromName?window.partFamilyInfoFromName(name):{base:String(name||'').trim(),monthNo:1};
+ const familyKey=name=>'PART::'+norm(info(name).base);
+ function st(){try{return window.__luysGetState?window.__luysGetState():null}catch(e){return null}}
  function jobs(){
-   let arr=[];
-   try{const st=window.__luysGetState?window.__luysGetState():null;if(st&&Array.isArray(st.orders))arr=st.orders}catch(e){}
-   const map=new Map();
-   arr.forEach(j=>{
-     const code=j.orderNo||j.code||j.jobNo||j.isEmri||j.id;
-     const name=j.part||j.partName||j.name||j.parca||j.productName||'';
-     if(code)map.set(String(code),{...j,_code:String(code),_name:name});
-   });
-   return [...map.values()];
+   const arr=st()?.orders||[];return arr.map(j=>({...j,_code:String(j.orderNo||j.code||j.id||''),_name:j.part||j.partName||j.name||'',_base:info(j.part||j.partName||j.name||'').base})).filter(j=>j._code);
  }
- function produced(j){
-   const ops=j.ops||j.operations||j.operasyonlar||[];
-   let vals=ops.map(o=>Number(o.done??o.produced??o.yapilan??o.completedQty??0)).filter(x=>x>=0);
-   if(vals.length)return Math.max(...vals);
-   return Number(j.done??j.produced??j.yapilan??j.completedQty??0);
+ function records(){return st()?.daily||[]}
+ function families(){
+   const map=new Map();jobs().forEach(j=>{const k=familyKey(j._name);if(!map.has(k))map.set(k,{key:k,name:j._base,jobs:[]});map.get(k).jobs.push(j)});return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+ }
+ function costForFamily(f,costs){
+   if(costs[f.key])return costs[f.key];
+   for(const j of f.jobs){if(costs[j._code])return costs[j._code]}
+   return {};
+ }
+ function costForJob(j,costs){
+   const f=families().find(x=>x.key===familyKey(j._name));return f?costForFamily(f,costs):{};
  }
  function fillJobs(){
-   const sel=document.getElementById('pcJob');if(!sel)return;
-   const old=sel.value;sel.innerHTML='<option value="">Seçiniz</option>';
-   jobs().forEach(j=>{let o=document.createElement('option');o.value=j._code;o.textContent=j._code+(j._name?' • '+j._name:'');sel.appendChild(o)});
-   if([...sel.options].some(o=>o.value===old))sel.value=old;
+   const sel=document.getElementById('pcJob');if(!sel)return;const old=sel.value;sel.innerHTML='<option value="">Seçiniz</option>';
+   families().forEach(f=>{let o=document.createElement('option');o.value=f.key;o.textContent=f.name;sel.appendChild(o)});if([...sel.options].some(o=>o.value===old))sel.value=old;
  }
  function loadCost(){
-   const c=load(KEY,{})[document.getElementById('pcJob').value]||{};
+   const key=document.getElementById('pcJob').value,costs=load(KEY,{}),f=families().find(x=>x.key===key),c=f?costForFamily(f,costs):{};
    pcUsd.value=c.usd||'';pcRate.value=c.rate||'';
  }
+ function recNetHours(r){
+   if(r.netHours!==undefined&&r.netHours!==null&&r.netHours!=='')return Math.max(0,Number(r.netHours)||0);
+   return Math.max(0,(Number(r.hours)||0)-(((Number(r.breaktime)||0)+(Number(r.downtime)||0))/60));
+ }
  function render(){
-   fillJobs();
-   const costs=load(KEY,{});
-   let sales=0,html='';
-   jobs().forEach(j=>{
-     const c=costs[j._code]||{},q=produced(j),rate=Number(c.rate||0),usd=Number(c.usd||0);
-     const sv=q*usd*rate;sales+=sv;
-     html+=`<tr><td><b>${j._code}</b><br><small>${j._name||''}</small></td><td>${q}</td><td>$${usd.toFixed(2)}</td><td>${money(sv)}</td></tr>`;
+   fillJobs();const costs=load(KEY,{}),month=profitMonth.value||ym(),orders=jobs(),orderMap=new Map(orders.map(j=>[String(j.id),j])),groups=new Map();
+   records().filter(r=>String(r.date||'').startsWith(month)).forEach(r=>{
+     const j=orderMap.get(String(r.orderId));if(!j)return;const key=familyKey(j._name);if(!groups.has(key))groups.set(key,{key,name:j._base,orders:new Set(),good:0,hours:0});
+     const g=groups.get(key);g.orders.add(j._code);g.hours+=recNetHours(r);
+     // Ciro yalnızca bitmiş ürün üzerinden hesaplanır: son operasyonun sağlam adedi.
+     // İşçilik süresinde ise aynı aya ait tüm operasyonların gerçek net saatleri toplanır.
+     const ops=j.ops||[],lastOp=ops.length?ops[ops.length-1]:null;
+     if(!lastOp || String(r.opId)===String(lastOp.id))g.good+=Math.max(0,Number(r.good)||0);
    });
-   profitRows.innerHTML=html||'<tr><td colspan="4">Henüz işçilik fiyatı kaydı yok.</td></tr>';
-   pkSales.textContent=money(sales);
+   let totalSales=0,totalHours=0,html='';
+   [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'tr')).forEach(g=>{
+     const f=families().find(x=>x.key===g.key)||{key:g.key,name:g.name,jobs:orders.filter(j=>familyKey(j._name)===g.key)},c=costForFamily(f,costs),price=Math.max(0,Number(c.usd)||0),sales=g.good*price,hourly=g.hours>0?sales/g.hours:null;
+     totalSales+=sales;totalHours+=g.hours;
+     html+=`<tr><td><b>${g.name}</b></td><td>${[...g.orders].join(', ')}</td><td>${g.good}</td><td>${usd(price)}</td><td><b>${usd(sales)}</b></td><td>${g.hours.toFixed(2)} sa</td><td><b>${hourly===null?'-':usd(hourly)+'/sa'}</b></td></tr>`;
+   });
+   profitRows.innerHTML=html||'<tr><td colspan="7">Seçilen ayda günlük üretim kaydı yok.</td></tr>';
+   pkSales.textContent=usd(totalSales);pkHours.textContent=totalHours.toFixed(2)+' sa';pkHourly.textContent=totalHours>0?usd(totalSales/totalHours)+'/sa':'-';
  }
  document.addEventListener('DOMContentLoaded',()=>{
-   profitMonth.value=ym();fillJobs();
-   pcJob.addEventListener('change',loadCost);
+   profitMonth.value=ym();fillJobs();pcJob.addEventListener('change',loadCost);
    pcSave.addEventListener('click',()=>{
-     if(!pcJob.value)return alert('Önce iş emri seçin.');
-     const all=load(KEY,{}),old=all[pcJob.value]||{};
-     // Eski maliyet alanlarını sil: bu ekran yalnızca işçilik fiyatını tutar.
-     all[pcJob.value]={usd:+pcUsd.value||0,rate:+pcRate.value||0};
-     save(KEY,all);render();alert('İşçilik fiyatı kaydedildi.');
+     if(!pcJob.value)return alert('Önce parça seçin.');const all=load(KEY,{}),old=all[pcJob.value]||{};all[pcJob.value]={...old,usd:+pcUsd.value||0,rate:+pcRate.value||0};save(KEY,all);render();if(window.renderPartTimes)try{window.renderPartTimes()}catch(e){}alert('Parça işçilik fiyatı kaydedildi. Tüm ay siparişleri aynı fiyatı kullanacak.');
    });
    profitMonth.addEventListener('change',render);
    document.body.addEventListener('click',e=>{
      const x=e.target.closest('button,a,[data-tab]');if(!x)return;
      if(/Muhasebe|Maliyet\s*&?\s*Kârlılık|İşçilik Değeri/i.test(x.textContent||'')){
-       if(typeof canEdit==='function'&&!canEdit())return;
-       setTimeout(()=>{
-         document.querySelectorAll('main>section,.page,.tab-content').forEach(y=>{if(y.id!=='profitPanel')y.classList.remove('active')});
-         profitPanel.classList.add('active');render();window.scrollTo({top:0,behavior:'smooth'});
-       },0);
+       if(typeof canEdit==='function'&&!canEdit())return;setTimeout(()=>{document.querySelectorAll('main>section,.page,.tab-content').forEach(y=>{if(y.id!=='profitPanel')y.classList.remove('active')});profitPanel.classList.add('active');render();window.scrollTo({top:0,behavior:'smooth'});},0);
      }else if(x.closest('nav')||x.dataset.tab){profitPanel.classList.remove('active')}
    });
  });
