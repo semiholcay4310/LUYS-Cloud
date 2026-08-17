@@ -1017,6 +1017,56 @@ function ensureBaselineProductEnd(o){
   const b=baselineProductEnd(o);
   if(b)o.baselineProductEnd=b;
 }
+
+// Canlı performans referansı: OP her gerçek başlatıldığında / yeniden başlatıldığında
+// kalan iş, normal takvim ve standart sürelerle o andan itibaren yeniden planlanır.
+// Böylece haftalık bir ara, sıra değişimi veya eski ilk başlangıç tarihi kullanıcıyı
+// yapay olarak "geride" göstermez.
+function liveReferencePlanEnd(o,op,at){
+  if(!o||!op)return '';
+  const ops=o.ops||[];
+  const idx=ops.findIndex(x=>x.id===op.id);
+  if(idx<0)return '';
+  let cursor=nextMoment(new Date(at||new Date()));
+  for(let i=idx;i<ops.length;i++){
+    const x=ops[i];
+    const remaining=Math.max(0,opTarget(o,x)-opProcessed(x));
+    if(remaining<=0)continue;
+    // Aktif OP zaten başlatılmış kabul edilir; sonraki OP'lerin ayarı normal plana dahildir.
+    if(i>idx)cursor=addWork(cursor,n(x.setup)*60);
+    cursor=addWork(cursor,remaining*(n(x.cycle)+n(x.handling)));
+  }
+  return localISO(cursor);
+}
+function planReasonSnapshotNow(o){
+  const r=calculatePlanReasonInfo(o);
+  return {speed:r.speed,overtime:r.overtime,downtime:r.downtime,netGain:r.netGain,records:r.records,normalMinutes:r.normalMinutes,attendedMinutes:r.attendedMinutes};
+}
+function resetLiveReferencePlan(o,op,at){
+  if(!o||!op)return;
+  const t=at||localISO(new Date());
+  const end=liveReferencePlanEnd(o,op,t);
+  if(!end)return;
+  o.livePlanOpId=op.id;
+  o.livePlanStartedAt=localISO(nextMoment(new Date(t)));
+  o.livePlanEnd=end;
+  // O ana kadarki üretim performansını sıfır noktası olarak sakla.
+  // Bundan sonra yalnızca yeni hız / ek çalışma / duruş farkı referans plana uygulanır.
+  o.livePlanReasonBase=planReasonSnapshotNow(o);
+  o.currentForecastSnapshot=end;
+  o.forecastSnapshotAt=localISO(new Date());
+}
+function ensureRunningLiveReferencePlans(){
+  let changed=false;
+  for(const o of (state.orders||[])){
+    const op=(o.ops||[]).find(x=>x.runState==='running'&&opProcessed(x)<opTarget(o,x));
+    if(op&&!o.livePlanEnd){
+      resetLiveReferencePlan(o,op,localISO(new Date()));
+      changed=true;
+    }
+  }
+  return changed;
+}
 function actualMinutesPerPiece(o,op){
   const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
   const processed=recs.reduce((a,r)=>a+n(r.good)+n(r.scrap),0);
@@ -1180,29 +1230,41 @@ function calculatePlanReasonInfo(o){
 }
 
 function planReasonInfo(o){
-  // Plan farkı her ekranda güncel günlük kayıtlar ve güncel takvimle canlı hesaplanır.
-  return calculatePlanReasonInfo(o);
+  // Plan farkı, son OP başlatma / yeniden başlatma anından SONRA oluşan performanstır.
+  const cur=calculatePlanReasonInfo(o);
+  const b=o?.livePlanReasonBase;
+  if(!b)return cur;
+  const speed=Math.round(cur.speed-n(b.speed));
+  const overtime=Math.round(cur.overtime-n(b.overtime));
+  const downtime=Math.round(cur.downtime-n(b.downtime));
+  const rawRecords=Math.max(0,cur.records-n(b.records));
+  const normalMinutes=Math.max(0,Math.round(cur.normalMinutes-n(b.normalMinutes)));
+  const attendedMinutes=Math.max(0,Math.round(cur.attendedMinutes-n(b.attendedMinutes)));
+  // Aynı gün durdur/başlat sonrası günlük kayıt güncellenirse kayıt adedi artmayabilir.
+  // Buna rağmen performans farkı varsa yeni seans verisi var kabul et.
+  const hasDelta=Math.abs(speed)+Math.abs(overtime)+Math.abs(downtime)+normalMinutes+attendedMinutes>0;
+  const records=rawRecords>0?rawRecords:(hasDelta?1:0);
+  return {speed,overtime,downtime,netGain:speed+overtime-downtime,records,normalMinutes,attendedMinutes};
 }
 
 function calculateForecastFromDaily(o){
   if(!o||!(o.ops||[]).length)return '';
-  const ops=o.ops||[], lastOp=ops[ops.length-1];
-  const opPlanEnd=lastOp?.planEnd||'';
-  ensureBaselineProductEnd(o);
-  const fixedBaseline=o.baselineProductEnd||baselineProductEnd(o)||opPlanEnd;
-  if(!ops.some(op=>op.actualStart))return opPlanEnd||fixedBaseline;
-  if(!ops.some(op=>opProcessed(op)<opTarget(o,op)))
-    return lastOp.actualEnd||opPlanEnd||fixedBaseline;
-  const r=calculatePlanReasonInfo(o);
-  if(!r.records)return opPlanEnd||fixedBaseline;
-  return shiftWorkingMoment(opPlanEnd||fixedBaseline,-r.netGain);
+  const ops=o.ops||[],lastOp=ops[ops.length-1];
+  if(!ops.some(op=>op.actualStart))return lastOp?.planEnd||'';
+  if(!ops.some(op=>opProcessed(op)<opTarget(o,op)))return lastOp?.actualEnd||lastOp?.planEnd||o.livePlanEnd||'';
+
+  // Esas referans, aktif OP'nin en son başlatıldığı anda kalan işten oluşturulan sabit plandır.
+  const base=o.livePlanEnd||o.baselineProductEnd||baselineProductEnd(o)||lastOp?.planEnd||'';
+  if(!base)return '';
+  const r=planReasonInfo(o);
+  if(!r.records)return base;
+  return shiftWorkingMoment(base,-r.netGain);
 }
 
 function refreshForecastSnapshot(o){
   if(!o)return;
   schedule();
-  ensureBaselineProductEnd(o);
-  const r=calculatePlanReasonInfo(o);
+  const r=planReasonInfo(o);
   o.planReasonSnapshot={speed:r.speed,overtime:r.overtime,downtime:r.downtime,netGain:r.netGain,records:r.records};
   o.currentForecastSnapshot=calculateForecastFromDaily(o);
   o.forecastSnapshotAt=localISO(new Date());
@@ -1219,7 +1281,7 @@ function planReasonHTML(o){
   const r=planReasonInfo(o);
   const started=(o.ops||[]).some(op=>!!op.actualStart);
   if(!started)return `<div class="planReasonNote">Önde/geride hesabı, operasyon gerçek üretime alındığında başlar.</div>`;
-  if(!r.records)return `<div class="planReasonNote">İmalat başladı. İlk günlük üretim kaydından sonra performans hesabı oluşacak.</div>`;
+  if(!r.records)return `<div class="planReasonNote">Yeni referans plan oluşturuldu. İlk yeni günlük üretim kaydından sonra hız ve ek çalışma etkisi oluşacak.</div>`;
 
   const fmtMin=v=>{
     const a=Math.abs(Math.round(v)),h=Math.floor(a/60),m=a%60;
@@ -1238,7 +1300,7 @@ function planReasonHTML(o){
     <div class="planReasonRow ${totalCls}" style="border-top:2px solid #dfe7ed;margin-top:3px;padding-top:6px">
       <span><b>TOPLAM İMALAT PERFORMANSI</b></span><b>${fmtMin(total)}</b>
     </div>
-    <div class="planReasonNote">Önde/geride hesabı gerçek üretim başladıktan sonraki imalat verisidir. Hızlı/yavaş üretim, normal çalışma süresinin üzerindeki ek çalışma ve duruşlar hesaba girer. İş sırası ve eski plan tarihleri performans hesabına girmez.</div>`;
+    <div class="planReasonNote">Önde/geride hesabı son OP başlatma / yeniden başlatma anından itibaren ölçülür. Hızlı/yavaş üretim, normal çalışma süresinin üzerindeki ek çalışma ve duruşlar hesaba girer. Önceki bekleme süresi, iş sırası ve eski plan tarihleri bu performans farkına girmez.</div>`;
 }
 function togglePlanReason(id){
   const el=document.getElementById(id);
@@ -1247,41 +1309,34 @@ function togglePlanReason(id){
 
 function planDeltaInfo(o){
   const r=planReasonInfo(o);
-  // Önde/geride yalnızca gerçek imalat başladıktan sonra anlamlıdır.
   const started=(o.ops||[]).some(op=>!!op.actualStart);
-  if(!started || !r.records)return null;
+  if(!started)return null;
 
-  // Performans farkı = imalat hızı + normal mesai üstü ek çalışma - duruş.
-  // İş sırası, eski plan başlangıcı ve takvim kaydırmaları bu hesaba girmez.
+  // Referans plan: OP'nin en son başlatıldığı / yeniden başlatıldığı anda,
+  // o andaki kalan adetlerin standart süre ve normal mesaiyle biteceği tarih.
+  // Sıra değişimi ve eski ilk başlangıç bu tarihi sonradan oynatmaz.
+  const base=o.livePlanEnd||o.baselineProductEnd||baselineProductEnd(o)||'';
+  if(!base)return null;
+
   const netGain=r.speed+r.overtime-r.downtime;
   const abs=Math.abs(Math.round(netGain));
-
   const normalDaily=(r.normalMinutes&&r.records)?Math.max(60,Math.round(r.normalMinutes/r.records)):510;
   const days=Math.floor(abs/normalDaily);
   let rest=abs-days*normalDaily;
-  const hours=Math.floor(rest/60);
-  const minutes=rest%60;
-
+  const hours=Math.floor(rest/60),minutes=rest%60;
   let parts=[];
   if(days)parts.push(days+' iş günü');
   if(hours)parts.push(hours+' sa');
   if(minutes)parts.push(minutes+' dk');
   if(!parts.length)parts.push('0 dk');
-
   const cls=netGain>1?'ahead':netGain<-1?'behind':'same';
   const label=cls==='ahead'?parts.join(' ')+' önde':cls==='behind'?parts.join(' ')+' geride':'Planla aynı';
 
-  // Başlangıç Planı: üretim başladığı anda sabitlenen ilk ürün bitiş tarihi.
-  // Eski kayıtlarda sabit değer yoksa mevcut veriden bir kez türetip gösterir.
-  ensureBaselineProductEnd(o);
-  const base=o.baselineProductEnd||baselineProductEnd(o)||'';
-
-  // Güncel Tahmin: günlük üretim, imalat hızı, ek çalışma ve duruş etkileriyle
-  // hesaplanan canlı ürün bitiş tahmini.
-  const forecast=calculateForecastFromDaily(o)||currentProductForecast(o)||base;
-
+  // Güncel Tahmin = sabit referans bitişi +/- yalnızca bu üretim seansındaki performans.
+  const forecast=r.records?shiftWorkingMoment(base,-netGain):base;
   return {base,forecast,netGain,cls,text:label};
 }
+
 function planTrackHTML(o){
   const p=planDeltaInfo(o);
   if(!p)return '';
@@ -1792,17 +1847,17 @@ if($('opForm')?.name){
 $('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
 window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
 window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
-window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});op.runState='running';if(!op.actualStart)op.actualStart=localISO(new Date());op.pauseReason='';o.stage='production';schedule();ensureBaselineProductEnd(o);if(!o.currentForecastSnapshot)o.currentForecastSnapshot=o.baselineProductEnd||baselineProductEnd(o);if(!o.planReasonSnapshot)o.planReasonSnapshot={speed:0,overtime:0,downtime:0,netGain:0,records:0};o.forecastSnapshotAt=op.actualStart||localISO(new Date());syncCompletedOps();await save()}
+window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}const wasRunning=op.runState==='running';state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});const now=localISO(new Date());op.runState='running';if(!op.actualStart)op.actualStart=now;op.pauseReason='';o.stage='production';schedule();if(!wasRunning)resetLiveReferencePlan(o,op,now);syncCompletedOps();await save()}
 window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());o.stage='paused';schedule();await save()}
-window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart=''}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production';schedule();ensureBaselineProductEnd(o);if(!o.currentForecastSnapshot)o.currentForecastSnapshot=o.baselineProductEnd||baselineProductEnd(o);if(!o.planReasonSnapshot)o.planReasonSnapshot={speed:0,overtime:0,downtime:0,netGain:0,records:0};o.forecastSnapshotAt=op.actualStart||localISO(new Date())}await save()}
-window.cmmApprove=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);op.runState='running';op.pauseReason='';op.cmmApprovedAt=localISO(new Date());o.stage='production';if(o.cmm)o.cmm.status='Onay';schedule();await save()}
+window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart='';if(o.livePlanOpId===op.id){o.livePlanOpId='';o.livePlanStartedAt='';o.livePlanEnd='';o.livePlanReasonBase=null}}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production';schedule();resetLiveReferencePlan(o,op,v)}await save()}
+window.cmmApprove=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);const now=localISO(new Date());op.runState='running';op.pauseReason='';op.cmmApprovedAt=now;o.stage='production';if(o.cmm)o.cmm.status='Onay';schedule();resetLiveReferencePlan(o,op,now);await save()}
 $('dailyOrder').onchange=fillDailyOps;
 $('dailyForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),id=f.get('recId'),key=r=>r.orderId===f.get('orderId')&&r.opId===f.get('opId')&&r.date===f.get('date'),existing=state.daily.find(key),obj={id:id||existing?.id||uid(),orderId:f.get('orderId'),opId:f.get('opId'),date:f.get('date'),hours:n(f.get('hours')),good:n(f.get('good')),scrap:n(f.get('scrap')),downtime:n(f.get('downtime')),reason:f.get('reason')};if(existing&&!id){if(!confirm('Bu tarih için kayıt var. Mevcut kayıt güncellensin mi?'))return;Object.assign(existing,obj)}else if(id){let r=state.daily.find(x=>x.id===id);Object.assign(r,obj)}else state.daily.push(obj);if(await save()){e.target.reset();e.target.recId.value='';e.target.date.value=ymd(new Date());e.target.hours.value=10;$('dailyTitle').textContent='Günlük Üretim Kaydı'}}
 window.editDaily=id=>{if(!canEdit())return;let r=state.daily.find(x=>x.id===id),f=$('dailyForm');for(let k of ['recId','orderId','opId','date','hours','good','scrap','downtime','reason'])if(f.elements[k])f.elements[k].value=r[k]??'';fillDailyOps();f.opId.value=r.opId;$('dailyTitle').textContent='Günlük Kaydı Düzenle';document.querySelector('[data-p="daily"]').click();window.scrollTo(0,0)}
 window.delDaily=async id=>{if(!canEdit())return;if(confirm('Günlük kayıt silinsin mi?')){let old=state.daily.find(r=>r.id===id),oid=old?.orderId||'';state.daily=state.daily.filter(r=>r.id!==id);syncCompletedOps();let o=order(oid);if(o)refreshForecastSnapshot(o);await save()}}
 $('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;o.cmm={firm:f.get('firm'),sent:f.get('sent'),sentDate:f.get('sentDate'),expected:f.get('expected'),returned:f.get('returned'),status:f.get('status'),reportNo:f.get('reportNo')};await save()}
 $('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
-Promise.all([loadMe(),load()]).then(()=>{if(canEdit())newOrderForm();if($('dailyForm')){$('dailyForm').date.value=ymd(new Date());$('dailyForm').hours.value=0}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
+Promise.all([loadMe(),load()]).then(async()=>{if(canEdit()){if(ensureRunningLiveReferencePlans())await save();newOrderForm()}if($('dailyForm')){$('dailyForm').date.value=ymd(new Date());$('dailyForm').hours.value=0}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
 setInterval(()=>load().catch(()=>{}),15000);
 function saatFarki(startTime,endTime){
   if(!startTime||!endTime)return 0;
