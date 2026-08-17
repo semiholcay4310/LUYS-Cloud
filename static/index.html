@@ -1055,7 +1055,8 @@ function resetLiveReferencePlan(o,op,at){
   // Böylece deploy / sayfa yenileme / sıra değişimi bu referansı kaybettiremez.
   op.lastResumeAt=sessionStart;
   o.livePlanMode='session';
-  o.livePlanVersion=2;
+  o.livePlanVersion=3;
+  op.resumeSeq=n(op.resumeSeq)+1;
   // O ana kadarki üretim performansını sıfır noktası olarak sakla.
   // Bundan sonra yalnızca yeni hız / ek çalışma / duruş farkı referans plana uygulanır.
   o.livePlanReasonBase=planReasonSnapshotNow(o);
@@ -1065,13 +1066,17 @@ function resetLiveReferencePlan(o,op,at){
 function liveRefDate(v){const d=v?new Date(v):null;return d&&!isNaN(d)?d:null}
 function isExplicitLiveReference(o,op){
   if(!o||!op||!o.livePlanEnd||o.livePlanOpId!==op.id)return false;
+  const lp=liveRefDate(o.livePlanStartedAt),pa=liveRefDate(op.pausedAt);
+  if(!lp)return false;
+  // OP daha sonra durdurulmuşsa, duruştan ÖNCE kalmış referans artık geçerli değildir.
+  // Böyle bir kayıt kullanılırsa yeniden başlatılan iş eski plana geri düşer.
+  if(op.runState==='running'&&pa&&lp<=pa)return false;
   if(o.livePlanMode==='session')return true;
   // Bir önceki sürümde marker yoktu. Gerçek kullanıcı başlangıçlarını korumak için
-  // ilk başlangıca çok yakın kayıtları veya yakın zamanda durdurulup yeniden başlayanları tanı.
-  const lp=liveRefDate(o.livePlanStartedAt),as=liveRefDate(op.actualStart),pa=liveRefDate(op.pausedAt),ca=liveRefDate(op.cmmApprovedAt);
-  if(!lp)return false;
+  // ilk başlangıca çok yakın kayıtları veya durdurulup yeniden başlayanları tanı.
+  const as=liveRefDate(op.actualStart),ca=liveRefDate(op.cmmApprovedAt);
   if(as&&Math.abs(lp-as)<=10*60000)return true;
-  if(pa&&lp>=pa&&(lp-pa)<=12*60*60000)return true;
+  if(pa&&lp>pa)return true;
   if(ca&&Math.abs(lp-ca)<=12*60*60000)return true;
   return false;
 }
@@ -1081,54 +1086,53 @@ function clearLiveReference(o){
 }
 function repairLiveReferences(){
   let changed=false;
-  const now=Date.now();
+  const nowDate=new Date(),now=nowDate.getTime();
   for(const o of (state.orders||[])){
-    // 1) Mevcut gerçek seans kaydı varsa ASLA temizleme. Sadece marker'ını tamamla.
-    if(o.livePlanEnd&&o.livePlanOpId){
-      const linked=(o.ops||[]).find(x=>x.id===o.livePlanOpId);
-      if(linked){
-        if(o.livePlanMode!=='session'){o.livePlanMode='session';changed=true}
-        if(!linked.lastResumeAt&&o.livePlanStartedAt){linked.lastResumeAt=o.livePlanStartedAt;changed=true}
-        if(o.livePlanVersion!==2){o.livePlanVersion=2;changed=true}
+    const running=(o.ops||[]).find(x=>x.runState==='running'&&x.actualStart&&opProcessed(x)<opTarget(o,x));
+
+    // EN ÖNEMLİ KURAL: çalışan OP daha önce durdurulmuşsa, canlı referans son duruştan
+    // sonra kurulmuş olmalıdır. Duruştan eski bir referans varsa bu STALE kayıttır.
+    if(running&&running.pausedAt){
+      const p=new Date(running.pausedAt).getTime();
+      const ls=(o.livePlanOpId===running.id&&o.livePlanStartedAt)?new Date(o.livePlanStartedAt).getTime():NaN;
+      const lr=running.lastResumeAt?new Date(running.lastResumeAt).getTime():NaN;
+      const liveValid=isFinite(p)&&isFinite(ls)&&ls>p&&o.livePlanOpId===running.id&&!!o.livePlanEnd;
+
+      if(isFinite(p)&&!liveValid){
+        // Gerçek yeniden başlatma zamanı kayıtlıysa onu kullan. Önceki sürüm bunu kaybettiyse,
+        // forecast snapshot duruştan sonraysa onu kullan; o da yoksa BU YÜKLEME anını bir kere
+        // yeni referans kabul et. Böylece haftalık eski plan sağ kartta tekrar görünmez.
+        let resumeAt='';
+        if(isFinite(lr)&&lr>p)resumeAt=running.lastResumeAt;
+        if(!resumeAt&&o.forecastSnapshotAt){
+          const fs=new Date(o.forecastSnapshotAt).getTime();
+          if(isFinite(fs)&&fs>p)resumeAt=o.forecastSnapshotAt;
+        }
+        if(!resumeAt)resumeAt=localISO(nowDate);
+        resetLiveReferencePlan(o,running,resumeAt);
+        running.resumeRecovered=true;
+        running.resumeRecoveredAt=localISO(nowDate);
+        changed=true;
         continue;
       }
     }
 
-    // 2) Önceki düzeltme gerçek yeniden-başlatma referansını yanlışlıkla silmiş olabilir.
-    // Bunu yalnızca çok güçlü kanıt varsa geri kur: OP şu an çalışıyor, daha önce pause edilmiş
-    // ve o pause'dan hemen sonra canlı tahmin snapshot'ı oluşmuş.
-    const op=(o.ops||[]).find(x=>x.runState==='running'&&x.actualStart&&x.pausedAt);
-    if(!op||o.livePlanEnd)continue;
-    const a=new Date(op.actualStart).getTime(),p=new Date(op.pausedAt).getTime();
-    if(!isFinite(a)||!isFinite(p)||p<=a)continue;
+    // Geçerli canlı seans varsa aynen koru ve OP üzerindeki kalıcı marker'ı tamamla.
+    if(o.livePlanEnd&&o.livePlanOpId){
+      const linked=(o.ops||[]).find(x=>x.id===o.livePlanOpId);
+      if(linked&&isExplicitLiveReference(o,linked)){
+        if(o.livePlanMode!=='session'){o.livePlanMode='session';changed=true}
+        if(!linked.lastResumeAt&&o.livePlanStartedAt){linked.lastResumeAt=o.livePlanStartedAt;changed=true}
+        if(o.livePlanVersion!==3){o.livePlanVersion=3;changed=true}
+        continue;
+      }
+    }
 
-    let resumeAt='';
-    if(op.lastResumeAt){
-      const lr=new Date(op.lastResumeAt).getTime();
-      if(isFinite(lr)&&lr>=p)resumeAt=op.lastResumeAt;
-    }
-    if(!resumeAt&&o.forecastSnapshotAt){
-      const fs=new Date(o.forecastSnapshotAt).getTime();
-      // Reset anında forecastSnapshotAt yazılıyordu. Pause'dan sonraki 6 saat içindeyse
-      // bunun gerçek yeniden-başlatma seansı olma ihtimali çok yüksek.
-      if(isFinite(fs)&&fs>=p&&fs-p<=6*60*60*1000)resumeAt=o.forecastSnapshotAt;
-    }
-    // Çok yeni bir pause sonrası halen running ise, eski sürümün silmiş olduğu seansı
-    // pause anından yaklaşık olarak geri kur. Eski çalışan işleri etkilememek için 12 saat sınırı var.
-    if(!resumeAt&&now-p>=0&&now-p<=12*60*60*1000)resumeAt=localISO(new Date(p+60000));
-    if(!resumeAt)continue;
-
-    // Snapshot'ta daha önce hesaplanmış seans bitişi duruyorsa onu koru; yoksa yeniden hesapla.
-    const snapEnd=o.currentForecastSnapshot;
-    resetLiveReferencePlan(o,op,resumeAt);
-    if(snapEnd){
-      const se=new Date(snapEnd).getTime(),rs=new Date(resumeAt).getTime();
-      if(isFinite(se)&&isFinite(rs)&&se>rs)o.livePlanEnd=snapEnd;
-    }
-    changed=true;
+    // Eski çalışan ve hiç durdurulmamış işler (soldaki gibi) kesinlikle resetlenmez.
   }
   return changed;
 }
+
 function actualMinutesPerPiece(o,op){
   const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
   const processed=recs.reduce((a,r)=>a+n(r.good)+n(r.scrap),0);
