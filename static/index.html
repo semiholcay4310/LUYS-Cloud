@@ -1064,21 +1064,24 @@ function resetLiveReferencePlan(o,op,at){
   o.forecastSnapshotAt=localISO(new Date());
 }
 function liveRefDate(v){const d=v?new Date(v):null;return d&&!isNaN(d)?d:null}
+function opLastStopDate(op){
+  if(!op)return null;
+  return liveRefDate(op.lastStoppedAt)||liveRefDate(op.pausedAt);
+}
 function isExplicitLiveReference(o,op){
   if(!o||!op||!o.livePlanEnd||o.livePlanOpId!==op.id)return false;
-  const lp=liveRefDate(o.livePlanStartedAt),pa=liveRefDate(op.pausedAt);
+  const lp=liveRefDate(o.livePlanStartedAt);
   if(!lp)return false;
-  // OP daha sonra durdurulmuşsa, duruştan ÖNCE kalmış referans artık geçerli değildir.
-  // Böyle bir kayıt kullanılırsa yeniden başlatılan iş eski plana geri düşer.
-  if(op.runState==='running'&&pa&&lp<=pa)return false;
-  if(o.livePlanMode==='session')return true;
-  // Bir önceki sürümde marker yoktu. Gerçek kullanıcı başlangıçlarını korumak için
-  // ilk başlangıca çok yakın kayıtları veya durdurulup yeniden başlayanları tanı.
-  const as=liveRefDate(op.actualStart),ca=liveRefDate(op.cmmApprovedAt);
-  if(as&&Math.abs(lp-as)<=10*60000)return true;
-  if(pa&&lp>pa)return true;
-  if(ca&&Math.abs(lp-ca)<=12*60*60000)return true;
-  return false;
+  const stop=opLastStopDate(op);
+  const session=liveRefDate(op.sessionStartedAt)||liveRefDate(op.lastResumeAt);
+
+  // Bir duruş yaşandıysa referans MUTLAKA o duruştan sonraki gerçek yeniden başlatma
+  // seansına ait olmalı. Eski ilk başlangıç / eski snapshot artık kabul edilmez.
+  if(stop){
+    if(!session || session<=stop)return false;
+    if(lp<session || lp<=stop)return false;
+  }
+  return o.livePlanMode==='session';
 }
 function clearLiveReference(o){
   if(!o)return;
@@ -1086,49 +1089,35 @@ function clearLiveReference(o){
 }
 function repairLiveReferences(){
   let changed=false;
-  const nowDate=new Date(),now=nowDate.getTime();
+  const nowISO=localISO(new Date());
+
   for(const o of (state.orders||[])){
     const running=(o.ops||[]).find(x=>x.runState==='running'&&x.actualStart&&opProcessed(x)<opTarget(o,x));
+    if(!running)continue;
 
-    // EN ÖNEMLİ KURAL: çalışan OP daha önce durdurulmuşsa, canlı referans son duruştan
-    // sonra kurulmuş olmalıdır. Duruştan eski bir referans varsa bu STALE kayıttır.
-    if(running&&running.pausedAt){
-      const p=new Date(running.pausedAt).getTime();
-      const ls=(o.livePlanOpId===running.id&&o.livePlanStartedAt)?new Date(o.livePlanStartedAt).getTime():NaN;
-      const lr=running.lastResumeAt?new Date(running.lastResumeAt).getTime():NaN;
-      const liveValid=isFinite(p)&&isFinite(ls)&&ls>p&&o.livePlanOpId===running.id&&!!o.livePlanEnd;
+    const stop=opLastStopDate(running);
+    if(stop){
+      const session=liveRefDate(running.sessionStartedAt)||liveRefDate(running.lastResumeAt);
+      const validSession=!!(session&&session>stop&&isExplicitLiveReference(o,running));
 
-      if(isFinite(p)&&!liveValid){
-        // Gerçek yeniden başlatma zamanı kayıtlıysa onu kullan. Önceki sürüm bunu kaybettiyse,
-        // forecast snapshot duruştan sonraysa onu kullan; o da yoksa BU YÜKLEME anını bir kere
-        // yeni referans kabul et. Böylece haftalık eski plan sağ kartta tekrar görünmez.
-        let resumeAt='';
-        if(isFinite(lr)&&lr>p)resumeAt=running.lastResumeAt;
-        if(!resumeAt&&o.forecastSnapshotAt){
-          const fs=new Date(o.forecastSnapshotAt).getTime();
-          if(isFinite(fs)&&fs>p)resumeAt=o.forecastSnapshotAt;
-        }
-        if(!resumeAt)resumeAt=localISO(nowDate);
+      if(!validSession){
+        // Eski veride yeniden başlatma anı kaydedilmemiş olabilir. Bu durumda uygulamanın
+        // bu sürümde ilk açıldığı anı bir kerelik yeni seans başlangıcı kabul ediyoruz.
+        // Böylece geçmişteki 1 haftalık bekleme performans farkına girmez.
+        let resumeAt=nowISO;
+        if(session&&session>stop)resumeAt=localISO(session);
+        running.sessionStartedAt=resumeAt;
+        running.sessionKind='resume-recovered';
+        running.lastResumeAt=resumeAt;
         resetLiveReferencePlan(o,running,resumeAt);
         running.resumeRecovered=true;
-        running.resumeRecoveredAt=localISO(nowDate);
+        running.resumeRecoveredAt=nowISO;
         changed=true;
         continue;
       }
     }
 
-    // Geçerli canlı seans varsa aynen koru ve OP üzerindeki kalıcı marker'ı tamamla.
-    if(o.livePlanEnd&&o.livePlanOpId){
-      const linked=(o.ops||[]).find(x=>x.id===o.livePlanOpId);
-      if(linked&&isExplicitLiveReference(o,linked)){
-        if(o.livePlanMode!=='session'){o.livePlanMode='session';changed=true}
-        if(!linked.lastResumeAt&&o.livePlanStartedAt){linked.lastResumeAt=o.livePlanStartedAt;changed=true}
-        if(o.livePlanVersion!==3){o.livePlanVersion=3;changed=true}
-        continue;
-      }
-    }
-
-    // Eski çalışan ve hiç durdurulmamış işler (soldaki gibi) kesinlikle resetlenmez.
+    // Hiç durdurulmamış çalışan işler (soldaki gibi) aynen korunur.
   }
   return changed;
 }
@@ -1935,7 +1924,7 @@ $('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new
 window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
 window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
 window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}const wasRunning=op.runState==='running';const hadStarted=!!op.actualStart;state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});const now=localISO(new Date());op.runState='running';if(!op.actualStart)op.actualStart=now;op.pauseReason='';o.stage='production';schedule();if(!wasRunning){op.sessionStartedAt=now;op.sessionKind=hadStarted?'resume':'start';resetLiveReferencePlan(o,op,now)}syncCompletedOps();await save()}
-window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());op.lastStoppedAt=op.pausedAt;o.stage='paused';schedule();await save()}
+window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());op.lastStoppedAt=op.pausedAt;op.sessionStartedAt='';op.sessionKind='paused';o.stage='paused';schedule();await save()}
 window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart='';if(o.livePlanOpId===op.id){o.livePlanOpId='';o.livePlanStartedAt='';o.livePlanEnd='';o.livePlanReasonBase=null;o.livePlanMode=''}}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production';schedule();resetLiveReferencePlan(o,op,v)}await save()}
 window.cmmApprove=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);const now=localISO(new Date());op.runState='running';op.pauseReason='';op.cmmApprovedAt=now;o.stage='production';if(o.cmm)o.cmm.status='Onay';schedule();resetLiveReferencePlan(o,op,now);await save()}
 $('dailyOrder').onchange=fillDailyOps;
