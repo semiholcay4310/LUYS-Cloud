@@ -1047,12 +1047,15 @@ function resetLiveReferencePlan(o,op,at){
   const t=at||localISO(new Date());
   const end=liveReferencePlanEnd(o,op,t);
   if(!end)return;
+  const sessionStart=localISO(nextMoment(new Date(t)));
   o.livePlanOpId=op.id;
-  o.livePlanStartedAt=localISO(nextMoment(new Date(t)));
+  o.livePlanStartedAt=sessionStart;
   o.livePlanEnd=end;
-  // Bu işaret yalnızca kullanıcının gerçek BAŞLAT / yeniden BAŞLAT hareketinde oluşur.
-  // Sayfa yüklenmesi veya sıra hesabı çalışan bir OP'nin referansını değiştiremez.
+  // Gerçek BAŞLAT / yeniden BAŞLAT seansını OP üzerinde de sakla.
+  // Böylece deploy / sayfa yenileme / sıra değişimi bu referansı kaybettiremez.
+  op.lastResumeAt=sessionStart;
   o.livePlanMode='session';
+  o.livePlanVersion=2;
   // O ana kadarki üretim performansını sıfır noktası olarak sakla.
   // Bundan sonra yalnızca yeni hız / ek çalışma / duruş farkı referans plana uygulanır.
   o.livePlanReasonBase=planReasonSnapshotNow(o);
@@ -1076,18 +1079,53 @@ function clearLiveReference(o){
   if(!o)return;
   o.livePlanOpId='';o.livePlanStartedAt='';o.livePlanEnd='';o.livePlanReasonBase=null;o.livePlanMode='';
 }
-function cleanupAccidentalAutoLiveReferences(){
+function repairLiveReferences(){
   let changed=false;
+  const now=Date.now();
   for(const o of (state.orders||[])){
-    if(!o.livePlanEnd)continue;
-    const op=(o.ops||[]).find(x=>x.id===o.livePlanOpId);
-    if(op&&isExplicitLiveReference(o,op)){
-      if(o.livePlanMode!=='session'){o.livePlanMode='session';changed=true}
-    }else{
-      // Eski hatalı sürüm sayfa açılışında çalışan işlere referans oluşturuyordu.
-      // Bu kayıtları temizle; böylece mevcut işin eski performans/baseline hesabı geri gelir.
-      clearLiveReference(o);changed=true;
+    // 1) Mevcut gerçek seans kaydı varsa ASLA temizleme. Sadece marker'ını tamamla.
+    if(o.livePlanEnd&&o.livePlanOpId){
+      const linked=(o.ops||[]).find(x=>x.id===o.livePlanOpId);
+      if(linked){
+        if(o.livePlanMode!=='session'){o.livePlanMode='session';changed=true}
+        if(!linked.lastResumeAt&&o.livePlanStartedAt){linked.lastResumeAt=o.livePlanStartedAt;changed=true}
+        if(o.livePlanVersion!==2){o.livePlanVersion=2;changed=true}
+        continue;
+      }
     }
+
+    // 2) Önceki düzeltme gerçek yeniden-başlatma referansını yanlışlıkla silmiş olabilir.
+    // Bunu yalnızca çok güçlü kanıt varsa geri kur: OP şu an çalışıyor, daha önce pause edilmiş
+    // ve o pause'dan hemen sonra canlı tahmin snapshot'ı oluşmuş.
+    const op=(o.ops||[]).find(x=>x.runState==='running'&&x.actualStart&&x.pausedAt);
+    if(!op||o.livePlanEnd)continue;
+    const a=new Date(op.actualStart).getTime(),p=new Date(op.pausedAt).getTime();
+    if(!isFinite(a)||!isFinite(p)||p<=a)continue;
+
+    let resumeAt='';
+    if(op.lastResumeAt){
+      const lr=new Date(op.lastResumeAt).getTime();
+      if(isFinite(lr)&&lr>=p)resumeAt=op.lastResumeAt;
+    }
+    if(!resumeAt&&o.forecastSnapshotAt){
+      const fs=new Date(o.forecastSnapshotAt).getTime();
+      // Reset anında forecastSnapshotAt yazılıyordu. Pause'dan sonraki 6 saat içindeyse
+      // bunun gerçek yeniden-başlatma seansı olma ihtimali çok yüksek.
+      if(isFinite(fs)&&fs>=p&&fs-p<=6*60*60*1000)resumeAt=o.forecastSnapshotAt;
+    }
+    // Çok yeni bir pause sonrası halen running ise, eski sürümün silmiş olduğu seansı
+    // pause anından yaklaşık olarak geri kur. Eski çalışan işleri etkilememek için 12 saat sınırı var.
+    if(!resumeAt&&now-p>=0&&now-p<=12*60*60*1000)resumeAt=localISO(new Date(p+60000));
+    if(!resumeAt)continue;
+
+    // Snapshot'ta daha önce hesaplanmış seans bitişi duruyorsa onu koru; yoksa yeniden hesapla.
+    const snapEnd=o.currentForecastSnapshot;
+    resetLiveReferencePlan(o,op,resumeAt);
+    if(snapEnd){
+      const se=new Date(snapEnd).getTime(),rs=new Date(resumeAt).getTime();
+      if(isFinite(se)&&isFinite(rs)&&se>rs)o.livePlanEnd=snapEnd;
+    }
+    changed=true;
   }
   return changed;
 }
@@ -1893,7 +1931,7 @@ $('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new
 window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
 window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
 window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}const wasRunning=op.runState==='running';state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});const now=localISO(new Date());op.runState='running';if(!op.actualStart)op.actualStart=now;op.pauseReason='';o.stage='production';schedule();if(!wasRunning)resetLiveReferencePlan(o,op,now);syncCompletedOps();await save()}
-window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());o.stage='paused';schedule();await save()}
+window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());op.lastStoppedAt=op.pausedAt;o.stage='paused';schedule();await save()}
 window.setOpStart=async(oid,id,inputId)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),v=$(inputId).value;if(!v){if(!confirm('Gerçek başlangıç saati temizlensin mi?'))return;op.actualStart='';if(o.livePlanOpId===op.id){o.livePlanOpId='';o.livePlanStartedAt='';o.livePlanEnd='';o.livePlanReasonBase=null;o.livePlanMode=''}}else{op.actualStart=v;if(op.runState==='waiting')op.runState='running';o.stage='production';schedule();resetLiveReferencePlan(o,op,v)}await save()}
 window.cmmApprove=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);const now=localISO(new Date());op.runState='running';op.pauseReason='';op.cmmApprovedAt=now;o.stage='production';if(o.cmm)o.cmm.status='Onay';schedule();resetLiveReferencePlan(o,op,now);await save()}
 $('dailyOrder').onchange=fillDailyOps;
@@ -1902,7 +1940,7 @@ window.editDaily=id=>{if(!canEdit())return;let r=state.daily.find(x=>x.id===id),
 window.delDaily=async id=>{if(!canEdit())return;if(confirm('Günlük kayıt silinsin mi?')){let old=state.daily.find(r=>r.id===id),oid=old?.orderId||'';state.daily=state.daily.filter(r=>r.id!==id);syncCompletedOps();let o=order(oid);if(o)refreshForecastSnapshot(o);await save()}}
 $('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;o.cmm={firm:f.get('firm'),sent:f.get('sent'),sentDate:f.get('sentDate'),expected:f.get('expected'),returned:f.get('returned'),status:f.get('status'),reportNo:f.get('reportNo')};await save()}
 $('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
-Promise.all([loadMe(),load()]).then(async()=>{if(canEdit()){if(cleanupAccidentalAutoLiveReferences())await save();newOrderForm()}if($('dailyForm')){$('dailyForm').date.value=ymd(new Date());$('dailyForm').hours.value=0}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
+Promise.all([loadMe(),load()]).then(async()=>{if(canEdit()){if(repairLiveReferences())await save();newOrderForm()}if($('dailyForm')){$('dailyForm').date.value=ymd(new Date());$('dailyForm').hours.value=0}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
 setInterval(()=>load().catch(()=>{}),15000);
 function saatFarki(startTime,endTime){
   if(!startTime||!endTime)return 0;
