@@ -1135,10 +1135,25 @@ function actualMinutesPerPiece(o,op){
 }
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
-  const lastOp=o.ops[o.ops.length-1];
-  // Canlı tahmin tek kaynaktan gelir: schedule() tarafından hesaplanan son OP bitişi.
-  // Snapshot yalnızca eski veriler için yedek olarak tutulur.
-  return lastOp?.actualEnd||lastOp?.planEnd||o.currentForecastSnapshot||o.baselineProductEnd||baselineProductEnd(o)||'';
+  const ops=o.ops||[];
+  const lastOp=ops[ops.length-1];
+  const unfinished=ops.some(op=>opProcessed(op)<opTarget(o,op));
+
+  // Ana ürün bitişi schedule() tarafından hesaplanan son OP bitişidir.
+  let forecast=lastOp?.planEnd||lastOp?.actualEnd||o.currentForecastSnapshot||o.baselineProductEnd||baselineProductEnd(o)||'';
+
+  // Aktif OP bitmeden ürün bitmiş sayılamaz.
+  const running=ops.find(op=>op.runState==='running' && opProcessed(op)<opTarget(o,op));
+  if(running?.planEnd && (!forecast || new Date(forecast)<new Date(running.planEnd))){
+    forecast=running.planEnd;
+  }
+
+  // Bitmemiş aktif işin tahmini geçmişte kalamaz.
+  if(unfinished && forecast && new Date(forecast)<new Date()){
+    forecast=localISO(nextMoment(new Date()));
+  }
+
+  return forecast;
 }
 
 function workMinutesBetween(a,b){
@@ -1381,11 +1396,43 @@ function planDeltaInfo(o){
 
   const active=(o.ops||[]).find(x=>x.id===o.livePlanOpId);
   const session=!!(active&&isExplicitLiveReference(o,active));
-  const r=session?planReasonInfo(o):calculatePlanReasonInfo(o);
-  if(!r.records&&!session)return null;
 
-  const netGain=r.speed+r.overtime-r.downtime;
+  let base='';
+  if(session){
+    // Durdur -> Başlat / manuel referans: o anda kalan iş için kilitlenen normal bitiş.
+    base=o.livePlanEnd||'';
+  }else{
+    // Eski çalışan iş: ilk referans planı korunur.
+    ensureBaselineProductEnd(o);
+    base=o.baselineProductEnd||baselineProductEnd(o)||'';
+  }
+  if(!base)return null;
+
+  // TEK GÜNCEL BİTİŞ KAYNAĞI:
+  // schedule() kalan adetleri ve sıradaki OP'leri yeniden planlar.
+  // Geçmiş hız/mesai kazancı burada ikinci kez tarihten düşülmez.
+  let forecast=currentProductForecast(o)||base;
+
+  // Aktif, tamamlanmamış bir OP varken ürün bitişi o OP'nin bitişinden önce olamaz.
+  const running=(o.ops||[]).find(op=>op.runState==='running' && opProcessed(op)<opTarget(o,op));
+  if(running?.planEnd && (!forecast || new Date(forecast)<new Date(running.planEnd))){
+    forecast=running.planEnd;
+  }
+
+  // Çalışan ve bitmemiş bir ürün için güncel tahmin geçmişte kalamaz.
+  const unfinished=(o.ops||[]).some(op=>opProcessed(op)<opTarget(o,op));
+  if(unfinished && forecast && new Date(forecast)<new Date()){
+    forecast=localISO(nextMoment(new Date()));
+  }
+
+  // Önde/geride artık ekranda görünen iki tarihin GERÇEK çalışma zamanı farkıdır.
+  // forecast base'den erkense + kazanç (önde), geçse - kayıp (geride).
+  const signedForecastMinusBase=workMinutesBetween(base,forecast);
+  const netGain=-signedForecastMinusBase;
   const abs=Math.abs(Math.round(netGain));
+
+  // Gösterim için ortalama günlük normal çalışma dakikası.
+  const r=planReasonInfo(o);
   const normalDaily=(r.normalMinutes&&r.records)?Math.max(60,Math.round(r.normalMinutes/r.records)):510;
   const days=Math.floor(abs/normalDaily);
   let rest=abs-days*normalDaily;
@@ -1395,21 +1442,10 @@ function planDeltaInfo(o){
   if(hours)parts.push(hours+' sa');
   if(minutes)parts.push(minutes+' dk');
   if(!parts.length)parts.push('0 dk');
+
   const cls=netGain>1?'ahead':netGain<-1?'behind':'same';
   const label=cls==='ahead'?parts.join(' ')+' önde':cls==='behind'?parts.join(' ')+' geride':'Planla aynı';
 
-  let base='',forecast='';
-  if(session){
-    // Gerçek yeniden başlatma: kalan işin o andaki normal planı sabit referanstır.
-    base=o.livePlanEnd||'';
-    forecast=r.records?shiftWorkingMoment(base,-netGain):base;
-  }else{
-    // Mevcut çalışan iş: eski kazanılmış performansı ve başlangıç planını koru.
-    ensureBaselineProductEnd(o);
-    base=o.baselineProductEnd||baselineProductEnd(o)||'';
-    forecast=calculateForecastFromDaily(o)||currentProductForecast(o)||base;
-  }
-  if(!base)return null;
   return {base,forecast,netGain,cls,text:label,session};
 }
 
