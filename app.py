@@ -86,7 +86,17 @@ def get_state():
     init_db()
     with engine.begin() as c:
         row=c.execute(text('SELECT payload FROM luys_state WHERE id=1')).first()
-    return app.response_class(row[0] if row else json.dumps(DEFAULT_STATE),mimetype='application/json')
+    raw=row[0] if row else json.dumps(DEFAULT_STATE)
+    # Görüntüleyici hesap üretim verilerini okuyabilir; finansal alanlar yalnızca yöneticiye gider.
+    if not can_edit():
+        try:
+            data=json.loads(raw)
+            data.pop('accounting',None)
+            data.pop('laborFinance',None)
+            raw=json.dumps(data,ensure_ascii=False)
+        except Exception:
+            pass
+    return app.response_class(raw,mimetype='application/json')
 
 @app.route('/api/state',methods=['PUT'])
 def put_state():
