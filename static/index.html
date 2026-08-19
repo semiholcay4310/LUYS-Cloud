@@ -885,7 +885,11 @@ function schedule(){
         startBase=available?new Date(available):new Date(o.start||now);
         if(o.start&&new Date(o.start)>startBase)startBase=new Date(o.start);
         startBase=nextMoment(startBase);
-        op.planStart=op.actualStart||localISO(startBase);
+        // Durdurulmuş / yeniden sıraya alınmış bir OP'nin eski gerçek başlangıcını
+        // plan başlangıcı olarak taşımayız. planStart her schedule() çağrısında
+        // mevcut tezgâh sırasına ve önündeki işlere göre yeniden oluşur.
+        // actualStart geçmiş üretim kaydı olarak ayrıca korunur.
+        op.planStart=localISO(startBase);
       }
 
       let started=!!op.actualStart;
@@ -922,7 +926,12 @@ function schedule(){
 
     orders.forEach(o=>{
       let ops=o.ops||[];
-      let starts=ops.map(x=>x.planStart||x.actualStart).filter(Boolean).sort();
+      // Ürün Terminleri'ndeki Tahmini Başlangıç, tamamlanmış eski OP'lerin
+      // tarihinden değil kalan işin güncel planından gelmeli. Böylece kısmi
+      // üretim yapılıp durdurulan iş tekrar sıraya girdiğinde geçmiş tarih kalmaz.
+      let unfinishedOps=ops.filter(x=>!opIsComplete(o,x));
+      let startSource=unfinishedOps.length?unfinishedOps:ops;
+      let starts=startSource.map(x=>x.planStart||x.actualStart).filter(Boolean).sort();
       o.planStart=starts[0]||o.start||'';
       o.realStart=(ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');
       o.cncEnd=ops.length?(ops[ops.length-1].actualEnd||ops[ops.length-1].planEnd||o.planStart):o.planStart;
