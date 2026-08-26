@@ -1417,46 +1417,28 @@ function planDeltaInfo(o){
 
   let base='';
   if(session){
-    // Durdur -> Başlat / manuel referans: o anda kalan iş için kilitlenen normal bitiş.
+    // Son Başlat / yeniden Başlat anında, kalan işin NORMAL sürelerle biteceği tarih.
     base=o.livePlanEnd||'';
   }else{
-    // Eski çalışan iş: ilk referans planı korunur.
+    // Eski çalışan işlerde mevcut sabit referansı koru.
     ensureBaselineProductEnd(o);
     base=o.baselineProductEnd||baselineProductEnd(o)||'';
   }
   if(!base)return null;
 
-  // TEK GÜNCEL BİTİŞ KAYNAĞI:
-  // schedule() kalan adetleri ve sıradaki OP'leri yeniden planlar.
-  // Geçmiş hız/mesai kazancı burada ikinci kez tarihten düşülmez.
-  let forecast=currentProductForecast(o)||base;
-
-  // Aktif, tamamlanmamış bir OP varken ürün bitişi o OP'nin bitişinden önce olamaz.
-  const running=(o.ops||[]).find(op=>op.runState==='running' && opProcessed(op)<opTarget(o,op));
-  if(running?.planEnd && (!forecast || new Date(forecast)<new Date(running.planEnd))){
-    forecast=running.planEnd;
-  }
-
-  // Çalışan ve bitmemiş bir ürün için güncel tahmin geçmişte kalamaz.
-  const unfinished=(o.ops||[]).some(op=>opProcessed(op)<opTarget(o,op));
-  if(unfinished && forecast && new Date(forecast)<new Date()){
-    forecast=localISO(nextMoment(new Date()));
-  }
-
-  // Önde/geride artık ekranda görünen iki tarihin GERÇEK çalışma zamanı farkıdır.
-  // forecast base'den erkense + kazanç (önde), geçse - kayıp (geride).
-  const signedForecastMinusBase=workMinutesBetween(base,forecast);
-  const netGain=-signedForecastMinusBase;
-  const abs=Math.abs(Math.round(netGain));
-
-  // Gösterim için ortalama günlük normal çalışma dakikası.
+  // ÖNDE / GERİDE göstergesinin TEK kaynağı imalat performansıdır:
+  // hız + ek çalışma - duruş.
+  // Eski sıra değişimleri, bekleme süreleri ve schedule() tarih kaymaları bu farka girmez.
   const r=planReasonInfo(o);
-  const normalDaily=(r.normalMinutes&&r.records)?Math.max(60,Math.round(r.normalMinutes/r.records)):510;
-  const days=Math.floor(abs/normalDaily);
-  let rest=abs-days*normalDaily;
-  const hours=Math.floor(rest/60),minutes=rest%60;
+  const netGain=Math.round(n(r.netGain));
+
+  // Güncel tahmin de aynı matematiği kullanır.
+  // + performans => referans bitiş erkene, - performans => referans bitiş ileriye gider.
+  const forecast=netGain ? shiftWorkingMoment(base,-netGain) : base;
+
+  const abs=Math.abs(netGain);
+  const hours=Math.floor(abs/60),minutes=abs%60;
   let parts=[];
-  if(days)parts.push(days+' iş günü');
   if(hours)parts.push(hours+' sa');
   if(minutes)parts.push(minutes+' dk');
   if(!parts.length)parts.push('0 dk');
