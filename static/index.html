@@ -866,7 +866,14 @@ function nextWorkdayStartAfter(dateStr){
   return nextMoment(d);
 }
 function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<2000&&left>0;g++){d=nextMoment(d);let w=windows(ymd(d)).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(8,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
-function opIsComplete(o,op){let t=opTarget(o,op);return t<=0||opProcessed(op)>=t||op.runState==='done'}
+function opIsComplete(o,op){
+  // Tamamlanmış/arsivlenmiş iş emri tekrar açılmaz.
+  if(o?.stage==='done'||o?.completedAt)return true;
+  const t=opTarget(o,op);
+  // Aktif işte etiket değil, gerçek adet belirleyicidir:
+  // done yazsa bile hedefin altında kaldıysa termin planında eksik sayılır.
+  return t<=0||opProcessed(op)>=t;
+}
 function schedule(){
   compactAllQueues();
   let machines=[...new Set(state.orders.map(o=>o.machine).filter(Boolean))];
@@ -1167,21 +1174,8 @@ function currentProductForecast(o){
     ? scheduledEnds[scheduledEnds.length-1]
     : (ops.map(op=>op.actualEnd||op.planEnd).filter(Boolean).sort().pop()||o.currentForecastSnapshot||o.baselineProductEnd||baselineProductEnd(o)||'');
 
-  // AKTİF İŞTE GERİYE DÖNÜK EKSİK OP KONTROLÜ:
-  // Bir OP eski akışta 'done' işaretlenmiş olsa bile hedef adetten eksik üretim varsa,
-  // bu eksik miktar müşteri termin hesabından düşmez. OP1 eksik + aktif OP + OP3 dahil.
-  // Eski tamamlanmış/arsivlenmiş iş emirleri bu kurala girmez.
-  if(o.stage!=='done'&&forecast){
-    let extraMin=0;
-    for(const op of ops){
-      const target=opTarget(o,op),processed=opProcessed(op);
-      const missing=Math.max(0,target-processed);
-      if(missing>0&&op.runState==='done'){
-        extraMin += missing*(n(op.cycle)+n(op.handling)) + Math.max(0,n(op.setup))*60;
-      }
-    }
-    if(extraMin>0)forecast=localISO(addWork(new Date(forecast),extraMin));
-  }
+  // Eksik eski OP'ler artık opIsComplete() tarafından doğrudan schedule() içine alınır.
+  // Böylece OP1 eksik + aktif OP + OP3 aynı termin planının parçasıdır.
 
   // Aktif OP bitmeden ürün bitmiş sayılamaz.
   const running=ops.find(op=>op.runState==='running' && opProcessed(op)<opTarget(o,op));
@@ -1201,9 +1195,9 @@ function currentProductForecast(o){
 function requestedDeadlineMoment(o){
   if(!o?.requested)return null;
   const raw=String(o.requested).trim();
-  // Müşteri termini yalnızca gün olarak girilmişse o günün tamamı teslim süresidir.
-  // Böylece 11.09 tarihinde biten iş 11.09 00:00 yüzünden yanlış RİSK olmaz.
-  if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return new Date(raw+'T23:59:59');
+  // Termin yalnızca gün olarak girilmişse ürün o gün üretime/teslimata hazır olmalı.
+  // Bu nedenle normal çalışma başlangıcı 08:00 sınır kabul edilir.
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return new Date(raw+'T08:00:00');
   const d=new Date(raw);
   return isNaN(d)?null:d;
 }
@@ -1689,7 +1683,7 @@ function renderMachines(){
     if(!jobs.length){el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus wait">Planlanan iş yok</div></div></div><div class="emptyDash">Bu tezgâhta sırada iş bulunmuyor.</div>`;return}
     const runningOrder=jobs.find(j=>(j.ops||[]).some(op=>op.runState==='running'&&!opIsComplete(j,op)));
     const o=runningOrder||jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'&&!opIsComplete(o,op)),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>!opIsComplete(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=currentProductForecast(o)||(ops.length?(ops[ops.length-1]?.planEnd||''):''),pct=Math.round(progress(o)),risk=orderTerminRisk(o,urunBitis),queued=jobs.filter(j=>j.id!==o.id).slice(0,2);
-    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span>${aktif?`<div class="machineMiniGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>OP Durumu</small><b>${realRunning?'Üretimde':'Bekliyor'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
+    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span>${aktif?`<div class="machineMiniGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>Ürün Bitiş (Termin)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
   });
 }
 
