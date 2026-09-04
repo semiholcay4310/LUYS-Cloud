@@ -2326,6 +2326,28 @@ window.editDaily=id=>{
     <div class="profitKpi"><small>ORTALAMA İŞÇİLİK DEĞERİ</small><b id="pkHourly">-</b></div>
   </div>
 
+  <div class="profitCard" id="dailyProfitCard">
+    <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin:0">Günlük İşçilik Kazancı</h3>
+        <div style="font-size:11px;color:#718491;margin-top:5px">Sadece sağlam üretim sayılır. Hurda kazanca dahil edilmez.</div>
+      </div>
+      <label style="font-weight:800;color:#173f5b;display:flex;flex-direction:column;gap:5px">Gün
+        <input id="profitDay" type="date" style="padding:9px 11px;border:1px solid #b9c8d2;border-radius:10px;background:#fff;color:#173f5b;font:inherit;font-weight:700">
+      </label>
+    </div>
+    <div class="profitGrid" style="margin-bottom:10px">
+      <div class="profitKpi"><small>GÜNLÜK İŞÇİLİK CİROSU • USD</small><b id="pkDaySales">$0.00</b></div>
+      <div class="profitKpi"><small>GÜNLÜK İŞÇİLİK CİROSU • TL</small><b id="pkDaySalesTl">₺0,00</b></div>
+      <div class="profitKpi"><small>GÜNLÜK SAĞLAM ÜRETİM</small><b id="pkDayGood">0 adet</b></div>
+      <div class="profitKpi"><small>GÜNLÜK İŞÇİLİK SÜRESİ</small><b id="pkDayHours">0.00 sa</b></div>
+    </div>
+    <table class="profitTable">
+      <thead><tr><th>Parça</th><th>İş Emri</th><th>OP</th><th>Sağlam</th><th>Hurda</th><th>İşçilik USD/adet</th><th>OP Katkısı</th><th>Günlük Kazanç</th></tr></thead>
+      <tbody id="profitDayRows"></tbody>
+    </table>
+  </div>
+
   <div class="profitCard">
     <h3>İş / Parça İşçilik Fiyatı</h3>
     <div class="profitForm">
@@ -2425,9 +2447,35 @@ window.editDaily=id=>{
    });
    profitRows.innerHTML=html||'<tr><td colspan="7">Seçilen ayda günlük üretim kaydı yok.</td></tr>';
    pkSales.textContent=usd(totalSales);pkSalesTl.textContent=fx>0?tl(totalSales*fx):'-';pkSalesTl.title=fx>0?('Kur: '+fx.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:4})+' TL/USD'):'Bu ay için USD/TL kuru girin';pkHours.textContent=totalHours.toFixed(2)+' sa';pkHourly.textContent=totalHours>0?usd(totalSales/totalHours)+'/sa':'-';
+
+   // Günlük kazanç: yalnızca sağlam adet üzerinden hesaplanır. Hurda hiçbir şekilde ciroya girmez.
+   // Çok operasyonlu parçalarda aynı ürün fiyatını her OP'de tekrar saymamak için OP ağırlığı kullanılır;
+   // böylece günlük toplamların aylık ilerleme bazlı işçilik cirosuyla matematiksel olarak aynı mantıkta kalması sağlanır.
+   const day=(document.getElementById('profitDay')?.value)||new Date().toISOString().slice(0,10);
+   let daySales=0,dayHours=0,dayGood=0,dayHtml='';
+   records().filter(r=>String(r.date||'')===day).sort((a,b)=>String(a.orderId).localeCompare(String(b.orderId))).forEach(r=>{
+     const j=orderMap.get(String(r.orderId));if(!j)return;
+     const op=(j.ops||[]).find(x=>String(x.id)===String(r.opId));if(!op)return;
+     const good=Math.max(0,Number(r.good)||0),scrap=Math.max(0,Number(r.scrap)||0),hours=recNetHours(r);
+     const c=costForJob(j,costs),price=Math.max(0,Number(c.usd)||0);
+     let weight=0;
+     if(typeof window.opWeight==='function')weight=Math.max(0,Number(window.opWeight(j,op))||0)/100;
+     else if(typeof opWeight==='function')weight=Math.max(0,Number(opWeight(j,op))||0)/100;
+     else weight=(j.ops||[]).length?1/(j.ops||[]).length:1;
+     const earned=good*price*weight;
+     daySales+=earned;dayHours+=hours;dayGood+=good;
+     dayHtml+=`<tr><td><b>${j._name}</b></td><td>${j._code}</td><td>${op.name||'-'}</td><td><b>${good}</b></td><td>${scrap}</td><td>${usd(price)}</td><td>%${(weight*100).toFixed(1)}</td><td><b>${usd(earned)}</b></td></tr>`;
+   });
+   const dayFxMap=load(FX_KEY,{}),dayMonth=day.slice(0,7),dayFx=Math.max(0,Number(dayFxMap[dayMonth])||0);
+   const dRows=document.getElementById('profitDayRows');if(dRows)dRows.innerHTML=dayHtml||'<tr><td colspan="8">Seçilen günde üretim kaydı yok.</td></tr>';
+   if(document.getElementById('pkDaySales'))pkDaySales.textContent=usd(daySales);
+   if(document.getElementById('pkDaySalesTl')){pkDaySalesTl.textContent=dayFx>0?tl(daySales*dayFx):'-';pkDaySalesTl.title=dayFx>0?('Kur: '+dayFx.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:4})+' TL/USD'):'Bu günün ayı için USD/TL kuru girin';}
+   if(document.getElementById('pkDayGood'))pkDayGood.textContent=dayGood.toLocaleString('tr-TR')+' adet';
+   if(document.getElementById('pkDayHours'))pkDayHours.textContent=dayHours.toFixed(2)+' sa';
  }
  document.addEventListener('DOMContentLoaded',()=>{
-   profitMonth.value=ym();fillJobs();pcJob.addEventListener('change',loadCost);
+   profitMonth.value=ym();if(document.getElementById('profitDay'))profitDay.value=new Date().toISOString().slice(0,10);fillJobs();pcJob.addEventListener('change',loadCost);
+   if(document.getElementById('profitDay'))profitDay.addEventListener('change',render);
    pcSave.addEventListener('click',()=>{
      if(!pcJob.value)return alert('Önce parça seçin.');const all=load(KEY,{}),old=all[pcJob.value]||{};all[pcJob.value]={...old,usd:+pcUsd.value||0};save(KEY,all);render();if(window.renderPartTimes)try{window.renderPartTimes()}catch(e){}alert('Parça işçilik fiyatı kaydedildi. Tüm ay siparişleri aynı fiyatı kullanacak.');
    });
