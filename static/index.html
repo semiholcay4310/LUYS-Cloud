@@ -957,8 +957,8 @@ function automaticPlanningPDF(){
     .filter(o=>o.stage!=='done')
     .sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));
 
-  const productEnd=o=>(o.ops||[]).length?((o.ops||[])[(o.ops||[]).length-1].planEnd||''):'';
-  const risk=o=>!!(o.requested&&productEnd(o)&&new Date(productEnd(o))>new Date(o.requested));
+  const productEnd=o=>currentProductForecast(o);
+  const risk=o=>orderTerminRisk(o,productEnd(o));
 
   const machineSections=['Tezgâh 1 - 850','Tezgâh 2 - 1000'].map(machine=>{
     const arr=jobs.filter(o=>o.machine===machine);
@@ -1154,11 +1154,34 @@ function actualMinutesPerPiece(o,op){
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
   const ops=o.ops||[];
-  const lastOp=ops[ops.length-1];
-  const unfinished=ops.some(op=>opProcessed(op)<opTarget(o,op));
 
-  // Ana ürün bitişi schedule() tarafından hesaplanan son OP bitişidir.
-  let forecast=lastOp?.planEnd||lastOp?.actualEnd||o.currentForecastSnapshot||o.baselineProductEnd||baselineProductEnd(o)||'';
+  // schedule() normalde aktif/bekleyen tüm OP'leri planlar. Ürün bitişi için
+  // sıradaki son OP yerine TÜM planlanmış kalan OP'lerin en geç bitişini al.
+  const scheduledEnds=ops
+    .filter(op=>!opIsComplete(o,op))
+    .map(op=>op.planEnd)
+    .filter(Boolean)
+    .sort();
+
+  let forecast=scheduledEnds.length
+    ? scheduledEnds[scheduledEnds.length-1]
+    : (ops.map(op=>op.actualEnd||op.planEnd).filter(Boolean).sort().pop()||o.currentForecastSnapshot||o.baselineProductEnd||baselineProductEnd(o)||'');
+
+  // AKTİF İŞTE GERİYE DÖNÜK EKSİK OP KONTROLÜ:
+  // Bir OP eski akışta 'done' işaretlenmiş olsa bile hedef adetten eksik üretim varsa,
+  // bu eksik miktar müşteri termin hesabından düşmez. OP1 eksik + aktif OP + OP3 dahil.
+  // Eski tamamlanmış/arsivlenmiş iş emirleri bu kurala girmez.
+  if(o.stage!=='done'&&forecast){
+    let extraMin=0;
+    for(const op of ops){
+      const target=opTarget(o,op),processed=opProcessed(op);
+      const missing=Math.max(0,target-processed);
+      if(missing>0&&op.runState==='done'){
+        extraMin += missing*(n(op.cycle)+n(op.handling)) + Math.max(0,n(op.setup))*60;
+      }
+    }
+    if(extraMin>0)forecast=localISO(addWork(new Date(forecast),extraMin));
+  }
 
   // Aktif OP bitmeden ürün bitmiş sayılamaz.
   const running=ops.find(op=>op.runState==='running' && opProcessed(op)<opTarget(o,op));
@@ -1167,11 +1190,32 @@ function currentProductForecast(o){
   }
 
   // Bitmemiş aktif işin tahmini geçmişte kalamaz.
+  const unfinished=ops.some(op=>opProcessed(op)<opTarget(o,op));
   if(unfinished && forecast && new Date(forecast)<new Date()){
     forecast=localISO(nextMoment(new Date()));
   }
 
   return forecast;
+}
+
+function requestedDeadlineMoment(o){
+  if(!o?.requested)return null;
+  const raw=String(o.requested).trim();
+  // Müşteri termini yalnızca gün olarak girilmişse o günün tamamı teslim süresidir.
+  // Böylece 11.09 tarihinde biten iş 11.09 00:00 yüzünden yanlış RİSK olmaz.
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return new Date(raw+'T23:59:59');
+  const d=new Date(raw);
+  return isNaN(d)?null:d;
+}
+function orderTerminRisk(o,endValue){
+  const end=endValue||currentProductForecast(o),deadline=requestedDeadlineMoment(o);
+  return !!(deadline&&end&&new Date(end)>deadline);
+}
+function orderTerminNear(o,endValue){
+  const end=endValue||currentProductForecast(o),deadline=requestedDeadlineMoment(o);
+  if(!deadline||!end||orderTerminRisk(o,end))return false;
+  const diff=(deadline-new Date(end))/86400000;
+  return diff>=0&&diff<=2;
 }
 
 function workMinutesBetween(a,b){
@@ -1629,11 +1673,11 @@ function renderBoard(){
   $('m1').textContent=a.length;
   $('m2').textContent=a.filter(o=>(o.ops||[]).some(op=>op.runState==='running'&&!opIsComplete(o,op))).length;
   $('m3').textContent=a.filter(o=>o.cmmRequired==='yes'&&o.cmm?.status&&o.cmm.status!=='Onay').length;
-  let productEnd=o=>currentProductForecast(o)||((o.ops||[]).length?(o.ops[o.ops.length-1].planEnd||''):'');
-  let isRisk=o=>!!(o.requested&&productEnd(o)&&new Date(productEnd(o))>new Date(o.requested));
+  let productEnd=o=>currentProductForecast(o);
+  let isRisk=o=>orderTerminRisk(o,productEnd(o));
   $('m4').textContent=a.filter(isRisk).length;
   if($('totalOrders'))$('totalOrders').textContent='(Toplam '+a.length+')';
-  $('board').innerHTML=a.map(o=>{let end=productEnd(o),pct=Math.round(progress(o)),risk=isRisk(o),near=!risk&&o.requested&&end&&((new Date(o.requested)-new Date(end))/86400000)<=2,badge=!o.requested?'Termin yok':risk?'RİSK':near?'YAKLAŞIYOR':'TERMİNDE';return `<tr class="${risk?'rowRisk':''}"><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>${n(o.produceQty)}</td><td>${fmt(o.planStart)}</td><td><b>${end?fmt(end):'-'}</b>${planMiniHTML(o)}</td><td>${o.requested?fmt(o.requested):'-'}</td><td><span class="termBadge ${risk?'risk':near?'warn':'ok'}">${badge}</span></td><td><span class="tinyBar"><i class="${risk?'p-risk':near?'p-warn':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></span> ${pct}%</td></tr>`}).join('');
+  $('board').innerHTML=a.map(o=>{let end=productEnd(o),pct=Math.round(progress(o)),risk=isRisk(o),near=orderTerminNear(o,end),badge=!o.requested?'Termin yok':risk?'RİSK':near?'YAKLAŞIYOR':'TERMİNDE';return `<tr class="${risk?'rowRisk':''}"><td><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></td><td>${n(o.produceQty)}</td><td>${fmt(o.planStart)}</td><td><b>${end?fmt(end):'-'}</b>${planMiniHTML(o)}</td><td>${o.requested?fmt(o.requested):'-'}</td><td><span class="termBadge ${risk?'risk':near?'warn':'ok'}">${badge}</span></td><td><span class="tinyBar"><i class="${risk?'p-risk':near?'p-warn':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></span> ${pct}%</td></tr>`}).join('');
   let due=[...a].filter(o=>o.requested).sort((x,y)=>x.requested.localeCompare(y.requested)).slice(0,4);
   $('dueList').innerHTML=due.length?due.map(o=>{let end=productEnd(o),risk=isRisk(o);return `<div class="dashListItem"><div><b>${esc(o.orderNo)}</b><br><small>${esc(o.part)}</small></div><div><small>Ürün Bitiş (Tahmini)</small><br><b>${end?fmt(end):'-'}</b></div><span class="termBadge ${risk?'risk':'ok'}">${risk?'RİSK':'TERMİNDE'}</span></div>`}).join(''):'<div class="emptyDash">Yaklaşan termin bulunmuyor.</div>';
   let cmm=a.filter(o=>o.cmmRequired==='yes'&&o.cmm?.status&&o.cmm.status!=='Onay');
@@ -1644,7 +1688,7 @@ function renderMachines(){
   machines.forEach(m=>{const el=$(m.id);if(!el)return;const jobs=state.orders.filter(o=>o.machine===m.name&&o.stage!=='done').sort((a,b)=>n(a.queue)-n(b.queue));
     if(!jobs.length){el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus wait">Planlanan iş yok</div></div></div><div class="emptyDash">Bu tezgâhta sırada iş bulunmuyor.</div>`;return}
     const runningOrder=jobs.find(j=>(j.ops||[]).some(op=>op.runState==='running'&&!opIsComplete(j,op)));
-    const o=runningOrder||jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'&&!opIsComplete(o,op)),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>!opIsComplete(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=currentProductForecast(o)||(ops.length?(ops[ops.length-1]?.planEnd||''):''),pct=Math.round(progress(o)),risk=!!(o.requested&&urunBitis&&new Date(urunBitis)>new Date(o.requested)),queued=jobs.filter(j=>j.id!==o.id).slice(0,2);
+    const o=runningOrder||jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'&&!opIsComplete(o,op)),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>!opIsComplete(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=currentProductForecast(o)||(ops.length?(ops[ops.length-1]?.planEnd||''):''),pct=Math.round(progress(o)),risk=orderTerminRisk(o,urunBitis),queued=jobs.filter(j=>j.id!==o.id).slice(0,2);
     el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span>${aktif?`<div class="machineMiniGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>OP Durumu</small><b>${realRunning?'Üretimde':'Bekliyor'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
   });
 }
