@@ -1188,6 +1188,274 @@ html[data-theme="dark"] .box{
 }
 </style>
 
+
+<style id="luys-light-complete-fix">
+/* COMPLETE LIGHT THEME OVERRIDE - applied after every legacy dark rule */
+html[data-theme="light"] body,
+html[data-theme="light"] .wrap,
+html[data-theme="light"] .page{background:#eef3f8!important;color:#16324a!important}
+
+/* Generic surfaces */
+html[data-theme="light"] .card,
+html[data-theme="light"] .metric,
+html[data-theme="light"] .row,
+html[data-theme="light"] .accMetric,
+html[data-theme="light"] .panel,
+html[data-theme="light"] .box,
+html[data-theme="light"] .tile,
+html[data-theme="light"] .formCard,
+html[data-theme="light"] .summaryCard,
+html[data-theme="light"] .statCard,
+html[data-theme="light"] .reportCard,
+html[data-theme="light"] .dailyCard,
+html[data-theme="light"] .dayCard,
+html[data-theme="light"] .historyCard,
+html[data-theme="light"] .weekCard,
+html[data-theme="light"] .kpiCard,
+html[data-theme="light"] .priceCard,
+html[data-theme="light"] .valueCard,
+html[data-theme="light"] .infoBox,
+html[data-theme="light"] .miniCard,
+html[data-theme="light"] .unitCompare>div,
+html[data-theme="light"] .actualEditor,
+html[data-theme="light"] .notice,
+html[data-theme="light"] .finishbox,
+html[data-theme="light"] .readonlyNotice{
+ background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important;
+ box-shadow:0 3px 14px rgba(25,57,80,.06)!important
+}
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] b,
+html[data-theme="light"] strong,
+html[data-theme="light"] .value{color:#16324a!important}
+html[data-theme="light"] .small,
+html[data-theme="light"] small,
+html[data-theme="light"] label,
+html[data-theme="light"] .muted,
+html[data-theme="light"] .meta{color:#718491!important}
+
+/* Forms */
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea,
+html[data-theme="light"] option,
+html[data-theme="light"] .partRateInput,
+html[data-theme="light"] #profitDay{
+ background:#fff!important;color:#16324a!important;border-color:#9dafbe!important
+}
+html[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
+html[data-theme="light"] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+html[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator{filter:none!important}
+
+/* Tables */
+html[data-theme="light"] table,
+html[data-theme="light"] tbody,
+html[data-theme="light"] tr,
+html[data-theme="light"] td{background:transparent!important;color:#16324a!important}
+html[data-theme="light"] th{background:#f3f7fa!important;color:#385266!important}
+html[data-theme="light"] td{border-bottom-color:#dfe7ed!important}
+html[data-theme="light"] tbody tr:nth-child(even){background:rgba(14,67,100,.018)!important}
+
+/* Buttons */
+html[data-theme="light"] .btn.alt,
+html[data-theme="light"] button.alt,
+html[data-theme="light"] .secondary,
+html[data-theme="light"] .ghost,
+html[data-theme="light"] .outline,
+html[data-theme="light"] .partRateBtn{
+ background:#fff!important;color:#17354b!important;border:1px solid #cbd9e2!important;
+ box-shadow:none!important
+}
+
+/* Dashboard exact reference */
+html[data-theme="light"] #dash .metric{
+ background:#fff!important;color:#536d7f!important;border-color:#dbe4eb!important
+}
+html[data-theme="light"] #dash .metric b{color:#16324a!important}
+html[data-theme="light"] #dash .metric small{color:#7b8c98!important}
+html[data-theme="light"] #dash .metric:before{background:#e9f5fb!important;color:#1781b6!important}
+html[data-theme="light"] #dash .metric:nth-child(2):before{background:#e8f7ef!important;color:#1d9c63!important}
+html[data-theme="light"] #dash .metric:nth-child(3):before{background:#f2eafa!important;color:#8d61c4!important}
+html[data-theme="light"] #dash .metric:nth-child(4):before{background:#fdebed!important;color:#d95660!important}
+html[data-theme="light"] .dashSectionTitle b,
+html[data-theme="light"] .dashCardHead b{color:#27445b!important}
+html[data-theme="light"] .dashSectionTitle span,
+html[data-theme="light"] .dashCardHead span{color:#1781b6!important}
+html[data-theme="light"] #dash .machineCards .card,
+html[data-theme="light"] #dash .planCard,
+html[data-theme="light"] #dash .dashLower .card,
+html[data-theme="light"] #dash .dashCard{
+ background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important
+}
+html[data-theme="light"] #dash .machineCards h2{color:#173a57!important}
+html[data-theme="light"] .machineIcon{background:#eaf5fb!important;border-color:#cfe4ef!important}
+html[data-theme="light"] .machineStatus{color:#1d9c63!important}
+html[data-theme="light"] .machineActiveBox{
+ background:#f7faff!important;color:#16324a!important;border-color:#e6edf4!important
+}
+html[data-theme="light"] .machineActiveBox.running{
+ background:#f3fff7!important;border-color:#d7f0e1!important
+}
+html[data-theme="light"] .machineActiveBox.riskBox{
+ background:#fff7f7!important;border-color:#f1cccc!important
+}
+html[data-theme="light"] .machineLabel{color:#1781b6!important}
+html[data-theme="light"] .machineJob{color:#24415b!important}
+html[data-theme="light"] .machineMini,
+html[data-theme="light"] .machineDue,
+html[data-theme="light"] .nextOps,
+html[data-theme="light"] .machineMiniGrid .machineMini,
+html[data-theme="light"] .machineActiveBox .machineMini,
+html[data-theme="light"] .machineActiveBox .machineMiniGrid>div,
+html[data-theme="light"] .machineActiveBox [class*="plan"],
+html[data-theme="light"] .machineActiveBox [class*="forecast"]{
+ background:transparent!important;color:#24415b!important;border-color:#dce8ed!important;
+ box-shadow:none!important
+}
+html[data-theme="light"] .machineMini small,
+html[data-theme="light"] .machineDue small{color:#7c8c99!important}
+html[data-theme="light"] .machineMini b,
+html[data-theme="light"] .machineDue b{color:#24415b!important}
+html[data-theme="light"] .progressHead{color:#7c8c99!important}
+html[data-theme="light"] .progressHead b{color:#24415b!important}
+html[data-theme="light"] .bar,
+html[data-theme="light"] .progressTrack,
+html[data-theme="light"] .tinyBar{background:#e5edf3!important}
+html[data-theme="light"] .dashListItem{background:#fff!important;color:#24415b!important;border-color:#e3ebf0!important}
+html[data-theme="light"] .dashListItem b{color:#24415b!important}
+html[data-theme="light"] .dashListItem small{color:#7b8d99!important}
+html[data-theme="light"] #dash th{background:#f3f7fa!important;color:#385266!important}
+html[data-theme="light"] .rowRisk{background:#fff3f4!important}
+
+/* İşçilik Değeri */
+html[data-theme="light"] .profitWrap{color:#16324a!important}
+html[data-theme="light"] .profitWrap>h2{color:#16324a!important}
+html[data-theme="light"] .profitMonthBar,
+html[data-theme="light"] .profitKpi,
+html[data-theme="light"] .profitCard{
+ background:#fff!important;color:#16324a!important;border-color:#dfe8ef!important;
+ box-shadow:0 4px 14px rgba(23,59,91,.07)!important
+}
+html[data-theme="light"] .profitMonthBar label,
+html[data-theme="light"] .profitForm label,
+html[data-theme="light"] .profitCard label{color:#526b7c!important}
+html[data-theme="light"] .profitMonthBar input,
+html[data-theme="light"] .profitForm input,
+html[data-theme="light"] .profitForm select{background:#fff!important;color:#16324a!important;border-color:#9dafbe!important}
+html[data-theme="light"] .profitKpi small{color:#738695!important}
+html[data-theme="light"] .profitKpi b{color:#123d5b!important}
+html[data-theme="light"] .profitCard h3{color:#16324a!important}
+html[data-theme="light"] .profitTable th{background:#f3f7fa!important;color:#385266!important}
+html[data-theme="light"] .profitTable td{color:#16324a!important}
+
+/* Parça Süresi */
+html[data-theme="light"] .partRateKpi{
+ background:#f9fcfe!important;color:#16324a!important;border-color:#dce6ed!important;
+ box-shadow:none!important
+}
+html[data-theme="light"] .partRateKpi small{color:#728594!important}
+html[data-theme="light"] .partRateKpi b{color:#173f5b!important}
+html[data-theme="light"] .partRateKpi .good,
+html[data-theme="light"] .partRateHourly{color:#168348!important}
+html[data-theme="light"] .partRateGroupTable th{background:#f3f7fa!important;color:#385266!important}
+html[data-theme="light"] .partRateGroupTable td{color:#16324a!important}
+
+/* Günlük Üretim */
+html[data-theme="light"] .dailyCurrentSummary .dailySummaryBox,
+html[data-theme="light"] .dailyWeek,
+html[data-theme="light"] .dailyWeekHead,
+html[data-theme="light"] .dailyWeekBody,
+html[data-theme="light"] .dailyDayBtn,
+html[data-theme="light"] .dailyDayPanel,
+html[data-theme="light"] .dailyDayTitle,
+html[data-theme="light"] .dailyEntries,
+html[data-theme="light"] .dailyEntry,
+html[data-theme="light"] .dailyEntry .dailyStats div{
+ background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important
+}
+html[data-theme="light"] .dailyWeekHead b,
+html[data-theme="light"] .dailyDayTitle b,
+html[data-theme="light"] .dailyEntryTop b,
+html[data-theme="light"] .dailySummaryBox b,
+html[data-theme="light"] .dailyEntry .dailyStats b{color:#16324a!important}
+html[data-theme="light"] .dailyWeekHead .weekIcon{
+ background:#e9f5fb!important;color:#1781b6!important;border-color:#cfe4ef!important
+}
+html[data-theme="light"] .dailyDayBtn.active{
+ background:#eaf6fc!important;color:#1781b6!important;border-color:#8bc9e6!important
+}
+html[data-theme="light"] .weekTotal{background:#eef4f8!important;color:#385266!important}
+
+/* Operations */
+html[data-theme="light"] #ops .row.running{
+ background:#f2fff7!important;border-color:#19884e!important;
+ box-shadow:0 3px 12px rgba(25,136,78,.08)!important
+}
+html[data-theme="light"] #ops .row.running .finishbox,
+html[data-theme="light"] #ops .row.running .actualEditor,
+html[data-theme="light"] #ops .row.running .unitCompare>div{
+ background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important
+}
+html[data-theme="light"] .row.paused{background:#fff5f5!important;border-color:#c93333!important}
+
+/* Bottom PDF + modal */
+html[data-theme="light"] .dashModalHead{background:#f3f7fa!important;border-color:#dbe4eb!important}
+html[data-theme="light"] .dashModalHead b{color:#16324a!important}
+html[data-theme="light"] .dashModalClose{background:#e9eff3!important;color:#16324a!important}
+html[data-theme="light"] #dash .card p,
+html[data-theme="light"] #dash .card small{color:#718491!important}
+
+/* Semantic colors */
+html[data-theme="light"] .ok,
+html[data-theme="light"] .good,
+html[data-theme="light"] .ahead{color:#168348!important}
+html[data-theme="light"] .risk,
+html[data-theme="light"] .bad,
+html[data-theme="light"] .behind{color:#c72e2e!important}
+html[data-theme="light"] .warn,
+html[data-theme="light"] .wait{color:#a56e00!important}
+</style>
+
+<style id="luys-dark-soften-final">
+/* SOFTER DARK: brighter navy, lower contrast */
+html[data-theme="dark"] body{background:#102431!important}
+html[data-theme="dark"] header{background:linear-gradient(110deg,#16405b,#1c5574)!important}
+html[data-theme="dark"] .tabs{background:#142d3d!important}
+html[data-theme="dark"] .tabs button{background:#1a3749!important;border-color:#365f78!important}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .metric,
+html[data-theme="dark"] .row,
+html[data-theme="dark"] .accMetric,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .box,
+html[data-theme="dark"] .profitMonthBar,
+html[data-theme="dark"] .profitKpi,
+html[data-theme="dark"] .profitCard,
+html[data-theme="dark"] .partRateKpi,
+html[data-theme="dark"] .dailyWeek,
+html[data-theme="dark"] .dailyDayPanel,
+html[data-theme="dark"] #dash .machineCards .card,
+html[data-theme="dark"] #dash .planCard,
+html[data-theme="dark"] .dashLower .card{
+ background:linear-gradient(155deg,#1a394b,#143040)!important;
+ border-color:#3b657c!important;
+ box-shadow:0 4px 14px rgba(0,0,0,.10)!important
+}
+html[data-theme="dark"] .machineActiveBox{background:#153243!important;border-color:#3a6279!important}
+html[data-theme="dark"] .machineActiveBox.running{
+ background:linear-gradient(155deg,#17483f,#153743)!important;border-color:#2e7b65!important
+}
+html[data-theme="dark"] .machineMini,
+html[data-theme="dark"] .machineDue,
+html[data-theme="dark"] .unitCompare>div,
+html[data-theme="dark"] .actualEditor{
+ background:#173647!important;border-color:#406a82!important
+}
+</style>
+
 </head>
 <body>
 <header>
