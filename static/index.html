@@ -483,6 +483,9 @@
 @media(max-width:800px){.partRateTop{grid-template-columns:1fr}.partRateKpi b{font-size:15px}.partRateInput{width:82px}}
 
 </style>
+<style>
+.machineMiniGrid > .machineMini:only-child{grid-column:1/-1}
+</style>
 </head>
 <body>
 <header>
@@ -1225,6 +1228,13 @@ function actualMinutesPerPiece(o,op){
 }
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
+
+  // Ekrandaki "Ürün Bitiş" ile "Güncel Tahmin" aynı kaynaktan beslensin.
+  // Operasyon gerçek üretime başladıysa performans bazlı güncel tahmin önceliklidir.
+  // Böylece üst kart başka, alt kart başka tarih göstermez.
+  const tracked=planDeltaInfo(o);
+  if(tracked?.forecast)return tracked.forecast;
+
   const ops=o.ops||[];
 
   // schedule() normalde aktif/bekleyen tüm OP'leri planlar. Ürün bitişi için
@@ -1748,7 +1758,7 @@ function renderMachines(){
     if(!jobs.length){el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus wait">Planlanan iş yok</div></div></div><div class="emptyDash">Bu tezgâhta sırada iş bulunmuyor.</div>`;return}
     const runningOrder=jobs.find(j=>(j.ops||[]).some(op=>op.runState==='running'&&!opIsComplete(j,op)));
     const o=runningOrder||jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'&&!opIsComplete(o,op)),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>!opIsComplete(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=currentProductForecast(o)||(ops.length?(ops[ops.length-1]?.planEnd||''):''),pct=Math.round(progress(o)),risk=orderTerminRisk(o,urunBitis),queued=jobs.filter(j=>j.id!==o.id).slice(0,2);
-    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span>${aktif?`<div class="machineMiniGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div><div class="machineMini"><small>Ürün Bitiş (Termin)</small><b>${urunBitis?fmt(urunBitis):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
+    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span>${aktif?`<div class="machineMiniGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
   });
 }
 
