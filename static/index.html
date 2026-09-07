@@ -1854,27 +1854,6 @@ function automaticPlanningPDF(){
   <footer>Planlanan başlangıç ve bitiş süreleri tahminidir. Gerçek süreler operasyon ve günlük üretim kayıtlarına göre güncellenir.</footer>
   <script>window.onload=()=>{setTimeout(()=>window.print(),250)}<\/script>
   
-<script id="luys-theme-controller">
-(function(){
- const KEY='luys_theme';
- function saved(){try{return localStorage.getItem(KEY)==='light'?'light':'dark'}catch(e){return 'dark'}}
- function apply(t){
-   document.documentElement.setAttribute('data-theme',t);
-   const b=document.getElementById('themeTop');
-   if(b){b.textContent=t==='light'?'🌙':'☀️';b.title=t==='light'?'Koyu temaya geç':'Açık temaya geç';b.setAttribute('aria-label',b.title)}
- }
- apply(saved());
- document.addEventListener('DOMContentLoaded',()=>{
-   apply(saved());
-   const b=document.getElementById('themeTop');
-   if(b)b.addEventListener('click',()=>{
-     const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
-     try{localStorage.setItem(KEY,t)}catch(e){}
-     apply(t);
-   });
- });
-})();
-</script>
 
 </body></html>`;
 
@@ -3388,6 +3367,33 @@ window.editDaily=id=>{
    });
  });
  window.__luysRenderProfit=render;
+})();
+</script>
+
+
+<script id="luys-theme-controller">
+(function(){
+ const KEY='luys_theme';
+ function saved(){try{return localStorage.getItem(KEY)==='light'?'light':'dark'}catch(e){return 'dark'}}
+ function apply(t){
+   document.documentElement.setAttribute('data-theme',t);
+   const b=document.getElementById('themeTop');
+   if(b){
+     b.textContent=t==='light'?'🌙':'☀️';
+     b.title=t==='light'?'Koyu temaya geç':'Açık temaya geç';
+     b.setAttribute('aria-label',b.title);
+   }
+ }
+ apply(saved());
+ document.addEventListener('DOMContentLoaded',()=>{
+   apply(saved());
+   const b=document.getElementById('themeTop');
+   if(b)b.addEventListener('click',()=>{
+     const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+     try{localStorage.setItem(KEY,t)}catch(e){}
+     apply(t);
+   });
+ });
 })();
 </script>
 
