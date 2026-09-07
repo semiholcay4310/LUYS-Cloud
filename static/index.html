@@ -1747,6 +1747,308 @@ html[data-theme="light"] footer *{
 }
 </style>
 
+
+<style id="luys-final-light-pass">
+/* ==========================================================
+   FINAL LIGHT THEME PASS
+   Goal: every page uses the same bright reference language.
+   Only visual overrides; production/business logic untouched.
+   ========================================================== */
+
+html[data-theme="light"] body{
+  background:#eef3f8!important;
+  color:#17384c!important;
+}
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4{
+  color:#17384c!important;
+  opacity:1!important;
+}
+
+/* Main page cards */
+html[data-theme="light"] .page > .card,
+html[data-theme="light"] .page .card{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dbe4eb!important;
+  box-shadow:0 3px 14px rgba(25,57,80,.06)!important;
+}
+html[data-theme="light"] .page .card h2,
+html[data-theme="light"] .page .card h3,
+html[data-theme="light"] .page .card b,
+html[data-theme="light"] .page .card strong{
+  color:#17384c!important;
+}
+html[data-theme="light"] .page .card small,
+html[data-theme="light"] .page .card .small,
+html[data-theme="light"] .page .card .muted,
+html[data-theme="light"] .page .card label{
+  color:#718491!important;
+}
+
+/* Forms on all pages */
+html[data-theme="light"] .form,
+html[data-theme="light"] .form *{
+  text-shadow:none!important;
+}
+html[data-theme="light"] .form label{
+  color:#526b7c!important;
+}
+html[data-theme="light"] .form input,
+html[data-theme="light"] .form select,
+html[data-theme="light"] .form textarea{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#9dafbe!important;
+}
+html[data-theme="light"] .form input[readonly]{
+  background:#f5f8fa!important;
+  color:#526b7c!important;
+}
+
+/* Daily production page - this was the main remaining dark block */
+html[data-theme="light"] #daily{
+  background:#eef3f8!important;
+  color:#17384c!important;
+}
+html[data-theme="light"] #daily > .card,
+html[data-theme="light"] #daily .card{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dbe4eb!important;
+}
+html[data-theme="light"] #daily #dailyTitle,
+html[data-theme="light"] #daily h2,
+html[data-theme="light"] #daily h3{
+  color:#17384c!important;
+}
+html[data-theme="light"] #daily #verimBilgi,
+html[data-theme="light"] #daily #verimBilgi p,
+html[data-theme="light"] #daily #verimBilgi b,
+html[data-theme="light"] #daily #smartTimeAnalysis{
+  color:#17384c!important;
+}
+html[data-theme="light"] #daily .dailyCurrentSummary .dailySummaryBox,
+html[data-theme="light"] #daily .dailyWeek,
+html[data-theme="light"] #daily .dailyWeekHead,
+html[data-theme="light"] #daily .dailyWeekBody,
+html[data-theme="light"] #daily .dailyDayBtn,
+html[data-theme="light"] #daily .dailyDayPanel,
+html[data-theme="light"] #daily .dailyDayTitle,
+html[data-theme="light"] #daily .dailyEntries,
+html[data-theme="light"] #daily .dailyEntry,
+html[data-theme="light"] #daily .dailyEntry .dailyStats div{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dbe4eb!important;
+}
+html[data-theme="light"] #daily .dailyWeekHead b,
+html[data-theme="light"] #daily .dailyDayTitle b,
+html[data-theme="light"] #daily .dailyEntryTop b,
+html[data-theme="light"] #daily .dailySummaryBox b,
+html[data-theme="light"] #daily .dailyEntry .dailyStats b{
+  color:#17384c!important;
+}
+html[data-theme="light"] #daily .dailyWeekHead small,
+html[data-theme="light"] #daily .dailyDayBtn span,
+html[data-theme="light"] #daily .dailyEntry .dailyStats small,
+html[data-theme="light"] #daily .dailySummaryBox small{
+  color:#718491!important;
+}
+html[data-theme="light"] #daily .dailyDayBtn.active{
+  background:#eaf6fc!important;
+  color:#1476a9!important;
+  border-color:#8bc9e6!important;
+}
+
+/* Operations page */
+html[data-theme="light"] #ops > .card,
+html[data-theme="light"] #ops .card{
+  background:#fff!important;
+  color:#17384c!important;
+}
+html[data-theme="light"] #ops .row{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dbe4eb!important;
+}
+html[data-theme="light"] #ops .row.running{
+  background:#f1fbf5!important;
+  border-color:#2b9561!important;
+}
+html[data-theme="light"] #ops .row.running .finishbox,
+html[data-theme="light"] #ops .row.running .actualEditor,
+html[data-theme="light"] #ops .row.running .unitCompare>div{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dbe4eb!important;
+}
+html[data-theme="light"] #ops .row b,
+html[data-theme="light"] #ops .row strong{
+  color:#17384c!important;
+}
+html[data-theme="light"] #ops .row small,
+html[data-theme="light"] #ops .row .small,
+html[data-theme="light"] #ops .row .muted{
+  color:#718491!important;
+}
+
+/* Part times page */
+html[data-theme="light"] #parttimes > .card{
+  background:#fff!important;
+  color:#17384c!important;
+}
+html[data-theme="light"] #parttimes .partRateKpi{
+  background:#f9fcfe!important;
+  color:#17384c!important;
+  border-color:#dce6ed!important;
+}
+html[data-theme="light"] #parttimes .partRateKpi b{
+  color:#17384c!important;
+}
+html[data-theme="light"] #parttimes .partRateKpi small{
+  color:#718491!important;
+}
+html[data-theme="light"] #parttimes .partRateBtn{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#bfd0db!important;
+}
+
+/* Labour / profit page */
+html[data-theme="light"] .profitWrap,
+html[data-theme="light"] .profitWrap > h2{
+  color:#17384c!important;
+}
+html[data-theme="light"] .profitMonthBar,
+html[data-theme="light"] .profitKpi,
+html[data-theme="light"] .profitCard{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dfe8ef!important;
+}
+html[data-theme="light"] .profitKpi b,
+html[data-theme="light"] .profitCard h3{
+  color:#17384c!important;
+}
+html[data-theme="light"] .profitKpi small,
+html[data-theme="light"] .profitCard .small{
+  color:#718491!important;
+}
+html[data-theme="light"] .profitTable th{
+  background:#f3f7fa!important;
+  color:#385266!important;
+}
+html[data-theme="light"] .profitTable td{
+  color:#17384c!important;
+}
+
+/* Dashboard lower cards and table */
+html[data-theme="light"] #dash .dashLower .card,
+html[data-theme="light"] #dash .planCard,
+html[data-theme="light"] #dash .autoPdfCard{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dbe4eb!important;
+}
+html[data-theme="light"] #dash .dashCardHead b,
+html[data-theme="light"] #dash .autoPdfCard b{
+  color:#17384c!important;
+}
+html[data-theme="light"] #dash .dashListItem,
+html[data-theme="light"] #dash .dashListItem *{
+  opacity:1!important;
+}
+html[data-theme="light"] #dash .dashListItem{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dfe7ed!important;
+}
+html[data-theme="light"] #dash .dashListItem b{
+  color:#17384c!important;
+}
+html[data-theme="light"] #dash .dashListItem small{
+  color:#718491!important;
+}
+html[data-theme="light"] #dash table,
+html[data-theme="light"] #dash table *{
+  opacity:1!important;
+  text-shadow:none!important;
+}
+html[data-theme="light"] #dash thead th{
+  background:#f3f7fa!important;
+  color:#385266!important;
+}
+html[data-theme="light"] #dash tbody td{
+  color:#17384c!important;
+  background:transparent!important;
+}
+html[data-theme="light"] #dash tbody td small{
+  color:#718491!important;
+}
+html[data-theme="light"] #dash .autoPdfCard .small{
+  color:#718491!important;
+}
+
+/* Preserve dashboard machine reference look */
+html[data-theme="light"] #dash .machineCards .card{
+  background:#fff!important;
+  color:#17384c!important;
+}
+html[data-theme="light"] #dash .machineActiveBox.running{
+  background:#f1fbf5!important;
+  color:#17384c!important;
+  border-color:#cfe8d9!important;
+}
+html[data-theme="light"] #dash .machineActiveBox.running *{
+  opacity:1!important;
+}
+html[data-theme="light"] #dash .machineMini,
+html[data-theme="light"] #dash .machineDue,
+html[data-theme="light"] #dash .machineActiveBox [class*="plan"],
+html[data-theme="light"] #dash .machineActiveBox [class*="forecast"]{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#d9e4ea!important;
+}
+html[data-theme="light"] #dash .machineMini b,
+html[data-theme="light"] #dash .machineDue b{
+  color:#17384c!important;
+}
+html[data-theme="light"] #dash .machineMini small,
+html[data-theme="light"] #dash .machineDue small{
+  color:#718491!important;
+}
+
+/* FINAL SOFT DARK - slightly brighter navy */
+html[data-theme="dark"] body{
+  background:#142b39!important;
+}
+html[data-theme="dark"] .page > .card,
+html[data-theme="dark"] .page .card,
+html[data-theme="dark"] .metric,
+html[data-theme="dark"] .row,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .box,
+html[data-theme="dark"] .profitMonthBar,
+html[data-theme="dark"] .profitKpi,
+html[data-theme="dark"] .profitCard,
+html[data-theme="dark"] .partRateKpi,
+html[data-theme="dark"] .dailyWeek,
+html[data-theme="dark"] .dailyDayPanel{
+  background:linear-gradient(155deg,#21485e,#193b4d)!important;
+  border-color:#4a748b!important;
+  box-shadow:0 4px 14px rgba(0,0,0,.10)!important;
+}
+html[data-theme="dark"] #dash .machineActiveBox.running,
+html[data-theme="dark"] #ops .row.running{
+  background:linear-gradient(155deg,#1c5147,#1b424c)!important;
+  border-color:#3d876f!important;
+}
+</style>
+
 </head>
 <body>
 <header>
