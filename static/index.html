@@ -3212,6 +3212,85 @@ window.editDaily=id=>{
 </script>
 
 
+
+<style id="luys-industrial-blue-medium">
+/* LÜYS final dark theme: medium industrial blue — lighter than previous dark, still premium */
+html[data-theme="dark"],html[data-theme="dark"] body{background:#0b1d2a!important;color:#edf7ff!important}
+html[data-theme="dark"] body{background:linear-gradient(180deg,#0d2232 0%,#102838 48%,#0b1d2a 100%)!important}
+html[data-theme="dark"] header{background:linear-gradient(110deg,#10324b,#164666 72%,#185170)!important;border-bottom-color:#34779f!important}
+html[data-theme="dark"] .tabs{background:#102838!important}
+html[data-theme="dark"] .tabs button{background:#17364b!important;border-color:#315d79!important;color:#d9e9f4!important}
+html[data-theme="dark"] .tabs button.active{background:linear-gradient(110deg,#0786df,#16b1f2)!important;border-color:#45c3ff!important;color:#fff!important}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .metric,
+html[data-theme="dark"] .row,
+html[data-theme="dark"] .accMetric,
+html[data-theme="dark"] .dashModalBox,
+html[data-theme="dark"] .reportCard,
+html[data-theme="dark"] .summaryCard,
+html[data-theme="dark"] .statCard,
+html[data-theme="dark"] .dailyCard,
+html[data-theme="dark"] .dayCard,
+html[data-theme="dark"] .historyCard,
+html[data-theme="dark"] .weekCard,
+html[data-theme="dark"] .kpiCard,
+html[data-theme="dark"] .priceCard,
+html[data-theme="dark"] .valueCard,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .box,
+html[data-theme="dark"] .tile,
+html[data-theme="dark"] .infoBox,
+html[data-theme="dark"] .miniCard,
+html[data-theme="dark"] .formCard{background:linear-gradient(155deg,#17384c,#102a3b)!important;border-color:#32617e!important;color:#edf7ff!important;box-shadow:0 7px 20px rgba(0,0,0,.20)!important}
+html[data-theme="dark"] #dash .metric{background:linear-gradient(155deg,#17394e,#112c3e)!important;border-color:#32627f!important}
+html[data-theme="dark"] #dash .machineCards .card,
+html[data-theme="dark"] #dash .planCard,
+html[data-theme="dark"] .dashLower .card{background:linear-gradient(155deg,#17384c,#102a3b)!important;border-color:#32617e!important}
+html[data-theme="dark"] .machineActiveBox{background:#153447!important;border-color:#376781!important}
+html[data-theme="dark"] .machineActiveBox.running{background:linear-gradient(155deg,#123f39,#123344)!important;border-color:#248367!important}
+html[data-theme="dark"] .machineMiniGrid .machineMini,
+html[data-theme="dark"] .machineDue,
+html[data-theme="dark"] .machineActiveBox .machineMini,
+html[data-theme="dark"] .machineActiveBox .machineMiniGrid>div,
+html[data-theme="dark"] .machineActiveBox [class*="plan"],
+html[data-theme="dark"] .machineActiveBox [class*="forecast"]{background:#17384c!important;border-color:#3a6d8a!important;color:#eef8ff!important}
+html[data-theme="dark"] .form input,
+html[data-theme="dark"] .form select,
+html[data-theme="dark"] .form textarea,
+html[data-theme="dark"] .actualEditor input,
+html[data-theme="dark"] .cal input{background:#17364a!important;color:#f3f9ff!important;border-color:#42718d!important}
+html[data-theme="dark"] th{background:#163448!important;color:#b9d1e1!important}
+html[data-theme="dark"] table{color:#e7f2fa!important}
+html[data-theme="dark"] th,html[data-theme="dark"] td{border-bottom-color:#31566d!important}
+html[data-theme="dark"] tr:hover td{background:#1a3b50!important}
+html[data-theme="dark"] .bar,
+html[data-theme="dark"] .progressTrack,
+html[data-theme="dark"] .tinyBar{background:#284a61!important}
+html[data-theme="dark"] .progressTrack>i,
+html[data-theme="dark"] .bar i,
+html[data-theme="dark"] .tinyBar i{filter:saturate(1.2) brightness(1.08)}
+html[data-theme="dark"] .small,
+html[data-theme="dark"] .form label,
+html[data-theme="dark"] .meta,
+html[data-theme="dark"] .footer,
+html[data-theme="dark"] .cal small{color:#a9c0cf!important}
+html[data-theme="dark"] .machineMini small,
+html[data-theme="dark"] .machineDue small,
+html[data-theme="dark"] .progressHead{color:#9fb7c7!important}
+html[data-theme="dark"] .machineMini b,
+html[data-theme="dark"] .machineDue b{color:#f1f8fd!important}
+html[data-theme="dark"] .dashListItem{border-bottom-color:#31576e!important}
+html[data-theme="dark"] .rowRisk{background:#40232b!important}
+html[data-theme="dark"] .termBadge.warn{background:#59401c!important;color:#ffd56d!important;border-color:#916a2d!important}
+html[data-theme="dark"] .termBadge.risk{background:#57252d!important;color:#ff9ba1!important;border-color:#94414b!important}
+html[data-theme="dark"] .termBadge.ok{background:#154936!important;color:#65edac!important;border-color:#27825d!important}
+html[data-theme="dark"] .sync,html[data-theme="dark"] .userbox{background:#173d58!important;border-color:#397296!important;color:#f0f8ff!important}
+html[data-theme="dark"] .logo{background:#17384d!important;border-color:#397496!important}
+html[data-theme="dark"] ::-webkit-scrollbar-track{background:#102838}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#3c6d88}
+@media(max-width:800px){html[data-theme="dark"] body{background:#0b1d2a!important}html[data-theme="dark"] .tabs{background:#102838!important}}
+</style>
+
 <script id="luys-theme-switch-controller">
 (function(){
   const KEY='luys_theme';
@@ -3219,7 +3298,8 @@ window.editDaily=id=>{
     'luys-premium-dark-theme',
     'luys-premium-dark-fix-v2',
     'luys-premium-dark-fix-v3',
-    'luys-premium-dark-fix-v4'
+    'luys-premium-dark-fix-v4',
+    'luys-industrial-blue-medium'
   ];
 
   function readTheme(){
