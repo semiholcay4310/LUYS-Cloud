@@ -486,6 +486,171 @@
 <style>
 .machineMiniGrid > .machineMini:only-child{grid-column:1/-1}
 </style>
+
+<style id="luys-premium-dark-theme">
+:root{
+  --navy:#061522!important;
+  --blue:#0b8fe8!important;
+  --green:#21d17c!important;
+  --red:#ff4d57!important;
+  --amber:#f4b942!important;
+  --ink:#eef7ff!important;
+  --muted:#8da6b9!important;
+  --line:#1c3a50!important;
+  --panel:#0b1c2b!important;
+  --bg:#04101a!important;
+}
+html,body{background:#04101a!important;color:#eaf5ff!important}
+body{
+  background:
+    radial-gradient(circle at 82% 5%,rgba(0,138,255,.11),transparent 25%),
+    linear-gradient(180deg,#03101a 0%,#061522 42%,#04101a 100%)!important;
+}
+header{
+  background:linear-gradient(110deg,#04101a,#092238 72%,#0a2c47)!important;
+  border-bottom:1px solid #174768!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.28)!important;
+}
+.logo{background:#081b2b!important;border:1px solid #215c83!important;box-shadow:0 0 20px rgba(0,145,255,.12)!important}
+.brand h1{color:#fff!important;text-shadow:0 0 18px rgba(29,153,255,.12)}
+.brand small{color:#9ec7e4!important}
+.sync,.userbox{background:#0c2d47!important;border:1px solid #215579!important;color:#eaf5ff!important}
+
+.wrap{background:transparent!important}
+.tabs{
+  background:linear-gradient(180deg,rgba(5,18,29,.96),rgba(5,17,28,.90))!important;
+}
+.tabs button{
+  background:#0a1c2b!important;color:#c9dceb!important;
+  border:1px solid #1c425d!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.02)!important;
+}
+.tabs button:hover{border-color:#2678aa!important}
+.tabs button.active{
+  background:linear-gradient(110deg,#0778d7,#12a7ef)!important;
+  color:white!important;border-color:#2db8ff!important;
+  box-shadow:0 7px 18px rgba(0,137,235,.26),inset 0 1px rgba(255,255,255,.18)!important;
+}
+
+.card,.metric,.row,.accMetric,.dashModalBox{
+  background:linear-gradient(155deg,#0c2030,#081622)!important;
+  color:#eaf5ff!important;
+  border-color:#1a4059!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.22)!important;
+}
+h1,h2,h3,h4,b,strong,.card h2,.card h3{color:#eef8ff!important}
+.small,.form label,.meta,.footer,.cal small{color:#91aabd!important}
+.form input,.form select,.form textarea,.actualEditor input,.cal input{
+  background:#071622!important;color:#edf7ff!important;border-color:#28506c!important;
+}
+.form input:focus,.form select:focus,.form textarea:focus,.actualEditor input:focus{
+  outline:none!important;border-color:#149eea!important;box-shadow:0 0 0 3px rgba(20,158,234,.13)!important;
+}
+.form input::placeholder,.form textarea::placeholder{color:#6f8798!important}
+
+.btn{background:linear-gradient(100deg,#0879d6,#14a9ef)!important;box-shadow:0 7px 16px rgba(0,128,220,.18)!important}
+.btn.alt{background:#132b3d!important;color:#d9ebf8!important;border:1px solid #27506c!important}
+.btn.green{background:#128a58!important}.btn.red{background:#c93f49!important}.btn.orange{background:#c47f22!important}
+
+.row{border-color:#1c4058!important}
+.row.running{border-color:#20c978!important;background:linear-gradient(155deg,#0b2a27,#091d24)!important}
+.row.paused{border-color:#d94a53!important;background:linear-gradient(155deg,#2b161c,#121722)!important}
+.status{background:#183146!important;color:#b9cddd!important}
+.status.run{background:#0f392b!important;color:#48e49a!important}
+.status.pause{background:#441d25!important;color:#ff8f97!important}
+
+.notice{background:#0c2c25!important;border-left-color:#21c779!important;color:#c8f5df!important}
+.danger{background:#35171d!important;border-left-color:#ff4d57!important;color:#ffd3d6!important}
+.readonlyNotice{background:#332817!important;border-left-color:#f4b942!important;color:#ffe7aa!important}
+.finishbox{background:#0b2940!important;border-left-color:#139cea!important;color:#d9efff!important}
+
+.tablewrap{border-radius:12px}
+table{color:#dbeaf6!important}
+th,td{border-bottom-color:#16384f!important}
+th{background:#0a1c2b!important;color:#9fc3dd!important}
+tr:hover td{background:#0b2234!important}
+.bar,.progressTrack,.tinyBar{background:#173349!important}
+.bar i,.tinyBar i{background:linear-gradient(90deg,#0a83df,#20b6ff)!important}
+
+.cal>div{background:#0b1c2a!important;border:1px solid #1b4058!important}
+.unitCompare>div,.actualEditor{background:#091a28!important;border-color:#1d4158!important}
+.unitCompare small{color:#829caf!important}
+.unitCompare .ahead{color:#3fe091!important}.unitCompare .behind{color:#ff6b73!important}.unitCompare .same{color:#9ab2c3!important}
+.stock.ok{color:#3fe091!important}.stock.wait{color:#f4b942!important}
+
+/* Dashboard */
+#dash{background:transparent!important}
+#dash .metric{
+  background:linear-gradient(155deg,#0d2131,#081723)!important;
+  border-color:#1b425d!important;color:#a9c0d1!important;
+}
+#dash .metric b{color:#f0f8ff!important}
+#dash .metric small{color:#7896aa!important}
+#dash .metric:before{background:#0c2f4a!important;color:#38b9ff!important}
+#dash .metric:nth-child(2):before{background:#0b3529!important;color:#37df91!important}
+#dash .metric:nth-child(3):before{background:#261f46!important;color:#a98cff!important}
+#dash .metric:nth-child(4):before{background:#3d1b22!important;color:#ff6d75!important}
+.dashSectionTitle b,.dashCardHead b{color:#e9f5ff!important}
+.dashSectionTitle span,.dashCardHead span{color:#39b9ff!important}
+
+#dash .machineCards .card,#dash .planCard,.dashLower .card{
+  background:linear-gradient(155deg,#0d2131,#081723)!important;border-color:#1b425d!important
+}
+.machineIcon{background:#0d2b40!important;border:1px solid #1c5274!important}
+#dash .machineCards h2{color:#e8f5ff!important}
+.machineStatus{color:#37df91!important}.machineStatus.wait{color:#8299a9!important}
+.machineActiveBox{background:#081a28!important;border-color:#1d4058!important}
+.machineActiveBox.running{background:linear-gradient(155deg,#0b2a27,#0a1c25)!important;border-color:#155d49!important}
+.machineActiveBox.riskBox{background:#2a151b!important;border-color:#6f2832!important}
+.machineLabel{color:#39baff!important}.machineJob{color:#e3f0fa!important}
+.machineBadge,.termBadge,.queueBadge{background:#142c3d!important;color:#a6bac8!important}
+.machineBadge.run,.termBadge.ok{background:#0c3b2b!important;color:#43e99b!important;border:1px solid #187c55!important}
+.termBadge.risk{background:#421c24!important;color:#ff737c!important;border:1px solid #7e3039!important}
+.termBadge.warn{background:#3a2b16!important;color:#ffd06c!important;border:1px solid #6e5226!important}
+.progressHead{color:#7895aa!important}.progressHead b{color:#e0edf6!important}
+.machineMini,.machineDue,.nextOps{border-color:#173a50!important}
+.machineMini small,.machineDue small{color:#7f98aa!important}
+.machineMini b,.machineDue b{color:#dfeef9!important}
+.nextOpsTitle{color:#a5c1d4!important}
+.nextOpItem{border-bottom-color:#16364b!important}.nextNo{border-color:#295169!important;color:#8aa5b7!important}
+.nextOpItem b{color:#cfe0ec!important}.nextOpItem span{color:#728a9b!important}
+.dashListItem{border-bottom-color:#17384e!important}.dashListItem b{color:#dcebf6!important}.dashListItem small{color:#7892a5!important}
+.emptyDash{color:#7892a5!important}
+#dash th{background:#091b29!important;color:#8faabd!important}
+.rowRisk{background:#28161c!important}
+
+/* Accounting and report-style cards */
+.accMetric{background:linear-gradient(155deg,#0d2131,#081723)!important;border-color:#1b425d!important}
+.accMetric small{color:#7f9aaf!important}.accMetric b{color:#eef8ff!important}
+.accMetric.good b,.moneyGood{color:#43e99b!important}
+.accMetric.warn b,.moneyWarn{color:#ffd06c!important}
+.accMetric.bad b,.moneyBad{color:#ff737c!important}
+.accPill{background:#142c3d!important;color:#a9bdcb!important}
+.accPill.ok{background:#0c3b2b!important;color:#43e99b!important}.accPill.wait{background:#3a2b16!important;color:#ffd06c!important}
+
+/* Modals */
+.dashModal{background:rgba(0,5,10,.72)!important;backdrop-filter:blur(6px)}
+.dashModalHead{background:#0b1c2b!important;border-bottom-color:#1a4059!important}
+.dashModalHead b{color:#eef8ff!important}.dashModalClose{background:#142c3d!important;color:#d9eaf5!important}
+
+/* Premium highlights */
+a{color:#42bfff}
+hr{border-color:#17384d!important}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#06131f}
+::-webkit-scrollbar-thumb{background:#214a65;border-radius:99px}
+
+/* Keep mobile layout identical, only recolor it */
+@media(max-width:800px){
+  body{background:#04101a!important}
+  header{background:linear-gradient(110deg,#04101a,#092238)!important}
+  .tabs{background:#061522!important}
+  .tabs button{background:#0b1d2b!important;border-color:#193d55!important}
+  .tabs button.active{background:linear-gradient(110deg,#087bd8,#15a7ef)!important}
+  #dash .machineCards .card{box-shadow:0 5px 16px rgba(0,0,0,.25)!important}
+}
+</style>
+
 </head>
 <body>
 <header>
