@@ -877,82 +877,147 @@ function opIsComplete(o,op){
 function schedule(){
   compactAllQueues();
   let machines=[...new Set(state.orders.map(o=>o.machine).filter(Boolean))];
+
   for(let machine of machines){
     let orders=activeOrdersForMachine(machine).sort((a,b)=>n(a.queue)-n(b.queue));
     let tasks=[];
-    orders.forEach(o=>(o.ops||[]).forEach((op,idx)=>{if(!opIsComplete(o,op))tasks.push({o,op,idx})}));
+
+    orders.forEach(o=>(o.ops||[]).forEach((op,idx)=>{
+      if(!opIsComplete(o,op))tasks.push({o,op,idx});
+    }));
     if(!tasks.length)continue;
 
-    let running=tasks.filter(t=>t.op.runState==='running')
-      .sort((a,b)=>String(a.op.actualStart||'').localeCompare(String(b.op.actualStart||'')))[0]||null;
+    const now=new Date();
 
+    // Gerçek çalışan OP her zaman ilk sıradadır.
+    let running=tasks.filter(t=>t.op.runState==='running')
+      .sort((a,b)=>String(a.op.lastResumeAt||a.op.sessionStartedAt||a.op.actualStart||'').localeCompare(
+        String(b.op.lastResumeAt||b.op.sessionStartedAt||b.op.actualStart||'')
+      ))[0]||null;
+
+    // Başlatılıp durdurulmuş OP geçmiş actualStart tarihiyle planı bozmaz.
+    // Kuyrukta kendi sırasını korur; tekrar başlatılırsa running olarak otomatik en öne geçer.
     let ordered=[],remaining=[...tasks];
-    if(running){ordered.push(running);remaining.splice(remaining.indexOf(running),1)}
+    if(running){
+      ordered.push(running);
+      remaining.splice(remaining.indexOf(running),1);
+    }
 
     while(remaining.length){
       let cand=remaining.filter(t=>{
         let prev=(t.o.ops||[]).slice(0,t.idx);
-        return prev.every(p=>opIsComplete(t.o,p)||ordered.some(x=>x.o.id===t.o.id&&x.op.id===p.id));
+
+        // Aynı işte önceki OP sayısal olarak eksikse normalde önce gelmelidir.
+        // Ancak kullanıcı daha sonraki OP'yi gerçekten başlatmışsa/durdurmuşsa,
+        // bu OP mevcut üretim önceliğini koruyabilir; geçmiş actualStart sadece geçmiş kaydıdır.
+        if(t.op.actualStart)return true;
+
+        return prev.every(p=>
+          opIsComplete(t.o,p) ||
+          ordered.some(x=>x.o.id===t.o.id&&x.op.id===p.id)
+        );
       });
+
       if(!cand.length)cand=[...remaining];
-      cand.sort((a,b)=>n(a.o.queue)-n(b.o.queue)||a.idx-b.idx||String(a.o.orderNo||'').localeCompare(String(b.o.orderNo||'')));
-      let pick=cand[0];ordered.push(pick);remaining.splice(remaining.indexOf(pick),1);
+
+      cand.sort((a,b)=>{
+        // Başlatılmış ama tamamlanmamış işler, aynı siparişte hiç başlanmamış OP'lerden önce kalır.
+        const as=a.op.actualStart?0:1, bs=b.op.actualStart?0:1;
+        return n(a.o.queue)-n(b.o.queue) ||
+               as-bs ||
+               a.idx-b.idx ||
+               String(a.o.orderNo||'').localeCompare(String(b.o.orderNo||''));
+      });
+
+      let pick=cand[0];
+      ordered.push(pick);
+      remaining.splice(remaining.indexOf(pick),1);
     }
 
-    let available=null,now=new Date();
+    let available=null;
 
     for(let i=0;i<ordered.length;i++){
-      let {o,op}=ordered[i],startBase;
-      if(i===0&&op.runState==='running'){
-        startBase=op.actualStart?new Date(op.actualStart):new Date(o.start||now);
-        op.planStart=localISO(startBase);
+      let {o,op}=ordered[i];
+
+      const isRunning=op.runState==='running';
+      const started=!!op.actualStart;
+      const remainingQty=Math.max(0,opTarget(o,op)-opProcessed(op));
+
+      let startBase;
+
+      if(isRunning){
+        // Çalışan OP için gelecekteki plan, son BAŞLAT/YENİDEN BAŞLAT anından yürür.
+        // actualStart yalnızca ilk gerçek başlangıç geçmişidir.
+        const live=op.lastResumeAt||op.sessionStartedAt;
+        startBase=live?new Date(live):now;
+        if(startBase<now)startBase=new Date(now);
+        startBase=nextMoment(startBase);
       }else{
-        startBase=available?new Date(available):new Date(o.start||now);
+        // Bekleyen/durdurulan OP geçmiş başlangıç tarihinden yürütülmez.
+        // Makinede kendinden önce planlanan iş bittikten sonra veya şimdiden başlar.
+        startBase=available?new Date(available):new Date(now);
         if(o.start&&new Date(o.start)>startBase)startBase=new Date(o.start);
         startBase=nextMoment(startBase);
-        op.planStart=op.actualStart||localISO(startBase);
       }
 
-      let started=!!op.actualStart;
+      // Ekrandaki "Planlanan başlangıç" gerçek geçmiş başlangıç değil,
+      // kalan işin gelecekteki plan başlangıcıdır.
+      op.planStart=localISO(startBase);
+
+      // Daha önce başlamış OP'de ayar tekrar eklenmez.
+      // Hiç başlamamış OP'de ayar süresi bir kez eklenir.
       let setupEnd=started?startBase:addWork(startBase,n(op.setup)*60);
       op.setupEnd=localISO(setupEnd);
 
       let forecastStart=nextMoment(setupEnd);
-      let remainingQty=Math.max(0,opTarget(o,op)-opProcessed(op));
 
-      if(started&&remainingQty>0){
-        let recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id&&r.date)
-          .sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.endTime||'').localeCompare(String(b.endTime||'')));
-
-        if(recs.length){
-          // Günlük üretim kaydı girilen gün kapanmış kabul edilir.
-          // Kalan imalat, son kayıt gününün ertesi çalışma günü 08:00'dan yürür.
-          // Örn. 12 Ağustos kaydı varsa kalan süre 13 Ağustos 08:00'dan hesaplanır.
-          let last=recs[recs.length-1];
-          let anchor=nextWorkdayStartAfter(last.date);
-          if(anchor>forecastStart)forecastStart=anchor;
-        }else{
-          // Henüz günlük kayıt yoksa aktif operasyon için yalnızca bugünden ileri tahmin yapılır.
-          // Geçmiş gerçek başlangıç saati, kalan süreyi geçmişten tekrar saydırmaz.
-          let anchor=nextMoment(now);
-          if(anchor>forecastStart)forecastStart=anchor;
-        }
-      }
+      // Eski günlük kayıt tarihleri gelecekteki planı geçmişe çekmez.
+      // Kalan iş her zaman BUGÜN / kuyruk başlangıcından ileri planlanır.
+      if(forecastStart<now)forecastStart=nextMoment(now);
 
       op.prodStart=localISO(forecastStart);
-      let end=addWork(forecastStart,remainingQty*(n(op.cycle)+n(op.handling)));
-      op.planEnd=op.actualEnd||localISO(end);
+
+      let end=addWork(
+        forecastStart,
+        remainingQty*(n(op.cycle)+n(op.handling))
+      );
+
+      // actualEnd ancak gerçekten tamamlanmış OP'de kullanılabilir.
+      op.planEnd=opIsComplete(o,op)&&op.actualEnd
+        ? op.actualEnd
+        : localISO(end);
+
       available=new Date(op.planEnd);
     }
 
     orders.forEach(o=>{
       let ops=o.ops||[];
-      let starts=ops.map(x=>x.planStart||x.actualStart).filter(Boolean).sort();
+      let starts=ops
+        .filter(x=>!opIsComplete(o,x))
+        .map(x=>x.planStart)
+        .filter(Boolean)
+        .sort();
+
       o.planStart=starts[0]||o.start||'';
       o.realStart=(ops.map(x=>x.actualStart).filter(Boolean).sort()[0]||'');
-      o.cncEnd=ops.length?(ops[ops.length-1].actualEnd||ops[ops.length-1].planEnd||o.planStart):o.planStart;
-      let base=o.cmmRequired==='yes'?(o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd))):ymd(new Date(o.cncEnd));
-      let ship=new Date(base+'T12:00');ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));o.promised=ymd(ship);
+
+      let activeEnds=ops
+        .filter(x=>!opIsComplete(o,x))
+        .map(x=>x.planEnd)
+        .filter(Boolean)
+        .sort();
+
+      o.cncEnd=activeEnds.length
+        ? activeEnds[activeEnds.length-1]
+        : (ops.map(x=>x.actualEnd||x.planEnd).filter(Boolean).sort().pop()||o.planStart);
+
+      let base=o.cmmRequired==='yes'
+        ? (o.cmm?.returned||o.cmm?.expected||ymd(new Date(o.cncEnd)))
+        : ymd(new Date(o.cncEnd));
+
+      let ship=new Date(base+'T12:00');
+      ship.setDate(ship.getDate()+Math.ceil(n(o.shipDays)));
+      o.promised=ymd(ship);
     });
   }
 }
@@ -1998,8 +2063,8 @@ if($('opForm')?.name){
 $('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
 window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
 window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
-window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}const wasRunning=op.runState==='running';const hadStarted=!!op.actualStart;state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});const now=localISO(new Date());op.runState='running';if(!op.actualStart)op.actualStart=now;op.pauseReason='';o.stage='production';schedule();if(!wasRunning){op.sessionStartedAt=now;op.lastResumeAt=now;op.sessionKind=hadStarted?'resume':'start';resetLiveReferencePlan(o,op,now)}syncCompletedOps();await save()}
-window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());op.lastStoppedAt=op.pausedAt;op.sessionStartedAt='';op.sessionKind='paused';o.stage='paused';schedule();await save()}
+window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}const wasRunning=op.runState==='running';const hadStarted=!!op.actualStart;state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});const now=localISO(new Date());op.runState='running';if(!op.actualStart)op.actualStart=now;op.pauseReason='';o.stage='production';if(!wasRunning){op.sessionStartedAt=now;op.lastResumeAt=now;op.sessionKind=hadStarted?'resume':'start'}schedule();if(!wasRunning)resetLiveReferencePlan(o,op,now);syncCompletedOps();await save()}
+window.stopOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),reason=prompt('Duruş nedeni: CMM Onayı / Kalite / Takım / Malzeme / Arıza / Diğer','CMM Onayı')||'Diğer';op.runState='paused';op.pauseReason=reason;op.pausedAt=localISO(new Date());op.lastStoppedAt=op.pausedAt;op.sessionStartedAt='';op.sessionKind='paused';op.nextPlanFrom=op.pausedAt;o.stage='paused';schedule();await save()}
 
 window.resetOpLiveReference=async(oid,id)=>{
   if(!canEdit())return;
