@@ -1456,6 +1456,163 @@ html[data-theme="dark"] .actualEditor{
 }
 </style>
 
+
+<style id="luys-light-visibility-final">
+/* FINAL LIGHT VISIBILITY PASS */
+
+/* Header must always stay readable on blue */
+html[data-theme="light"] header,
+html[data-theme="light"] header *{
+  color:#ffffff!important;
+}
+html[data-theme="light"] header .sync,
+html[data-theme="light"] header .themeTop,
+html[data-theme="light"] header .logoutTop{
+  color:#ffffff!important;
+}
+html[data-theme="light"] header .sync{
+  background:rgba(5,32,52,.55)!important;
+  border-color:rgba(255,255,255,.18)!important;
+}
+
+/* Navigation */
+html[data-theme="light"] .tabs button{
+  color:#17384c!important;
+  font-weight:700!important;
+}
+html[data-theme="light"] .tabs button.active{
+  color:#ffffff!important;
+}
+
+/* Dashboard typography */
+html[data-theme="light"] #dash,
+html[data-theme="light"] #dash *{
+  text-shadow:none!important;
+}
+html[data-theme="light"] #dash .metric b,
+html[data-theme="light"] #dash .machineJob,
+html[data-theme="light"] #dash .machineMini b,
+html[data-theme="light"] #dash .machineDue b,
+html[data-theme="light"] #dash .planTrackItem b,
+html[data-theme="light"] #dash td,
+html[data-theme="light"] #dash th{
+  color:#17384c!important;
+}
+html[data-theme="light"] #dash .metric small,
+html[data-theme="light"] #dash .machineMini small,
+html[data-theme="light"] #dash .machineDue small,
+html[data-theme="light"] #dash .progressHead,
+html[data-theme="light"] #dash .planTrackItem small{
+  color:#718491!important;
+}
+
+/* Active job cards: prevent old dark text/opacity from leaking through */
+html[data-theme="light"] .machineActiveBox,
+html[data-theme="light"] .machineActiveBox *{
+  opacity:1!important;
+  text-shadow:none!important;
+}
+html[data-theme="light"] .machineActiveBox.running{
+  background:#f1fbf5!important;
+  color:#17384c!important;
+  border-color:#cfe8d9!important;
+}
+html[data-theme="light"] .machineActiveBox.running b,
+html[data-theme="light"] .machineActiveBox.running strong,
+html[data-theme="light"] .machineActiveBox.running .machineJob,
+html[data-theme="light"] .machineActiveBox.running .machineMini b,
+html[data-theme="light"] .machineActiveBox.running .machineDue b{
+  color:#17384c!important;
+}
+html[data-theme="light"] .machineActiveBox.running small,
+html[data-theme="light"] .machineActiveBox.running label,
+html[data-theme="light"] .machineActiveBox.running .muted,
+html[data-theme="light"] .machineActiveBox.running .progressHead{
+  color:#718491!important;
+}
+
+/* White mini boxes inside machine cards */
+html[data-theme="light"] .machineMini,
+html[data-theme="light"] .machineDue,
+html[data-theme="light"] .machineActiveBox .machineMini,
+html[data-theme="light"] .machineActiveBox [class*="plan"],
+html[data-theme="light"] .machineActiveBox [class*="forecast"]{
+  background:#ffffff!important;
+  color:#17384c!important;
+  border-color:#d9e4ea!important;
+}
+html[data-theme="light"] .machineMini b,
+html[data-theme="light"] .machineDue b{
+  color:#17384c!important;
+}
+html[data-theme="light"] .machineMini small,
+html[data-theme="light"] .machineDue small{
+  color:#78909e!important;
+}
+
+/* Restore visible values in all open-theme KPI/report cards */
+html[data-theme="light"] .profitKpi,
+html[data-theme="light"] .partRateKpi,
+html[data-theme="light"] .dailySummaryBox,
+html[data-theme="light"] .actualEditor,
+html[data-theme="light"] .unitCompare>div{
+  background:#ffffff!important;
+}
+html[data-theme="light"] .profitKpi b,
+html[data-theme="light"] .partRateKpi b,
+html[data-theme="light"] .dailySummaryBox b,
+html[data-theme="light"] .actualEditor b,
+html[data-theme="light"] .unitCompare>div b{
+  color:#17384c!important;
+}
+html[data-theme="light"] .profitKpi small,
+html[data-theme="light"] .partRateKpi small,
+html[data-theme="light"] .dailySummaryBox small,
+html[data-theme="light"] .actualEditor small,
+html[data-theme="light"] .unitCompare>div small{
+  color:#718491!important;
+}
+
+/* Generic anti-fade for light theme */
+html[data-theme="light"] .card,
+html[data-theme="light"] .panel,
+html[data-theme="light"] .box,
+html[data-theme="light"] .row{
+  opacity:1!important;
+}
+html[data-theme="light"] .card *:not(.ok):not(.good):not(.ahead):not(.risk):not(.bad):not(.behind):not(.warn):not(.wait),
+html[data-theme="light"] .panel *:not(.ok):not(.good):not(.ahead):not(.risk):not(.bad):not(.behind):not(.warn):not(.wait),
+html[data-theme="light"] .box *:not(.ok):not(.good):not(.ahead):not(.risk):not(.bad):not(.behind):not(.warn):not(.wait),
+html[data-theme="light"] .row *:not(.ok):not(.good):not(.ahead):not(.risk):not(.bad):not(.behind):not(.warn):not(.wait){
+  opacity:1!important;
+}
+
+/* Soft dark one final notch brighter */
+html[data-theme="dark"] body{
+  background:#132a38!important;
+}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .metric,
+html[data-theme="dark"] .row,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .box,
+html[data-theme="dark"] #dash .machineCards .card,
+html[data-theme="dark"] #dash .planCard,
+html[data-theme="dark"] .profitMonthBar,
+html[data-theme="dark"] .profitKpi,
+html[data-theme="dark"] .profitCard,
+html[data-theme="dark"] .partRateKpi,
+html[data-theme="dark"] .dailyWeek,
+html[data-theme="dark"] .dailyDayPanel{
+  background:linear-gradient(155deg,#204459,#193849)!important;
+  border-color:#456f86!important;
+}
+html[data-theme="dark"] .machineActiveBox.running{
+  background:linear-gradient(155deg,#1b5146,#1a414a)!important;
+  border-color:#3b856f!important;
+}
+</style>
+
 </head>
 <body>
 <header>
