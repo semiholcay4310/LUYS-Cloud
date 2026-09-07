@@ -1023,105 +1023,31 @@ h1,h2,h3,h4{color:#f3f9ff!important}
 </style>
 
 
-<style id="luys-final-dashboard-restore">
-/* Final dashboard restore: match the approved light machine cards */
-#dash .machineCards .card{
-  background:#fff!important;
-  border-color:#d9e2e8!important;
-  color:#173a57!important;
-  box-shadow:0 2px 10px rgba(22,50,74,.08)!important;
+<style id="luys-logout-top">
+.logoutTop{
+  display:flex;align-items:center;gap:6px;text-decoration:none;
+  color:#eef8ff;background:#102b3f;border:1px solid #2a5875;
+  padding:7px 10px;border-radius:11px;font-size:12px;font-weight:800;
+  white-space:nowrap;transition:.18s ease;
 }
-#dash .machineCards h2{color:#173a57!important}
-#dash .machineStatus{color:#159454!important}
-#dash .machineStatus.wait{color:#7c8d9a!important}
-#dash .machineIcon{background:#eaf2f8!important;border-color:#d5e3ec!important}
-
-#dash .machineActiveBox{
-  background:#f7faff!important;
-  border-color:#e6edf4!important;
-  color:#1e3b55!important;
-}
-#dash .machineActiveBox.running{
-  background:#f3fff7!important;
-  border-color:#d7f0e1!important;
-}
-#dash .machineActiveBox.riskBox{
-  background:#fff4f4!important;
-  border-color:#f2cfd3!important;
-}
-#dash .machineLabel{color:#3978b6!important}
-#dash .machineJob{color:#1e3b55!important}
-#dash .machineBadge{background:#eef3f7!important;color:#667887!important}
-#dash .machineBadge.run{background:#def5e8!important;color:#177246!important;border-color:#bfe5cf!important}
-
-/* Üretilen / Kalan / Hurda and OP finish are NOT white boxes */
-#dash .machineActiveBox .machineMiniGrid .machineMini,
-#dash .machineActiveBox .machineMini,
-#dash .machineActiveBox .machineMiniGrid>div{
-  background:transparent!important;
-  border:0!important;
-  border-top:1px solid #e7edf2!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  color:#24415b!important;
-}
-#dash .machineMini small{color:#7c8c99!important}
-#dash .machineMini b{color:#24415b!important}
-
-/* Progress text and percentage must stay visible */
-#dash .progressHead{color:#647789!important}
-#dash .progressHead span{color:#647789!important}
-#dash .progressHead b{color:#23425d!important;opacity:1!important;visibility:visible!important}
-#dash .progressTrack{background:#e5edf3!important}
-#dash .progressTrack i{background:#1a9b59!important}
-
-#dash .machineDue{
-  background:transparent!important;
-  border:0!important;
-  border-top:1px solid #e7edf2!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-}
-#dash .machineDue small{color:#7c8c99!important}
-#dash .machineDue b{color:#24415b!important}
-#dash .termBadge.ok{background:#def5e8!important;color:#177246!important;border-color:#bfe5cf!important}
-#dash .termBadge.risk{background:#fde8ea!important;color:#a92d39!important;border-color:#efc4c9!important}
-#dash .termBadge.warn{background:#fff4d8!important;color:#8b6816!important;border-color:#ecd89d!important}
-
-/* Approved screenshot: only Başlangıç Planı / Güncel Tahmin stay as white mini cards */
-#dash .machineActiveBox .unitCompare>div,
-#dash .machineActiveBox [class*="planTrack"]>div,
-#dash .machineActiveBox [class*="plan-track"]>div{
-  background:#fff!important;
-  color:#24415b!important;
-  border-color:#dce5eb!important;
-}
-#dash .unitCompare small{color:#7c8c99!important}
-#dash .unitCompare b{color:#24415b!important}
-#dash .unitCompare .ahead{color:#177246!important}
-#dash .unitCompare .behind{color:#b93440!important}
-#dash .unitCompare .same{color:#667887!important}
-
-/* Queue area below each machine remains light like the approved version */
-#dash .nextOps{border-color:#e7edf2!important;background:transparent!important}
-#dash .nextOpsTitle{color:#647789!important}
-#dash .nextOpItem{border-bottom-color:#edf1f4!important}
-#dash .nextNo{border-color:#8da0ad!important;color:#29445d!important}
-#dash .nextOpItem b{color:#29445d!important}
-#dash .nextOpItem span{color:#7c8d9a!important}
-
-/* Percentage values elsewhere: never disappear on light report/table backgrounds */
-#dash td b,#dash .planCard td,#dash .planCard td b{opacity:1!important;visibility:visible!important}
-#dash .planCard{background:#fff!important;color:#29445d!important;border-color:#d9e2e8!important}
-#dash .planCard h2{color:#29445d!important}
-#dash .planCard th{background:#f7f9fb!important;color:#617488!important}
-#dash .planCard td{color:#29445d!important}
-
+.logoutTop:hover{background:#173b55;border-color:#36a9e8}
 @media(max-width:800px){
-  #dash .machineCards .card{background:#fff!important;color:#173a57!important}
-  #dash .machineActiveBox.running{background:#f3fff7!important}
-  #dash .machineActiveBox .machineMini,
-  #dash .machineActiveBox .machineDue{background:transparent!important;color:#24415b!important}
+  .logoutTop{padding:8px 10px;min-width:42px;justify-content:center}
+  .logoutTop span{display:none}
+  .sync{margin-left:auto!important}
+}
+</style>
+
+
+<style id="luys-theme-switch-ui">
+.themeTop{
+  display:flex;align-items:center;justify-content:center;
+  min-width:42px;height:38px;padding:0 9px;border-radius:11px;
+  border:1px solid #2a5875;background:#102b3f;color:#eef8ff;
+  font-size:17px;cursor:pointer;line-height:1;
+}
+@media(max-width:800px){
+  .themeTop{min-width:42px;padding:0 8px}
 }
 </style>
 
@@ -1132,6 +1058,8 @@ h1,h2,h3,h4{color:#f3f9ff!important}
   <div class="brand"><h1>LÜYS</h1><small>LUUKMAS Üretim Yönetim Sistemi</small></div>
   <div class="userbox" id="userbox">Kullanıcı…</div>
   <div class="sync" id="sync">Bağlanıyor…</div>
+  <button class="themeTop" id="themeTop" type="button" title="Tema değiştir" aria-label="Tema değiştir">☀️</button>
+  <a class="logoutTop" href="/logout" title="Çıkış yap" aria-label="Çıkış yap">↪ <span>Çıkış</span></a>
 </header>
 <div class="wrap">
   
@@ -1415,7 +1343,7 @@ function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate
 function localISO(d){return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function fmt(s){if(!s)return '-';let d=new Date(s);if(String(s).length===10)d=new Date(s+'T12:00');return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+(String(s).includes('T')?' '+pad(d.getHours())+':'+pad(d.getMinutes()):'')}
 function canEdit(){return me.can_edit===true}
-async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none'}
+async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"],[data-p="parttimes"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pt=$('parttimes');if(pt&&!canEdit())pt.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none';if(!canEdit()&&document.querySelector('.page.active')?.id==='parttimes'){document.querySelector('[data-p="dash"]')?.click()}}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
 function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o);if(!o.baselineProductEnd&&(o.ops||[]).some(op=>op.actualStart)){let b=baselineProductEnd(o);if(b)o.baselineProductEnd=b}})}
@@ -3234,6 +3162,65 @@ window.editDaily=id=>{
    });
  });
  window.__luysRenderProfit=render;
+})();
+</script>
+
+
+<script id="luys-theme-switch-controller">
+(function(){
+  const KEY='luys_theme';
+  const DARK_STYLE_IDS=[
+    'luys-premium-dark-theme',
+    'luys-premium-dark-fix-v2',
+    'luys-premium-dark-fix-v3',
+    'luys-premium-dark-fix-v4'
+  ];
+
+  function readTheme(){
+    try{return localStorage.getItem(KEY)==='light'?'light':'dark'}
+    catch(e){return 'dark'}
+  }
+
+  function applyTheme(theme){
+    const light = theme === 'light';
+
+    DARK_STYLE_IDS.forEach(id=>{
+      const s=document.getElementById(id);
+      if(s) s.disabled = light;
+    });
+
+    document.documentElement.setAttribute('data-theme',theme);
+
+    const btn=document.getElementById('themeTop');
+    if(btn){
+      btn.textContent = light ? '🌙' : '☀️';
+      btn.title = light ? 'Koyu temaya geç' : 'Açık temaya geç';
+      btn.setAttribute('aria-label',btn.title);
+
+      if(light){
+        btn.style.background='#ffffff';
+        btn.style.color='#17384c';
+        btn.style.borderColor='#d7e2e9';
+      }else{
+        btn.style.background='#102b3f';
+        btn.style.color='#eef8ff';
+        btn.style.borderColor='#2a5875';
+      }
+    }
+  }
+
+  function toggleTheme(){
+    const current=document.documentElement.getAttribute('data-theme')||readTheme();
+    const next=current==='light'?'dark':'light';
+    try{localStorage.setItem(KEY,next)}catch(e){}
+    applyTheme(next);
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    applyTheme(readTheme());
+    const btn=document.getElementById('themeTop');
+    if(btn) btn.addEventListener('click',toggleTheme);
+  });
 })();
 </script>
 
