@@ -106,7 +106,47 @@ input:focus{border-color:#168fe0;box-shadow:0 0 0 3px rgba(22,143,224,.14)}input
 .dot{width:8px;height:8px;border-radius:50%;background:#20e58a;box-shadow:0 0 10px #20e58a}
 .features{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:17px 0 9px;text-align:center}.feat{color:#77bce9}.ico{font-size:18px;margin-bottom:5px}.lbl{font-size:8px;letter-spacing:1.1px;color:#9fc3dc;font-weight:800}
 .bottom{text-align:center;color:#57768b;font-size:8px;letter-spacing:1.4px;margin-top:13px}.bottom strong{color:#8bb9d6}
-@media(max-height:850px){body{padding-top:10px}.topwords{display:none}.brand{margin-bottom:11px}.mark{width:66px;height:66px}.mark:before{transform:scale(.76) skewY(-28deg);transform-origin:top left}.mark:after{transform:scale(.76) skewX(-28deg);transform-origin:top left}h1{font-size:34px}.hero{margin-top:8px}.line{margin-top:9px}.card{padding:19px}.quote{margin:12px 0 9px}.features{margin-top:12px}}
+@media(max-width:600px){
+ body{height:100svh;min-height:100svh;overflow:hidden;padding:8px 12px 10px;align-items:stretch}
+ .shell{height:100%;width:min(96vw,430px);display:flex;flex-direction:column;justify-content:center}
+ .topwords{display:none}
+ .brand{margin:0 0 8px}
+ .mark{width:52px;height:52px;margin-bottom:6px;border-radius:17px}
+ .mark:before{width:11px;height:37px;left:18px;top:9px}
+ .mark:after{width:29px;height:11px;left:19px;top:35px}
+ h1{font-size:31px;letter-spacing:4px}
+ .tag{font-size:8px;letter-spacing:1.55px;margin-top:4px}
+ .hero{font-size:10px;margin-top:6px}
+ .line{width:48px;height:2px;margin-top:7px}
+ .card{padding:14px 16px 12px;border-radius:20px}
+ .title{font-size:18px;margin-bottom:2px}
+ .sub{font-size:10px;margin-bottom:9px}
+ .field{margin:7px 0}
+ input[type=text],input[type=password]{height:43px;border-radius:12px;font-size:14px;padding:0 13px}
+ .options{font-size:11px;margin:8px 1px 2px}
+ .remember{gap:6px}.remember input{width:16px;height:16px}
+ .submit{height:45px;margin-top:9px;border-radius:12px;font-size:13px}
+ .sep{margin:10px 0 7px;font-size:9px}
+ .bioBtn{width:44px;height:44px;border-radius:14px;font-size:20px}
+ .bioText{font-size:9px;margin-top:4px}
+ .quote{font-size:10px;line-height:1.3;margin:8px 0 7px}
+ .status{padding:7px 8px;font-size:7px;letter-spacing:.9px;gap:6px}
+ .dot{width:6px;height:6px}
+ .features{margin:8px 0 4px;gap:3px}
+ .ico{font-size:15px;margin-bottom:3px}.lbl{font-size:6.8px;letter-spacing:.8px}
+ .bottom{font-size:6.8px;line-height:1.35;margin-top:5px}
+}
+@media(max-width:600px) and (max-height:760px){
+ .mark{width:46px;height:46px}
+ .mark:before{transform:scale(.88) skewY(-28deg);transform-origin:top left}
+ .mark:after{transform:scale(.88) skewX(-28deg);transform-origin:top left}
+ h1{font-size:28px}
+ .hero{display:none}
+ .card{padding:12px 14px 10px}
+ .quote{margin:6px 0 5px}
+ .features{margin-top:6px}
+}
+
 </style>
 </head>
 <body>
