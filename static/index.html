@@ -2049,6 +2049,120 @@ html[data-theme="dark"] #ops .row.running{
 }
 </style>
 
+
+<style id="luys-final-progress-fix">
+/* FINAL readability fix: all progress / percentage indicators */
+html[data-theme="light"] progress{
+  height:10px!important;
+  min-height:10px!important;
+  border:0!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  background:#dfe8ee!important;
+  accent-color:#1f9d63!important;
+}
+html[data-theme="light"] progress::-webkit-progress-bar{
+  background:#dfe8ee!important;
+  border-radius:999px!important;
+}
+html[data-theme="light"] progress::-webkit-progress-value{
+  background:#1f9d63!important;
+  border-radius:999px!important;
+  min-width:4px;
+}
+html[data-theme="light"] progress::-moz-progress-bar{
+  background:#1f9d63!important;
+  border-radius:999px!important;
+}
+
+/* Common custom bars across dashboard, operations, labour and part-time pages */
+html[data-theme="light"] .progress,
+html[data-theme="light"] .progressBar,
+html[data-theme="light"] .progress-bar,
+html[data-theme="light"] .bar,
+html[data-theme="light"] [class*="progressTrack"],
+html[data-theme="light"] [class*="progress-track"]{
+  min-height:10px!important;
+  border-radius:999px!important;
+  background:#dfe8ee!important;
+  overflow:hidden!important;
+}
+html[data-theme="light"] .progress > *,
+html[data-theme="light"] .progressBar > *,
+html[data-theme="light"] .progress-bar > *,
+html[data-theme="light"] .bar > *,
+html[data-theme="light"] [class*="progressFill"],
+html[data-theme="light"] [class*="progress-fill"]{
+  min-height:10px!important;
+  border-radius:999px!important;
+  opacity:1!important;
+}
+
+/* Percentage/value text must stay readable everywhere */
+html[data-theme="light"] [class*="percent"],
+html[data-theme="light"] [class*="Percent"],
+html[data-theme="light"] [class*="progress"] b,
+html[data-theme="light"] [class*="progress"] strong,
+html[data-theme="light"] [class*="progress"] span{
+  color:#29495d!important;
+  opacity:1!important;
+}
+
+/* Termin table progress: stronger amber + visible tiny values */
+html[data-theme="light"] #dash table progress,
+html[data-theme="light"] #dash [class*="progress"]{
+  accent-color:#e9a11b!important;
+}
+html[data-theme="light"] #dash table progress::-webkit-progress-value{
+  background:#e9a11b!important;
+  min-width:5px!important;
+}
+html[data-theme="light"] #dash table progress::-moz-progress-bar{
+  background:#e9a11b!important;
+  min-width:5px!important;
+}
+html[data-theme="light"] #dash table td{
+  opacity:1!important;
+}
+html[data-theme="light"] #dash table td:last-child,
+html[data-theme="light"] #dash table td:last-child *{
+  color:#29495d!important;
+  opacity:1!important;
+}
+
+/* Running-machine / operation progress stays green */
+html[data-theme="light"] .machineActiveBox progress,
+html[data-theme="light"] #ops progress{
+  accent-color:#1f9d63!important;
+}
+html[data-theme="light"] .machineActiveBox progress::-webkit-progress-value,
+html[data-theme="light"] #ops progress::-webkit-progress-value{
+  background:#1f9d63!important;
+}
+
+/* Dark mode: same visibility, brighter track/fill */
+html[data-theme="dark"] progress{
+  height:10px!important;
+  min-height:10px!important;
+  border-radius:999px!important;
+  background:#31546a!important;
+  accent-color:#43d990!important;
+}
+html[data-theme="dark"] progress::-webkit-progress-bar{
+  background:#31546a!important;
+  border-radius:999px!important;
+}
+html[data-theme="dark"] progress::-webkit-progress-value{
+  background:#43d990!important;
+  border-radius:999px!important;
+  min-width:5px!important;
+}
+html[data-theme="dark"] progress::-moz-progress-bar{
+  background:#43d990!important;
+  border-radius:999px!important;
+}
+</style>
+
 </head>
 <body>
 <header>
