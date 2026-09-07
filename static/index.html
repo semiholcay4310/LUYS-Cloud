@@ -651,6 +651,201 @@ hr{border-color:#17384d!important}
 }
 </style>
 
+
+<style id="luys-premium-dark-fix-v2">
+/* ===== LÜYS Dark Theme - contrast cleanup ===== */
+
+/* Generic light remnants */
+.card > div[style*="background:white"],
+.card > div[style*="background:#fff"],
+.card > div[style*="background:#ffffff"],
+.metric,
+.accMetric,
+.machineMini,
+.unitCompare>div,
+.actualEditor,
+.dashListItem,
+.cal>div,
+.notice,
+.finishbox,
+.readonlyNotice{
+  background:#0a1c2a!important;
+  color:#eaf5ff!important;
+  border-color:#1b425d!important;
+}
+
+/* Any old white card classes still used in reports/daily pages */
+.reportCard,.summaryCard,.statCard,.dailyCard,.dayCard,.historyCard,.weekCard,.kpiCard,.priceCard,.valueCard,
+.panel,.box,.tile,.infoBox,.miniCard,.formCard{
+  background:linear-gradient(155deg,#0d2131,#081723)!important;
+  color:#eaf5ff!important;
+  border-color:#1b425d!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.2)!important;
+}
+
+/* Stronger text contrast on dark theme */
+.card,.card *,.row,.row *,.panel,.panel *,.box,.box *{
+  text-shadow:none;
+}
+.card small,.row small,.panel small,.box small,
+.card .muted,.row .muted,.panel .muted,.box .muted,
+.card label,.row label,.panel label,.box label{
+  color:#8fa8ba!important;
+}
+.card b,.row b,.panel b,.box b,
+.card strong,.row strong,.panel strong,.box strong,
+.card .value,.row .value,.panel .value,.box .value{
+  color:#eef8ff!important;
+}
+
+/* Preserve semantic colors */
+.ok,.good,.ahead{color:#43e99b!important}
+.risk,.bad,.behind{color:#ff737c!important}
+.warn,.wait{color:#ffd06c!important}
+
+/* Dashboard forecast white blocks */
+.machineMiniGrid .machineMini,
+.machineDue,
+.machineActiveBox .machineMini,
+.machineActiveBox .machineMiniGrid>div,
+.machineActiveBox [class*="plan"],
+.machineActiveBox [class*="forecast"]{
+  background:#0b2030!important;
+  color:#eaf5ff!important;
+  border-color:#25516d!important;
+}
+.machineMiniGrid .machineMini small,
+.machineDue small{color:#8ba6b9!important}
+.machineMiniGrid .machineMini b,
+.machineDue b{color:#edf8ff!important}
+
+/* Buttons that remained white */
+button.alt,.btn.alt,.secondary,.ghost,.outline,
+button[style*="background:white"],button[style*="background:#fff"]{
+  background:#102638!important;
+  color:#eaf5ff!important;
+  border-color:#2a5774!important;
+}
+button.alt:hover,.btn.alt:hover,.secondary:hover,.ghost:hover,.outline:hover{
+  background:#153149!important;
+}
+
+/* Tables and list cards */
+table,tbody,tr,td{
+  background-color:transparent!important;
+}
+tbody tr{
+  color:#dcebf6!important;
+}
+tbody tr:nth-child(even){
+  background:rgba(255,255,255,.015)!important;
+}
+tbody tr:hover{
+  background:#0b2234!important;
+}
+
+/* Form select/input dropdowns */
+select,option{
+  background:#071622!important;
+  color:#edf7ff!important;
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator{
+  filter:invert(1) opacity(.8);
+}
+
+/* Labour value / Piece time bright summary boxes */
+#laborFinance .metric,
+#laborFinance .accMetric,
+#partTime .metric,
+#partTime .accMetric,
+#partTime .card > div,
+#profit .metric,
+#profit .accMetric,
+#profit .card > div{
+  background:linear-gradient(155deg,#0d2131,#081723)!important;
+  color:#eaf5ff!important;
+  border-color:#1c435e!important;
+}
+#laborFinance .metric b,
+#laborFinance .accMetric b,
+#partTime .metric b,
+#partTime .accMetric b,
+#profit .metric b,
+#profit .accMetric b{
+  color:#f0f8ff!important;
+}
+#laborFinance .metric small,
+#laborFinance .accMetric small,
+#partTime .metric small,
+#partTime .accMetric small,
+#profit .metric small,
+#profit .accMetric small{
+  color:#8ba5b7!important;
+}
+
+/* Daily production history white cards */
+#daily .card,
+#daily .metric,
+#daily .row,
+#daily [class*="week"],
+#daily [class*="day"],
+#daily [class*="history"],
+#daily [class*="record"]{
+  background:linear-gradient(155deg,#0d2131,#081723)!important;
+  color:#eaf5ff!important;
+  border-color:#1c435e!important;
+}
+#daily .card b,#daily .row b,#daily [class*="day"] b,#daily [class*="week"] b{
+  color:#eef8ff!important;
+}
+#daily .card small,#daily .row small,#daily [class*="day"] small,#daily [class*="week"] small{
+  color:#8fa9bb!important;
+}
+
+/* Operation running card refinement */
+#ops .row.running{
+  background:linear-gradient(160deg,#0a2926,#071c24)!important;
+  border-color:#1b8b67!important;
+  box-shadow:0 0 0 1px rgba(38,225,145,.04),0 10px 28px rgba(0,0,0,.2)!important;
+}
+#ops .row.running .finishbox,
+#ops .row.running .actualEditor,
+#ops .row.running .unitCompare>div{
+  background:#092131!important;
+  border-color:#24546f!important;
+}
+
+/* Bottom cards and PDF area */
+#dash .card,
+#dash .planCard,
+#dash .dashLower .card,
+#dash .dashCard{
+  background:linear-gradient(155deg,#0d2131,#081723)!important;
+}
+#dash .card h2,#dash .card h3,#dash .card b{color:#eef8ff!important}
+#dash .card p,#dash .card small{color:#8fa8ba!important}
+
+/* Headings */
+h1,h2,h3,h4{color:#f3f9ff!important}
+
+/* Divider cleanup */
+[class*="divider"],hr{
+  border-color:#173b52!important;
+  background:#173b52!important;
+}
+
+/* Mobile: keep all cards dark, eliminate bright flash blocks */
+@media(max-width:800px){
+  .card,.metric,.accMetric,.row,.panel,.box,.tile,.formCard,.summaryCard,.statCard,
+  .machineMini,.machineDue,.unitCompare>div,.actualEditor{
+    background:linear-gradient(155deg,#0d2131,#081723)!important;
+    color:#eaf5ff!important;
+  }
+}
+</style>
+
 </head>
 <body>
 <header>
