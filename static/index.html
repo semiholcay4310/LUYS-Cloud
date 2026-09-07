@@ -2403,7 +2403,7 @@ function renderMachines(){
     if(!jobs.length){el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus wait">Planlanan iş yok</div></div></div><div class="emptyDash">Bu tezgâhta sırada iş bulunmuyor.</div>`;return}
     const runningOrder=jobs.find(j=>(j.ops||[]).some(op=>op.runState==='running'&&!opIsComplete(j,op)));
     const o=runningOrder||jobs[0],ops=o.ops||[],realRunning=ops.find(op=>op.runState==='running'&&!opIsComplete(o,op)),aktif=realRunning||currentOp(o),idx=aktif?ops.indexOf(aktif):-1,sonraki=idx>=0?ops.slice(idx+1).find(op=>!opIsComplete(o,op)):null,opEnd=aktif?.planEnd||'',urunBitis=currentProductForecast(o)||(ops.length?(ops[ops.length-1]?.planEnd||''):''),pct=Math.round(progress(o)),risk=orderTerminRisk(o,urunBitis),queued=jobs.filter(j=>j.id!==o.id).slice(0,2);
-    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span>${aktif?`<div class="machineMiniGrid machineStatsGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
+    el.innerHTML=`<div class="machineHeader"><div class="machineIcon"><span class="cncFig"><i class="tower"></i><i class="screen"></i><i class="neck"></i><i class="table"></i><i class="base"></i></span></div><div><h2>${esc(m.name)}</h2><div class="machineStatus ${realRunning?'':'wait'}">${realRunning?'Çalışıyor':'Planlandı'}</div></div></div><div class="machineActiveBox ${risk?'riskBox':realRunning?'running':''}"><div class="machineLabel">AKTİF İŞ</div><div class="machineJob">${esc(o.orderNo)} &nbsp;•&nbsp; ${esc(o.part)} &nbsp;•&nbsp; ${aktif?esc(aktif.name||'OP'):'Bekliyor'}</div><span class="machineBadge ${realRunning?'run':''}">${realRunning?'Üretimde':'Bekliyor'}</span>${aktif?`<div class="machineMiniGrid"><div class="machineMini"><small>Üretilen</small><b>${n(aktif.done)}</b></div><div class="machineMini"><small>Kalan</small><b>${Math.max(0,opTarget(o,aktif)-opProcessed(aktif))}</b></div><div class="machineMini"><small>Hurda</small><b>${n(aktif.scrap)}</b></div></div>`:''}<div class="progressHead"><span>İlerleme</span><b>${pct}%</b></div><div class="progressTrack"><i class="${risk?'p-risk':'p-ok'}" style="width:${Math.min(100,pct)}%"></i></div><div class="machineMiniGrid"><div class="machineMini"><small>OP Bitiş (Tahmini)</small><b>${opEnd?fmt(opEnd):'-'}</b></div></div><div class="machineDue"><div><small>Müşteri Termini</small><b>${o.requested?fmt(o.requested):'-'}</b></div><span class="termBadge ${!o.requested||!urunBitis?'warn':risk?'risk':'ok'}">${!o.requested?'TERMİN YOK':!urunBitis?'PLAN YOK':risk?'RİSK ⚠':'TERMİNDE ✓'}</span></div>${planTrackHTML(o)}</div><div class="nextOps"><div class="nextOpsTitle">SIRADAKİ İŞLER</div>${sonraki?`<div class="nextOpItem"><span class="nextNo">1</span><b>${esc(o.orderNo)} • ${esc(sonraki.name||'OP')}</b><span>Bekliyor</span></div>`:''}${queued.map((j,k)=>`<div class="nextOpItem"><span class="nextNo">${k+(sonraki?2:1)}</span><b>${esc(j.orderNo)} • ${esc(j.part)}</b><span>Bekliyor</span></div>`).join('')}${!sonraki&&!queued.length?'<div class="emptyDash" style="padding:5px">Sırada başka iş yok.</div>':''}</div>`;
   });
 }
 
@@ -2853,15 +2853,13 @@ $('dailyForm').onsubmit=async e=>{
   let f=new FormData(e.target);
   let id=f.get('recId');
   let oldOrderId=id?(state.daily.find(x=>x.id===id)?.orderId||''):'';
-  let key=r=>r.orderId===f.get('orderId') &&
-             r.opId===f.get('opId') &&
-             r.date===f.get('date');
-
-  let existing=state.daily.find(key);
+  // Aynı iş emri + aynı operasyon + aynı gün içinde birden fazla üretim oturumu olabilir.
+  // Örn: Kasnak Sıkma-2 -> Kasnak Sıkma-1 -> tekrar Kasnak Sıkma-2.
+  // Yeni kayıtlar birbirini ezmez; sadece "Düzenle" ile açılan kayıt kendi ID'siyle güncellenir.
   let h=gunlukHesap(e.target);
 
   let obj={
-    id:id||existing?.id||uid(),
+    id:id||uid(),
     orderId:f.get('orderId'),
     opId:f.get('opId'),
     date:f.get('date'),
@@ -2878,13 +2876,24 @@ $('dailyForm').onsubmit=async e=>{
     efficiency:h.verim
   };
 
-  if(existing&&!id){
-    if(!confirm('Bu tarih için kayıt var. Mevcut kayıt güncellensin mi?'))return;
-    Object.assign(existing,obj);
-  }else if(id){
+  if(id){
     let r=state.daily.find(x=>x.id===id);
-    Object.assign(r,obj);
+    if(r)Object.assign(r,obj);
+    else state.daily.push(obj);
   }else{
+    const sameDayExisting=(state.daily||[]).filter(r=>
+      r.orderId===obj.orderId &&
+      r.opId===obj.opId &&
+      r.date===obj.date
+    );
+
+    if(sameDayExisting.length){
+      const ok=confirm(
+        `Bu iş emri / operasyon için ${obj.date} tarihinde daha önce ${sameDayExisting.length} kayıt var.\n\nYeni kayıt eklemek istiyor musunuz?`
+      );
+      if(!ok)return;
+    }
+
     state.daily.push(obj);
   }
 
@@ -3388,59 +3397,6 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#3c6d88}
   });
 })();
 </script>
-
-
-<style id="luys-machine-stats-final-override">
-/* Üretilen / Kalan / Hurda: same clean structure as the white theme */
-html[data-theme="dark"] .machineStatsGrid{
-  display:grid!important;
-  grid-template-columns:1fr 1fr!important;
-  gap:5px!important;
-  margin-top:7px!important;
-  background:transparent!important;
-  border:0!important;
-}
-html[data-theme="dark"] .machineStatsGrid > .machineMini{
-  background:transparent!important;
-  background-image:none!important;
-  border:0!important;
-  border-top:1px solid #3a6d8a!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  padding:5px 0 0!important;
-  margin:0!important;
-  min-height:38px!important;
-}
-html[data-theme="dark"] .machineStatsGrid > .machineMini small{
-  display:block!important;
-  color:#9fb7c7!important;
-  font-size:7px!important;
-  font-weight:400!important;
-  line-height:1.25!important;
-  margin:0 0 3px!important;
-}
-html[data-theme="dark"] .machineStatsGrid > .machineMini b{
-  display:block!important;
-  color:#eef8ff!important;
-  font-size:8px!important;
-  font-weight:700!important;
-  line-height:1.3!important;
-  margin:0!important;
-}
-
-/* Desktop keeps the same proportions as the original responsive dashboard */
-@media(min-width:1000px){
-  html[data-theme="dark"] .machineStatsGrid > .machineMini small{font-size:10px!important}
-  html[data-theme="dark"] .machineStatsGrid > .machineMini b{font-size:12px!important}
-}
-
-/* White theme remains native/original */
-html[data-theme="light"] .machineStatsGrid > .machineMini{
-  background:transparent!important;
-  background-image:none!important;
-  box-shadow:none!important;
-}
-</style>
 
 </body>
 </html>
