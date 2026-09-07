@@ -1369,6 +1369,169 @@ html[data-theme="dark"] small,
 html[data-theme="dark"] label{color:#9bb0bd!important}
 </style>
 
+
+<style id="luys-theme-final-reference">
+/* ===== LIGHT / REFERENCE LOOK ===== */
+html[data-theme="light"] body,
+html[data-theme="light"] main,
+html[data-theme="light"] .page,
+html[data-theme="light"] .wrap{
+  background:#f1f6f9!important;
+  color:#17384c!important;
+}
+
+/* KPI cards */
+html[data-theme="light"] .dashKpi,
+html[data-theme="light"] .dashKpis > *,
+html[data-theme="light"] .kpi,
+html[data-theme="light"] .kpiCard{
+  background:#ffffff!important;
+  color:#17384c!important;
+  border-color:#dce6ec!important;
+  box-shadow:0 4px 14px rgba(28,61,83,.07)!important;
+}
+
+/* Machine outer cards */
+html[data-theme="light"] .machine,
+html[data-theme="light"] .machineCard,
+html[data-theme="light"] .machineCards > *,
+html[data-theme="light"] .machineCards .card{
+  background:#ffffff!important;
+  color:#17384c!important;
+  border-color:#d8e4ea!important;
+  box-shadow:0 4px 14px rgba(28,61,83,.07)!important;
+}
+
+/* The dashboard's green active-operation panel.
+   Use broad dashboard descendants so old dark inline/card rules cannot win. */
+html[data-theme="light"] .machine .active,
+html[data-theme="light"] .machineCard .active,
+html[data-theme="light"] .machineCards .active,
+html[data-theme="light"] .machine .activeJob,
+html[data-theme="light"] .machineCard .activeJob,
+html[data-theme="light"] .machineCards .activeJob,
+html[data-theme="light"] .machine .jobCard,
+html[data-theme="light"] .machineCard .jobCard,
+html[data-theme="light"] .machineCards .jobCard{
+  background:#f0fbf4!important;
+  color:#17384c!important;
+  border-color:#ccebd9!important;
+}
+
+/* Any nested dashboard metric blocks that previous theme CSS forced dark/white */
+html[data-theme="light"] .machineCards .metric,
+html[data-theme="light"] .machineCards .stat,
+html[data-theme="light"] .machineCards .forecast,
+html[data-theme="light"] .machineCards .plan,
+html[data-theme="light"] .machineCards .mini,
+html[data-theme="light"] .machineCards .kv,
+html[data-theme="light"] .machineCards .valueBox{
+  background:transparent!important;
+  color:#17384c!important;
+  border-color:#dce8ed!important;
+  box-shadow:none!important;
+}
+
+/* Text inside machine dashboard */
+html[data-theme="light"] .machineCards,
+html[data-theme="light"] .machineCards div,
+html[data-theme="light"] .machineCards span,
+html[data-theme="light"] .machineCards b,
+html[data-theme="light"] .machineCards strong{
+  color:#17384c;
+}
+html[data-theme="light"] .machineCards small,
+html[data-theme="light"] .machineCards label,
+html[data-theme="light"] .machineCards .muted{
+  color:#7b909d!important;
+}
+
+/* Generic content cards remain clean white */
+html[data-theme="light"] .card,
+html[data-theme="light"] .panel,
+html[data-theme="light"] .box,
+html[data-theme="light"] .tile,
+html[data-theme="light"] .infoBox,
+html[data-theme="light"] .miniCard,
+html[data-theme="light"] .formCard,
+html[data-theme="light"] .reportCard,
+html[data-theme="light"] .summaryCard,
+html[data-theme="light"] .statCard,
+html[data-theme="light"] .partRateKpi,
+html[data-theme="light"] .profitKpi,
+html[data-theme="light"] .profitCard,
+html[data-theme="light"] .profitForm,
+html[data-theme="light"] .dailyWeek,
+html[data-theme="light"] .dailyDayPanel,
+html[data-theme="light"] .dailyEntry,
+html[data-theme="light"] .dailySummaryBox{
+  background:#fff!important;
+  color:#17384c!important;
+  border-color:#dbe6ec!important;
+  box-shadow:0 4px 14px rgba(28,61,83,.06)!important;
+}
+
+/* ===== DARK / SOFTER + BRIGHTER NAVY ===== */
+html[data-theme="dark"] body,
+html[data-theme="dark"] main,
+html[data-theme="dark"] .page,
+html[data-theme="dark"] .wrap{
+  background:#102431!important;
+  color:#e8f1f6!important;
+}
+html[data-theme="dark"] header{
+  background:linear-gradient(110deg,#17405a,#1d5572)!important;
+}
+html[data-theme="dark"] .tabs{
+  background:#142d3d!important;
+}
+html[data-theme="dark"] .tabs button{
+  background:#1b3749!important;
+  border-color:#365f78!important;
+  color:#e0ebf1!important;
+}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .box,
+html[data-theme="dark"] .tile,
+html[data-theme="dark"] .machine,
+html[data-theme="dark"] .machineCard,
+html[data-theme="dark"] .machineCards > *,
+html[data-theme="dark"] .machineCards .card,
+html[data-theme="dark"] .dashKpi,
+html[data-theme="dark"] .dashKpis > *,
+html[data-theme="dark"] .kpi,
+html[data-theme="dark"] .kpiCard,
+html[data-theme="dark"] .infoBox,
+html[data-theme="dark"] .miniCard,
+html[data-theme="dark"] .statCard,
+html[data-theme="dark"] .summaryCard,
+html[data-theme="dark"] .partRateKpi,
+html[data-theme="dark"] .profitKpi,
+html[data-theme="dark"] .profitCard,
+html[data-theme="dark"] .dailyWeek,
+html[data-theme="dark"] .dailyDayPanel,
+html[data-theme="dark"] .dailyEntry,
+html[data-theme="dark"] .dailySummaryBox{
+  background:#193748!important;
+  color:#e8f1f6!important;
+  border-color:#3a6279!important;
+  box-shadow:0 3px 12px rgba(0,0,0,.10)!important;
+}
+html[data-theme="dark"] .machine .active,
+html[data-theme="dark"] .machineCard .active,
+html[data-theme="dark"] .machineCards .active,
+html[data-theme="dark"] .machine .activeJob,
+html[data-theme="dark"] .machineCard .activeJob,
+html[data-theme="dark"] .machineCards .activeJob,
+html[data-theme="dark"] .machine .jobCard,
+html[data-theme="dark"] .machineCard .jobCard,
+html[data-theme="dark"] .machineCards .jobCard{
+  background:#16463f!important;
+  border-color:#287660!important;
+}
+</style>
+
 </head>
 <body>
 <header>
