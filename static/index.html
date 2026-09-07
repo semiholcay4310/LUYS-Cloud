@@ -1254,6 +1254,121 @@ html[data-theme="light"] .themeTop{
 }
 </style>
 
+
+<style id="luys-theme-polish-v3">
+/* LIGHT = return to the clean white dashboard look */
+html[data-theme="light"] body,
+html[data-theme="light"] main,
+html[data-theme="light"] .page,
+html[data-theme="light"] .wrap{background:#f2f6f9!important;color:#173247!important}
+
+html[data-theme="light"] .card,
+html[data-theme="light"] .panel,
+html[data-theme="light"] .box,
+html[data-theme="light"] .tile,
+html[data-theme="light"] .machineCard,
+html[data-theme="light"] .machineCards .card,
+html[data-theme="light"] .infoBox,
+html[data-theme="light"] .miniCard,
+html[data-theme="light"] .statCard,
+html[data-theme="light"] .summaryCard,
+html[data-theme="light"] .kpiCard,
+html[data-theme="light"] .partRateKpi,
+html[data-theme="light"] .profitKpi,
+html[data-theme="light"] .profitCard,
+html[data-theme="light"] .dailyWeek,
+html[data-theme="light"] .dailyDayPanel,
+html[data-theme="light"] .dailyEntry,
+html[data-theme="light"] .dailySummaryBox{
+ background:#fff!important;color:#173247!important;border-color:#d7e2e9!important;
+ box-shadow:0 4px 13px rgba(30,65,90,.06)!important
+}
+
+/* Active production surface in light mode */
+html[data-theme="light"] .activeJob,
+html[data-theme="light"] .active-job,
+html[data-theme="light"] .jobActive{
+ background:#f1fbf5!important;border-color:#c9ead8!important;color:#173247!important
+}
+
+/* Undo the accidental white blocks inside dark machine cards */
+html[data-theme="light"] .machineCards .card div,
+html[data-theme="light"] .machineCards .card span,
+html[data-theme="light"] .machineCards .card section{
+ color:inherit
+}
+html[data-theme="light"] .machineCards .card [style*="background"]{
+ box-shadow:none!important
+}
+html[data-theme="light"] .machineCards .card [class*="metric"],
+html[data-theme="light"] .machineCards .card [class*="stat"],
+html[data-theme="light"] .machineCards .card [class*="forecast"],
+html[data-theme="light"] .machineCards .card [class*="plan"]{
+ background:#fff!important;color:#173247!important;border-color:#dce6ec!important
+}
+
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea{
+ background:#fff!important;color:#173247!important;border-color:#ccdbe4!important
+}
+html[data-theme="light"] th{background:#edf3f6!important;color:#385366!important}
+html[data-theme="light"] td{background:#fff!important;color:#173247!important}
+html[data-theme="light"] .muted,
+html[data-theme="light"] small,
+html[data-theme="light"] label{color:#7a8c98!important}
+
+/* DARK = softer navy instead of near-black */
+html[data-theme="dark"] body,
+html[data-theme="dark"] main,
+html[data-theme="dark"] .page,
+html[data-theme="dark"] .wrap{
+ background:#0b1822!important;color:#e4edf3!important
+}
+html[data-theme="dark"] header{
+ background:linear-gradient(110deg,#12324a,#17445f)!important;
+ border-bottom-color:#285875!important
+}
+html[data-theme="dark"] .tabs{
+ background:#102431!important
+}
+html[data-theme="dark"] .tabs button{
+ background:#152c3b!important;color:#d9e6ee!important;border-color:#2c5067!important
+}
+html[data-theme="dark"] .tabs button.active{
+ background:linear-gradient(110deg,#1689c4,#27a5dc)!important;color:#fff!important
+}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .box,
+html[data-theme="dark"] .tile,
+html[data-theme="dark"] .machineCard,
+html[data-theme="dark"] .machineCards .card,
+html[data-theme="dark"] .infoBox,
+html[data-theme="dark"] .miniCard,
+html[data-theme="dark"] .statCard,
+html[data-theme="dark"] .summaryCard,
+html[data-theme="dark"] .kpiCard,
+html[data-theme="dark"] .partRateKpi,
+html[data-theme="dark"] .profitKpi,
+html[data-theme="dark"] .profitCard,
+html[data-theme="dark"] .dailyWeek,
+html[data-theme="dark"] .dailyDayPanel,
+html[data-theme="dark"] .dailyEntry,
+html[data-theme="dark"] .dailySummaryBox{
+ background:#142b3a!important;color:#e4edf3!important;border-color:#31566c!important;
+ box-shadow:0 4px 14px rgba(0,0,0,.13)!important
+}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{
+ background:#102533!important;color:#e7f0f5!important;border-color:#365a70!important
+}
+html[data-theme="dark"] .muted,
+html[data-theme="dark"] small,
+html[data-theme="dark"] label{color:#9bb0bd!important}
+</style>
+
 </head>
 <body>
 <header>
