@@ -1764,13 +1764,6 @@ function actualMinutesPerPiece(o,op){
 }
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
-
-  // Ekrandaki "Ürün Bitiş" ile "Güncel Tahmin" aynı kaynaktan beslensin.
-  // Operasyon gerçek üretime başladıysa performans bazlı güncel tahmin önceliklidir.
-  // Böylece üst kart başka, alt kart başka tarih göstermez.
-  const tracked=planDeltaInfo(o);
-  if(tracked?.forecast)return tracked.forecast;
-
   const ops=o.ops||[];
 
   // schedule() normalde aktif/bekleyen tüm OP'leri planlar. Ürün bitişi için
