@@ -1023,1143 +1023,105 @@ h1,h2,h3,h4{color:#f3f9ff!important}
 </style>
 
 
-<style id="luys-logout-top">
-.logoutTop{
-  display:flex;align-items:center;gap:6px;text-decoration:none;
-  color:#eef8ff;background:#102b3f;border:1px solid #2a5875;
-  padding:7px 10px;border-radius:11px;font-size:12px;font-weight:800;
-  white-space:nowrap;transition:.18s ease;
-}
-.logoutTop:hover{background:#173b55;border-color:#36a9e8}
-@media(max-width:800px){
-  .logoutTop{padding:8px 10px;min-width:42px;justify-content:center}
-  .logoutTop span{display:none}
-  .sync{margin-left:auto!important}
-}
-</style>
-
-
-<style id="luys-clean-dual-theme">
-.themeTop{
- display:flex;align-items:center;justify-content:center;min-width:42px;height:38px;padding:0 9px;
- border-radius:11px;border:1px solid #2a5875;background:#102b3f;color:#eef8ff;font-size:17px;cursor:pointer
-}
-
-/* ===== LIGHT: exact reference look ===== */
-html[data-theme="light"] body{background:#eef3f8!important;color:#16324a!important}
-html[data-theme="light"] header{background:#0d3456!important;color:#fff!important;border-bottom-color:#1b537a!important}
-html[data-theme="light"] .tabs{background:#eef3f8!important}
-html[data-theme="light"] .tabs button{background:#fff!important;color:#16324a!important;border-color:#e1e8ed!important;box-shadow:none!important}
-html[data-theme="light"] .tabs button.active{background:#0b79ae!important;color:#fff!important;border-color:#0b79ae!important}
-
-html[data-theme="light"] #dash .metric{
- background:#fff!important;border-color:#dbe4eb!important;color:#536d7f!important;
- box-shadow:0 3px 14px #0001!important
-}
-html[data-theme="light"] #dash .metric b{color:#16324a!important}
-html[data-theme="light"] #dash .metric small{color:#7b8c98!important}
-html[data-theme="light"] #dash .metric:before{background:#e9f5fb!important;color:#1781b6!important}
-html[data-theme="light"] #dash .metric:nth-child(2):before{background:#e8f7ef!important;color:#1d9c63!important}
-html[data-theme="light"] #dash .metric:nth-child(3):before{background:#f2eafa!important;color:#8d61c4!important}
-html[data-theme="light"] #dash .metric:nth-child(4):before{background:#fdebed!important;color:#d95660!important}
-html[data-theme="light"] .dashSectionTitle b,
-html[data-theme="light"] .dashCardHead b{color:#27445b!important}
-html[data-theme="light"] .dashSectionTitle span,
-html[data-theme="light"] .dashCardHead span{color:#1781b6!important}
-
-html[data-theme="light"] #dash .machineCards .card,
-html[data-theme="light"] #dash .planCard,
-html[data-theme="light"] .dashLower .card{
- background:#fff!important;border-color:#dbe4eb!important;color:#16324a!important;
- box-shadow:0 3px 14px #0001!important
-}
-html[data-theme="light"] #dash .machineCards h2{color:#173a57!important}
-html[data-theme="light"] .machineIcon{background:#eaf5fb!important;border-color:#cfe4ef!important}
-html[data-theme="light"] .machineStatus{color:#1d9c63!important}
-html[data-theme="light"] .machineStatus.wait{color:#7f909b!important}
-
-html[data-theme="light"] .machineActiveBox{
- background:#f7faff!important;border-color:#e6edf4!important;color:#16324a!important
-}
-html[data-theme="light"] .machineActiveBox.running{
- background:#f3fff7!important;border-color:#d7f0e1!important
-}
-html[data-theme="light"] .machineActiveBox.riskBox{
- background:#fff7f7!important;border-color:#f1cccc!important
-}
-html[data-theme="light"] .machineLabel{color:#1781b6!important}
-html[data-theme="light"] .machineJob{color:#24415b!important}
-
-html[data-theme="light"] .machineBadge,
-html[data-theme="light"] .termBadge,
-html[data-theme="light"] .queueBadge{background:#e7eef3!important;color:#536b7a!important}
-html[data-theme="light"] .machineBadge.run,
-html[data-theme="light"] .termBadge.ok{
- background:#dff6e7!important;color:#176b3d!important;border-color:#bfe7cf!important
-}
-html[data-theme="light"] .termBadge.risk{
- background:#ffe4e6!important;color:#a53038!important;border-color:#efc1c5!important
-}
-html[data-theme="light"] .termBadge.warn{
- background:#fff2d8!important;color:#93630d!important;border-color:#edd7a8!important
-}
-
-html[data-theme="light"] .machineMini{
- background:transparent!important;color:#24415b!important;border-color:#e7edf2!important;
- box-shadow:none!important
-}
-html[data-theme="light"] .machineMini small,
-html[data-theme="light"] .machineDue small{color:#7c8c99!important}
-html[data-theme="light"] .machineMini b,
-html[data-theme="light"] .machineDue b{color:#24415b!important}
-html[data-theme="light"] .machineDue,
-html[data-theme="light"] .nextOps{background:transparent!important;border-color:#e1e8ed!important}
-html[data-theme="light"] .progressHead{color:#7c8c99!important}
-html[data-theme="light"] .progressHead b{color:#24415b!important}
-html[data-theme="light"] .progressTrack{background:#e5edf3!important}
-html[data-theme="light"] .planTrackItem{
- background:#fff!important;border-color:#e5ecef!important;color:#27445b!important
-}
-html[data-theme="light"] .planTrackItem small{color:#7a8b97!important}
-html[data-theme="light"] .planTrackItem b{color:#27445b!important}
-
-html[data-theme="light"] .card,
-html[data-theme="light"] .row,
-html[data-theme="light"] .panel,
-html[data-theme="light"] .box,
-html[data-theme="light"] .metric,
-html[data-theme="light"] .accMetric,
-html[data-theme="light"] .unitCompare>div,
-html[data-theme="light"] .actualEditor,
-html[data-theme="light"] .dashListItem,
-html[data-theme="light"] .cal>div,
-html[data-theme="light"] .notice,
-html[data-theme="light"] .finishbox,
-html[data-theme="light"] .readonlyNotice{
- background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important
-}
-html[data-theme="light"] .card small,
-html[data-theme="light"] .row small,
-html[data-theme="light"] .panel small,
-html[data-theme="light"] .box small,
-html[data-theme="light"] .muted,
-html[data-theme="light"] label{color:#687b89!important}
-html[data-theme="light"] .card b,
-html[data-theme="light"] .row b,
-html[data-theme="light"] .panel b,
-html[data-theme="light"] .box b,
-html[data-theme="light"] strong{color:#16324a!important}
-html[data-theme="light"] table{color:#16324a!important}
-html[data-theme="light"] th{background:#f3f7fa!important;color:#385266!important}
-html[data-theme="light"] td{background:transparent!important;color:#16324a!important;border-bottom-color:#dfe7ed!important}
-html[data-theme="light"] input,
-html[data-theme="light"] select,
-html[data-theme="light"] textarea{background:#fff!important;color:#16324a!important;border-color:#9dafbe!important}
-
-/* ===== DARK: same premium look, just a little brighter/softer ===== */
-html[data-theme="dark"] body{background:#0c1c28!important}
-html[data-theme="dark"] header{background:linear-gradient(110deg,#123751,#174b69)!important}
-html[data-theme="dark"] .tabs{background:#102735!important}
-html[data-theme="dark"] .tabs button{background:#173345!important;border-color:#315b74!important}
-html[data-theme="dark"] #dash .metric,
-html[data-theme="dark"] #dash .machineCards .card,
-html[data-theme="dark"] #dash .planCard,
-html[data-theme="dark"] .dashLower .card{
- background:linear-gradient(155deg,#173445,#112a39)!important;
- border-color:#345f78!important
-}
-html[data-theme="dark"] .machineActiveBox{background:#112b3a!important;border-color:#31576e!important}
-html[data-theme="dark"] .machineActiveBox.running{
- background:linear-gradient(155deg,#123d39,#12303a)!important;border-color:#28735e!important
-}
-html[data-theme="dark"] .machineMini,
-html[data-theme="dark"] .machineDue,
-html[data-theme="dark"] .planTrackItem{
- background:#153244!important;border-color:#365f78!important
-}
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .panel,
-html[data-theme="dark"] .box{
- background:linear-gradient(155deg,#173445,#112a39)!important;border-color:#345f78!important
-}
-
-@media(max-width:800px){
- .themeTop{min-width:42px;padding:0 8px}
-}
-</style>
-
-
-<style id="luys-light-complete-fix">
-/* COMPLETE LIGHT THEME OVERRIDE - applied after every legacy dark rule */
-html[data-theme="light"] body,
-html[data-theme="light"] .wrap,
-html[data-theme="light"] .page{background:#eef3f8!important;color:#16324a!important}
-
-/* Generic surfaces */
-html[data-theme="light"] .card,
-html[data-theme="light"] .metric,
-html[data-theme="light"] .row,
-html[data-theme="light"] .accMetric,
-html[data-theme="light"] .panel,
-html[data-theme="light"] .box,
-html[data-theme="light"] .tile,
-html[data-theme="light"] .formCard,
-html[data-theme="light"] .summaryCard,
-html[data-theme="light"] .statCard,
-html[data-theme="light"] .reportCard,
-html[data-theme="light"] .dailyCard,
-html[data-theme="light"] .dayCard,
-html[data-theme="light"] .historyCard,
-html[data-theme="light"] .weekCard,
-html[data-theme="light"] .kpiCard,
-html[data-theme="light"] .priceCard,
-html[data-theme="light"] .valueCard,
-html[data-theme="light"] .infoBox,
-html[data-theme="light"] .miniCard,
-html[data-theme="light"] .unitCompare>div,
-html[data-theme="light"] .actualEditor,
-html[data-theme="light"] .notice,
-html[data-theme="light"] .finishbox,
-html[data-theme="light"] .readonlyNotice{
- background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important;
- box-shadow:0 3px 14px rgba(25,57,80,.06)!important
-}
-html[data-theme="light"] h1,
-html[data-theme="light"] h2,
-html[data-theme="light"] h3,
-html[data-theme="light"] h4,
-html[data-theme="light"] b,
-html[data-theme="light"] strong,
-html[data-theme="light"] .value{color:#16324a!important}
-html[data-theme="light"] .small,
-html[data-theme="light"] small,
-html[data-theme="light"] label,
-html[data-theme="light"] .muted,
-html[data-theme="light"] .meta{color:#718491!important}
-
-/* Forms */
-html[data-theme="light"] input,
-html[data-theme="light"] select,
-html[data-theme="light"] textarea,
-html[data-theme="light"] option,
-html[data-theme="light"] .partRateInput,
-html[data-theme="light"] #profitDay{
- background:#fff!important;color:#16324a!important;border-color:#9dafbe!important
-}
-html[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
-html[data-theme="light"] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-html[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator{filter:none!important}
-
-/* Tables */
-html[data-theme="light"] table,
-html[data-theme="light"] tbody,
-html[data-theme="light"] tr,
-html[data-theme="light"] td{background:transparent!important;color:#16324a!important}
-html[data-theme="light"] th{background:#f3f7fa!important;color:#385266!important}
-html[data-theme="light"] td{border-bottom-color:#dfe7ed!important}
-html[data-theme="light"] tbody tr:nth-child(even){background:rgba(14,67,100,.018)!important}
-
-/* Buttons */
-html[data-theme="light"] .btn.alt,
-html[data-theme="light"] button.alt,
-html[data-theme="light"] .secondary,
-html[data-theme="light"] .ghost,
-html[data-theme="light"] .outline,
-html[data-theme="light"] .partRateBtn{
- background:#fff!important;color:#17354b!important;border:1px solid #cbd9e2!important;
- box-shadow:none!important
-}
-
-/* Dashboard exact reference */
-html[data-theme="light"] #dash .metric{
- background:#fff!important;color:#536d7f!important;border-color:#dbe4eb!important
-}
-html[data-theme="light"] #dash .metric b{color:#16324a!important}
-html[data-theme="light"] #dash .metric small{color:#7b8c98!important}
-html[data-theme="light"] #dash .metric:before{background:#e9f5fb!important;color:#1781b6!important}
-html[data-theme="light"] #dash .metric:nth-child(2):before{background:#e8f7ef!important;color:#1d9c63!important}
-html[data-theme="light"] #dash .metric:nth-child(3):before{background:#f2eafa!important;color:#8d61c4!important}
-html[data-theme="light"] #dash .metric:nth-child(4):before{background:#fdebed!important;color:#d95660!important}
-html[data-theme="light"] .dashSectionTitle b,
-html[data-theme="light"] .dashCardHead b{color:#27445b!important}
-html[data-theme="light"] .dashSectionTitle span,
-html[data-theme="light"] .dashCardHead span{color:#1781b6!important}
-html[data-theme="light"] #dash .machineCards .card,
-html[data-theme="light"] #dash .planCard,
-html[data-theme="light"] #dash .dashLower .card,
-html[data-theme="light"] #dash .dashCard{
- background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important
-}
-html[data-theme="light"] #dash .machineCards h2{color:#173a57!important}
-html[data-theme="light"] .machineIcon{background:#eaf5fb!important;border-color:#cfe4ef!important}
-html[data-theme="light"] .machineStatus{color:#1d9c63!important}
-html[data-theme="light"] .machineActiveBox{
- background:#f7faff!important;color:#16324a!important;border-color:#e6edf4!important
-}
-html[data-theme="light"] .machineActiveBox.running{
- background:#f3fff7!important;border-color:#d7f0e1!important
-}
-html[data-theme="light"] .machineActiveBox.riskBox{
- background:#fff7f7!important;border-color:#f1cccc!important
-}
-html[data-theme="light"] .machineLabel{color:#1781b6!important}
-html[data-theme="light"] .machineJob{color:#24415b!important}
-html[data-theme="light"] .machineMini,
-html[data-theme="light"] .machineDue,
-html[data-theme="light"] .nextOps,
-html[data-theme="light"] .machineMiniGrid .machineMini,
-html[data-theme="light"] .machineActiveBox .machineMini,
-html[data-theme="light"] .machineActiveBox .machineMiniGrid>div,
-html[data-theme="light"] .machineActiveBox [class*="plan"],
-html[data-theme="light"] .machineActiveBox [class*="forecast"]{
- background:transparent!important;color:#24415b!important;border-color:#dce8ed!important;
- box-shadow:none!important
-}
-html[data-theme="light"] .machineMini small,
-html[data-theme="light"] .machineDue small{color:#7c8c99!important}
-html[data-theme="light"] .machineMini b,
-html[data-theme="light"] .machineDue b{color:#24415b!important}
-html[data-theme="light"] .progressHead{color:#7c8c99!important}
-html[data-theme="light"] .progressHead b{color:#24415b!important}
-html[data-theme="light"] .bar,
-html[data-theme="light"] .progressTrack,
-html[data-theme="light"] .tinyBar{background:#e5edf3!important}
-html[data-theme="light"] .dashListItem{background:#fff!important;color:#24415b!important;border-color:#e3ebf0!important}
-html[data-theme="light"] .dashListItem b{color:#24415b!important}
-html[data-theme="light"] .dashListItem small{color:#7b8d99!important}
-html[data-theme="light"] #dash th{background:#f3f7fa!important;color:#385266!important}
-html[data-theme="light"] .rowRisk{background:#fff3f4!important}
-
-/* İşçilik Değeri */
-html[data-theme="light"] .profitWrap{color:#16324a!important}
-html[data-theme="light"] .profitWrap>h2{color:#16324a!important}
-html[data-theme="light"] .profitMonthBar,
-html[data-theme="light"] .profitKpi,
-html[data-theme="light"] .profitCard{
- background:#fff!important;color:#16324a!important;border-color:#dfe8ef!important;
- box-shadow:0 4px 14px rgba(23,59,91,.07)!important
-}
-html[data-theme="light"] .profitMonthBar label,
-html[data-theme="light"] .profitForm label,
-html[data-theme="light"] .profitCard label{color:#526b7c!important}
-html[data-theme="light"] .profitMonthBar input,
-html[data-theme="light"] .profitForm input,
-html[data-theme="light"] .profitForm select{background:#fff!important;color:#16324a!important;border-color:#9dafbe!important}
-html[data-theme="light"] .profitKpi small{color:#738695!important}
-html[data-theme="light"] .profitKpi b{color:#123d5b!important}
-html[data-theme="light"] .profitCard h3{color:#16324a!important}
-html[data-theme="light"] .profitTable th{background:#f3f7fa!important;color:#385266!important}
-html[data-theme="light"] .profitTable td{color:#16324a!important}
-
-/* Parça Süresi */
-html[data-theme="light"] .partRateKpi{
- background:#f9fcfe!important;color:#16324a!important;border-color:#dce6ed!important;
- box-shadow:none!important
-}
-html[data-theme="light"] .partRateKpi small{color:#728594!important}
-html[data-theme="light"] .partRateKpi b{color:#173f5b!important}
-html[data-theme="light"] .partRateKpi .good,
-html[data-theme="light"] .partRateHourly{color:#168348!important}
-html[data-theme="light"] .partRateGroupTable th{background:#f3f7fa!important;color:#385266!important}
-html[data-theme="light"] .partRateGroupTable td{color:#16324a!important}
-
-/* Günlük Üretim */
-html[data-theme="light"] .dailyCurrentSummary .dailySummaryBox,
-html[data-theme="light"] .dailyWeek,
-html[data-theme="light"] .dailyWeekHead,
-html[data-theme="light"] .dailyWeekBody,
-html[data-theme="light"] .dailyDayBtn,
-html[data-theme="light"] .dailyDayPanel,
-html[data-theme="light"] .dailyDayTitle,
-html[data-theme="light"] .dailyEntries,
-html[data-theme="light"] .dailyEntry,
-html[data-theme="light"] .dailyEntry .dailyStats div{
- background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important
-}
-html[data-theme="light"] .dailyWeekHead b,
-html[data-theme="light"] .dailyDayTitle b,
-html[data-theme="light"] .dailyEntryTop b,
-html[data-theme="light"] .dailySummaryBox b,
-html[data-theme="light"] .dailyEntry .dailyStats b{color:#16324a!important}
-html[data-theme="light"] .dailyWeekHead .weekIcon{
- background:#e9f5fb!important;color:#1781b6!important;border-color:#cfe4ef!important
-}
-html[data-theme="light"] .dailyDayBtn.active{
- background:#eaf6fc!important;color:#1781b6!important;border-color:#8bc9e6!important
-}
-html[data-theme="light"] .weekTotal{background:#eef4f8!important;color:#385266!important}
-
-/* Operations */
-html[data-theme="light"] #ops .row.running{
- background:#f2fff7!important;border-color:#19884e!important;
- box-shadow:0 3px 12px rgba(25,136,78,.08)!important
-}
-html[data-theme="light"] #ops .row.running .finishbox,
-html[data-theme="light"] #ops .row.running .actualEditor,
-html[data-theme="light"] #ops .row.running .unitCompare>div{
- background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important
-}
-html[data-theme="light"] .row.paused{background:#fff5f5!important;border-color:#c93333!important}
-
-/* Bottom PDF + modal */
-html[data-theme="light"] .dashModalHead{background:#f3f7fa!important;border-color:#dbe4eb!important}
-html[data-theme="light"] .dashModalHead b{color:#16324a!important}
-html[data-theme="light"] .dashModalClose{background:#e9eff3!important;color:#16324a!important}
-html[data-theme="light"] #dash .card p,
-html[data-theme="light"] #dash .card small{color:#718491!important}
-
-/* Semantic colors */
-html[data-theme="light"] .ok,
-html[data-theme="light"] .good,
-html[data-theme="light"] .ahead{color:#168348!important}
-html[data-theme="light"] .risk,
-html[data-theme="light"] .bad,
-html[data-theme="light"] .behind{color:#c72e2e!important}
-html[data-theme="light"] .warn,
-html[data-theme="light"] .wait{color:#a56e00!important}
-</style>
-
-<style id="luys-dark-soften-final">
-/* SOFTER DARK: brighter navy, lower contrast */
-html[data-theme="dark"] body{background:#102431!important}
-html[data-theme="dark"] header{background:linear-gradient(110deg,#16405b,#1c5574)!important}
-html[data-theme="dark"] .tabs{background:#142d3d!important}
-html[data-theme="dark"] .tabs button{background:#1a3749!important;border-color:#365f78!important}
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .metric,
-html[data-theme="dark"] .row,
-html[data-theme="dark"] .accMetric,
-html[data-theme="dark"] .panel,
-html[data-theme="dark"] .box,
-html[data-theme="dark"] .profitMonthBar,
-html[data-theme="dark"] .profitKpi,
-html[data-theme="dark"] .profitCard,
-html[data-theme="dark"] .partRateKpi,
-html[data-theme="dark"] .dailyWeek,
-html[data-theme="dark"] .dailyDayPanel,
-html[data-theme="dark"] #dash .machineCards .card,
-html[data-theme="dark"] #dash .planCard,
-html[data-theme="dark"] .dashLower .card{
- background:linear-gradient(155deg,#1a394b,#143040)!important;
- border-color:#3b657c!important;
- box-shadow:0 4px 14px rgba(0,0,0,.10)!important
-}
-html[data-theme="dark"] .machineActiveBox{background:#153243!important;border-color:#3a6279!important}
-html[data-theme="dark"] .machineActiveBox.running{
- background:linear-gradient(155deg,#17483f,#153743)!important;border-color:#2e7b65!important
-}
-html[data-theme="dark"] .machineMini,
-html[data-theme="dark"] .machineDue,
-html[data-theme="dark"] .unitCompare>div,
-html[data-theme="dark"] .actualEditor{
- background:#173647!important;border-color:#406a82!important
-}
-</style>
-
-
-<style id="luys-light-visibility-final">
-/* FINAL LIGHT VISIBILITY PASS */
-
-/* Header must always stay readable on blue */
-html[data-theme="light"] header,
-html[data-theme="light"] header *{
-  color:#ffffff!important;
-}
-html[data-theme="light"] header .sync,
-html[data-theme="light"] header .themeTop,
-html[data-theme="light"] header .logoutTop{
-  color:#ffffff!important;
-}
-html[data-theme="light"] header .sync{
-  background:rgba(5,32,52,.55)!important;
-  border-color:rgba(255,255,255,.18)!important;
-}
-
-/* Navigation */
-html[data-theme="light"] .tabs button{
-  color:#17384c!important;
-  font-weight:700!important;
-}
-html[data-theme="light"] .tabs button.active{
-  color:#ffffff!important;
-}
-
-/* Dashboard typography */
-html[data-theme="light"] #dash,
-html[data-theme="light"] #dash *{
-  text-shadow:none!important;
-}
-html[data-theme="light"] #dash .metric b,
-html[data-theme="light"] #dash .machineJob,
-html[data-theme="light"] #dash .machineMini b,
-html[data-theme="light"] #dash .machineDue b,
-html[data-theme="light"] #dash .planTrackItem b,
-html[data-theme="light"] #dash td,
-html[data-theme="light"] #dash th{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .metric small,
-html[data-theme="light"] #dash .machineMini small,
-html[data-theme="light"] #dash .machineDue small,
-html[data-theme="light"] #dash .progressHead,
-html[data-theme="light"] #dash .planTrackItem small{
-  color:#718491!important;
-}
-
-/* Active job cards: prevent old dark text/opacity from leaking through */
-html[data-theme="light"] .machineActiveBox,
-html[data-theme="light"] .machineActiveBox *{
-  opacity:1!important;
-  text-shadow:none!important;
-}
-html[data-theme="light"] .machineActiveBox.running{
-  background:#f1fbf5!important;
-  color:#17384c!important;
-  border-color:#cfe8d9!important;
-}
-html[data-theme="light"] .machineActiveBox.running b,
-html[data-theme="light"] .machineActiveBox.running strong,
-html[data-theme="light"] .machineActiveBox.running .machineJob,
-html[data-theme="light"] .machineActiveBox.running .machineMini b,
-html[data-theme="light"] .machineActiveBox.running .machineDue b{
-  color:#17384c!important;
-}
-html[data-theme="light"] .machineActiveBox.running small,
-html[data-theme="light"] .machineActiveBox.running label,
-html[data-theme="light"] .machineActiveBox.running .muted,
-html[data-theme="light"] .machineActiveBox.running .progressHead{
-  color:#718491!important;
-}
-
-/* White mini boxes inside machine cards */
-html[data-theme="light"] .machineMini,
-html[data-theme="light"] .machineDue,
-html[data-theme="light"] .machineActiveBox .machineMini,
-html[data-theme="light"] .machineActiveBox [class*="plan"],
-html[data-theme="light"] .machineActiveBox [class*="forecast"]{
-  background:#ffffff!important;
-  color:#17384c!important;
-  border-color:#d9e4ea!important;
-}
-html[data-theme="light"] .machineMini b,
-html[data-theme="light"] .machineDue b{
-  color:#17384c!important;
-}
-html[data-theme="light"] .machineMini small,
-html[data-theme="light"] .machineDue small{
-  color:#78909e!important;
-}
-
-/* Restore visible values in all open-theme KPI/report cards */
-html[data-theme="light"] .profitKpi,
-html[data-theme="light"] .partRateKpi,
-html[data-theme="light"] .dailySummaryBox,
-html[data-theme="light"] .actualEditor,
-html[data-theme="light"] .unitCompare>div{
-  background:#ffffff!important;
-}
-html[data-theme="light"] .profitKpi b,
-html[data-theme="light"] .partRateKpi b,
-html[data-theme="light"] .dailySummaryBox b,
-html[data-theme="light"] .actualEditor b,
-html[data-theme="light"] .unitCompare>div b{
-  color:#17384c!important;
-}
-html[data-theme="light"] .profitKpi small,
-html[data-theme="light"] .partRateKpi small,
-html[data-theme="light"] .dailySummaryBox small,
-html[data-theme="light"] .actualEditor small,
-html[data-theme="light"] .unitCompare>div small{
-  color:#718491!important;
-}
-
-/* Generic anti-fade for light theme */
-html[data-theme="light"] .card,
-html[data-theme="light"] .panel,
-html[data-theme="light"] .box,
-html[data-theme="light"] .row{
-  opacity:1!important;
-}
-html[data-theme="light"] .card *:not(.ok):not(.good):not(.ahead):not(.risk):not(.bad):not(.behind):not(.warn):not(.wait),
-html[data-theme="light"] .panel *:not(.ok):not(.good):not(.ahead):not(.risk):not(.bad):not(.behind):not(.warn):not(.wait),
-html[data-theme="light"] .box *:not(.ok):not(.good):not(.ahead):not(.risk):not(.bad):not(.behind):not(.warn):not(.wait),
-html[data-theme="light"] .row *:not(.ok):not(.good):not(.ahead):not(.risk):not(.bad):not(.behind):not(.warn):not(.wait){
-  opacity:1!important;
-}
-
-/* Soft dark one final notch brighter */
-html[data-theme="dark"] body{
-  background:#132a38!important;
-}
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .metric,
-html[data-theme="dark"] .row,
-html[data-theme="dark"] .panel,
-html[data-theme="dark"] .box,
-html[data-theme="dark"] #dash .machineCards .card,
-html[data-theme="dark"] #dash .planCard,
-html[data-theme="dark"] .profitMonthBar,
-html[data-theme="dark"] .profitKpi,
-html[data-theme="dark"] .profitCard,
-html[data-theme="dark"] .partRateKpi,
-html[data-theme="dark"] .dailyWeek,
-html[data-theme="dark"] .dailyDayPanel{
-  background:linear-gradient(155deg,#204459,#193849)!important;
-  border-color:#456f86!important;
-}
-html[data-theme="dark"] .machineActiveBox.running{
-  background:linear-gradient(155deg,#1b5146,#1a414a)!important;
-  border-color:#3b856f!important;
-}
-</style>
-
-
-<style id="luys-light-lower-dashboard-fix">
-/* Remaining light-theme dashboard text cleanup */
-
-/* Near deadlines / CMM waiting cards */
-html[data-theme="light"] #dash .dashLower .card,
-html[data-theme="light"] #dash .dashLower .card *{
-  text-shadow:none!important;
-}
-html[data-theme="light"] #dash .dashLower .card h3,
-html[data-theme="light"] #dash .dashLower .card h4,
-html[data-theme="light"] #dash .dashLower .card b,
-html[data-theme="light"] #dash .dashLower .card strong,
-html[data-theme="light"] #dash .dashLower .card .title{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .dashLower .card p,
-html[data-theme="light"] #dash .dashLower .card small,
-html[data-theme="light"] #dash .dashLower .card .muted,
-html[data-theme="light"] #dash .dashLower .card .meta{
-  color:#718491!important;
-}
-
-/* Approaching deadlines list */
-html[data-theme="light"] #dash .dashListItem,
-html[data-theme="light"] #dash .dashListItem *{
-  opacity:1!important;
-}
-html[data-theme="light"] #dash .dashListItem{
+<style id="luys-final-dashboard-restore">
+/* Final dashboard restore: match the approved light machine cards */
+#dash .machineCards .card{
   background:#fff!important;
-  color:#17384c!important;
-  border-color:#dfe7ed!important;
+  border-color:#d9e2e8!important;
+  color:#173a57!important;
+  box-shadow:0 2px 10px rgba(22,50,74,.08)!important;
 }
-html[data-theme="light"] #dash .dashListItem b,
-html[data-theme="light"] #dash .dashListItem strong{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .dashListItem small,
-html[data-theme="light"] #dash .dashListItem .muted{
-  color:#718491!important;
-}
+#dash .machineCards h2{color:#173a57!important}
+#dash .machineStatus{color:#159454!important}
+#dash .machineStatus.wait{color:#7c8d9a!important}
+#dash .machineIcon{background:#eaf2f8!important;border-color:#d5e3ec!important}
 
-/* Empty-state CMM card */
-html[data-theme="light"] #dash .emptyState,
-html[data-theme="light"] #dash .emptyState *{
-  opacity:1!important;
+#dash .machineActiveBox{
+  background:#f7faff!important;
+  border-color:#e6edf4!important;
+  color:#1e3b55!important;
 }
-html[data-theme="light"] #dash .emptyState{
-  color:#6f8492!important;
+#dash .machineActiveBox.running{
+  background:#f3fff7!important;
+  border-color:#d7f0e1!important;
 }
-html[data-theme="light"] #dash .emptyState b,
-html[data-theme="light"] #dash .emptyState strong{
-  color:#17384c!important;
+#dash .machineActiveBox.riskBox{
+  background:#fff4f4!important;
+  border-color:#f2cfd3!important;
 }
+#dash .machineLabel{color:#3978b6!important}
+#dash .machineJob{color:#1e3b55!important}
+#dash .machineBadge{background:#eef3f7!important;color:#667887!important}
+#dash .machineBadge.run{background:#def5e8!important;color:#177246!important;border-color:#bfe5cf!important}
 
-/* Product deadlines table */
-html[data-theme="light"] #dash table,
-html[data-theme="light"] #dash table *{
-  opacity:1!important;
-  text-shadow:none!important;
-}
-html[data-theme="light"] #dash thead th{
-  color:#385266!important;
-  background:#f3f7fa!important;
-}
-html[data-theme="light"] #dash tbody td{
-  color:#17384c!important;
+/* Üretilen / Kalan / Hurda and OP finish are NOT white boxes */
+#dash .machineActiveBox .machineMiniGrid .machineMini,
+#dash .machineActiveBox .machineMini,
+#dash .machineActiveBox .machineMiniGrid>div{
   background:transparent!important;
-}
-html[data-theme="light"] #dash tbody td small,
-html[data-theme="light"] #dash tbody td .muted{
-  color:#718491!important;
-}
-html[data-theme="light"] #dash tbody tr.rowRisk{
-  background:#fff2f3!important;
-}
-html[data-theme="light"] #dash tbody tr.rowWarn{
-  background:#fff8e8!important;
-}
-
-/* Next jobs sections below machine cards */
-html[data-theme="light"] #dash .nextOps,
-html[data-theme="light"] #dash .nextOps *{
-  opacity:1!important;
-  text-shadow:none!important;
-}
-html[data-theme="light"] #dash .nextOps{
-  background:transparent!important;
-}
-html[data-theme="light"] #dash .nextOps b,
-html[data-theme="light"] #dash .nextOps strong{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .nextOps small,
-html[data-theme="light"] #dash .nextOps .muted{
-  color:#718491!important;
-}
-html[data-theme="light"] #dash .nextOps .planTrackItem{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dfe7ed!important;
-}
-html[data-theme="light"] #dash .nextOps .planTrackItem b{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .nextOps .planTrackItem small{
-  color:#718491!important;
-}
-
-/* PDF card in light theme */
-html[data-theme="light"] #dash .autoPdfCard{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dbe4eb!important;
-  box-shadow:0 3px 14px rgba(25,57,80,.06)!important;
-}
-html[data-theme="light"] #dash .autoPdfCard h2,
-html[data-theme="light"] #dash .autoPdfCard h3,
-html[data-theme="light"] #dash .autoPdfCard b,
-html[data-theme="light"] #dash .autoPdfCard strong{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .autoPdfCard p,
-html[data-theme="light"] #dash .autoPdfCard small{
-  color:#718491!important;
-}
-
-/* Footer */
-html[data-theme="light"] footer,
-html[data-theme="light"] footer *{
-  color:#8ba0ad!important;
-}
-</style>
-
-
-<style id="luys-final-light-pass">
-/* ==========================================================
-   FINAL LIGHT THEME PASS
-   Goal: every page uses the same bright reference language.
-   Only visual overrides; production/business logic untouched.
-   ========================================================== */
-
-html[data-theme="light"] body{
-  background:#eef3f8!important;
-  color:#17384c!important;
-}
-html[data-theme="light"] h1,
-html[data-theme="light"] h2,
-html[data-theme="light"] h3,
-html[data-theme="light"] h4{
-  color:#17384c!important;
-  opacity:1!important;
-}
-
-/* Main page cards */
-html[data-theme="light"] .page > .card,
-html[data-theme="light"] .page .card{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dbe4eb!important;
-  box-shadow:0 3px 14px rgba(25,57,80,.06)!important;
-}
-html[data-theme="light"] .page .card h2,
-html[data-theme="light"] .page .card h3,
-html[data-theme="light"] .page .card b,
-html[data-theme="light"] .page .card strong{
-  color:#17384c!important;
-}
-html[data-theme="light"] .page .card small,
-html[data-theme="light"] .page .card .small,
-html[data-theme="light"] .page .card .muted,
-html[data-theme="light"] .page .card label{
-  color:#718491!important;
-}
-
-/* Forms on all pages */
-html[data-theme="light"] .form,
-html[data-theme="light"] .form *{
-  text-shadow:none!important;
-}
-html[data-theme="light"] .form label{
-  color:#526b7c!important;
-}
-html[data-theme="light"] .form input,
-html[data-theme="light"] .form select,
-html[data-theme="light"] .form textarea{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#9dafbe!important;
-}
-html[data-theme="light"] .form input[readonly]{
-  background:#f5f8fa!important;
-  color:#526b7c!important;
-}
-
-/* Daily production page - this was the main remaining dark block */
-html[data-theme="light"] #daily{
-  background:#eef3f8!important;
-  color:#17384c!important;
-}
-html[data-theme="light"] #daily > .card,
-html[data-theme="light"] #daily .card{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dbe4eb!important;
-}
-html[data-theme="light"] #daily #dailyTitle,
-html[data-theme="light"] #daily h2,
-html[data-theme="light"] #daily h3{
-  color:#17384c!important;
-}
-html[data-theme="light"] #daily #verimBilgi,
-html[data-theme="light"] #daily #verimBilgi p,
-html[data-theme="light"] #daily #verimBilgi b,
-html[data-theme="light"] #daily #smartTimeAnalysis{
-  color:#17384c!important;
-}
-html[data-theme="light"] #daily .dailyCurrentSummary .dailySummaryBox,
-html[data-theme="light"] #daily .dailyWeek,
-html[data-theme="light"] #daily .dailyWeekHead,
-html[data-theme="light"] #daily .dailyWeekBody,
-html[data-theme="light"] #daily .dailyDayBtn,
-html[data-theme="light"] #daily .dailyDayPanel,
-html[data-theme="light"] #daily .dailyDayTitle,
-html[data-theme="light"] #daily .dailyEntries,
-html[data-theme="light"] #daily .dailyEntry,
-html[data-theme="light"] #daily .dailyEntry .dailyStats div{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dbe4eb!important;
-}
-html[data-theme="light"] #daily .dailyWeekHead b,
-html[data-theme="light"] #daily .dailyDayTitle b,
-html[data-theme="light"] #daily .dailyEntryTop b,
-html[data-theme="light"] #daily .dailySummaryBox b,
-html[data-theme="light"] #daily .dailyEntry .dailyStats b{
-  color:#17384c!important;
-}
-html[data-theme="light"] #daily .dailyWeekHead small,
-html[data-theme="light"] #daily .dailyDayBtn span,
-html[data-theme="light"] #daily .dailyEntry .dailyStats small,
-html[data-theme="light"] #daily .dailySummaryBox small{
-  color:#718491!important;
-}
-html[data-theme="light"] #daily .dailyDayBtn.active{
-  background:#eaf6fc!important;
-  color:#1476a9!important;
-  border-color:#8bc9e6!important;
-}
-
-/* Operations page */
-html[data-theme="light"] #ops > .card,
-html[data-theme="light"] #ops .card{
-  background:#fff!important;
-  color:#17384c!important;
-}
-html[data-theme="light"] #ops .row{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dbe4eb!important;
-}
-html[data-theme="light"] #ops .row.running{
-  background:#f1fbf5!important;
-  border-color:#2b9561!important;
-}
-html[data-theme="light"] #ops .row.running .finishbox,
-html[data-theme="light"] #ops .row.running .actualEditor,
-html[data-theme="light"] #ops .row.running .unitCompare>div{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dbe4eb!important;
-}
-html[data-theme="light"] #ops .row b,
-html[data-theme="light"] #ops .row strong{
-  color:#17384c!important;
-}
-html[data-theme="light"] #ops .row small,
-html[data-theme="light"] #ops .row .small,
-html[data-theme="light"] #ops .row .muted{
-  color:#718491!important;
-}
-
-/* Part times page */
-html[data-theme="light"] #parttimes > .card{
-  background:#fff!important;
-  color:#17384c!important;
-}
-html[data-theme="light"] #parttimes .partRateKpi{
-  background:#f9fcfe!important;
-  color:#17384c!important;
-  border-color:#dce6ed!important;
-}
-html[data-theme="light"] #parttimes .partRateKpi b{
-  color:#17384c!important;
-}
-html[data-theme="light"] #parttimes .partRateKpi small{
-  color:#718491!important;
-}
-html[data-theme="light"] #parttimes .partRateBtn{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#bfd0db!important;
-}
-
-/* Labour / profit page */
-html[data-theme="light"] .profitWrap,
-html[data-theme="light"] .profitWrap > h2{
-  color:#17384c!important;
-}
-html[data-theme="light"] .profitMonthBar,
-html[data-theme="light"] .profitKpi,
-html[data-theme="light"] .profitCard{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dfe8ef!important;
-}
-html[data-theme="light"] .profitKpi b,
-html[data-theme="light"] .profitCard h3{
-  color:#17384c!important;
-}
-html[data-theme="light"] .profitKpi small,
-html[data-theme="light"] .profitCard .small{
-  color:#718491!important;
-}
-html[data-theme="light"] .profitTable th{
-  background:#f3f7fa!important;
-  color:#385266!important;
-}
-html[data-theme="light"] .profitTable td{
-  color:#17384c!important;
-}
-
-/* Dashboard lower cards and table */
-html[data-theme="light"] #dash .dashLower .card,
-html[data-theme="light"] #dash .planCard,
-html[data-theme="light"] #dash .autoPdfCard{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dbe4eb!important;
-}
-html[data-theme="light"] #dash .dashCardHead b,
-html[data-theme="light"] #dash .autoPdfCard b{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .dashListItem,
-html[data-theme="light"] #dash .dashListItem *{
-  opacity:1!important;
-}
-html[data-theme="light"] #dash .dashListItem{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dfe7ed!important;
-}
-html[data-theme="light"] #dash .dashListItem b{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .dashListItem small{
-  color:#718491!important;
-}
-html[data-theme="light"] #dash table,
-html[data-theme="light"] #dash table *{
-  opacity:1!important;
-  text-shadow:none!important;
-}
-html[data-theme="light"] #dash thead th{
-  background:#f3f7fa!important;
-  color:#385266!important;
-}
-html[data-theme="light"] #dash tbody td{
-  color:#17384c!important;
-  background:transparent!important;
-}
-html[data-theme="light"] #dash tbody td small{
-  color:#718491!important;
-}
-html[data-theme="light"] #dash .autoPdfCard .small{
-  color:#718491!important;
-}
-
-/* Preserve dashboard machine reference look */
-html[data-theme="light"] #dash .machineCards .card{
-  background:#fff!important;
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .machineActiveBox.running{
-  background:#f1fbf5!important;
-  color:#17384c!important;
-  border-color:#cfe8d9!important;
-}
-html[data-theme="light"] #dash .machineActiveBox.running *{
-  opacity:1!important;
-}
-html[data-theme="light"] #dash .machineMini,
-html[data-theme="light"] #dash .machineDue,
-html[data-theme="light"] #dash .machineActiveBox [class*="plan"],
-html[data-theme="light"] #dash .machineActiveBox [class*="forecast"]{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#d9e4ea!important;
-}
-html[data-theme="light"] #dash .machineMini b,
-html[data-theme="light"] #dash .machineDue b{
-  color:#17384c!important;
-}
-html[data-theme="light"] #dash .machineMini small,
-html[data-theme="light"] #dash .machineDue small{
-  color:#718491!important;
-}
-
-/* FINAL SOFT DARK - slightly brighter navy */
-html[data-theme="dark"] body{
-  background:#142b39!important;
-}
-html[data-theme="dark"] .page > .card,
-html[data-theme="dark"] .page .card,
-html[data-theme="dark"] .metric,
-html[data-theme="dark"] .row,
-html[data-theme="dark"] .panel,
-html[data-theme="dark"] .box,
-html[data-theme="dark"] .profitMonthBar,
-html[data-theme="dark"] .profitKpi,
-html[data-theme="dark"] .profitCard,
-html[data-theme="dark"] .partRateKpi,
-html[data-theme="dark"] .dailyWeek,
-html[data-theme="dark"] .dailyDayPanel{
-  background:linear-gradient(155deg,#21485e,#193b4d)!important;
-  border-color:#4a748b!important;
-  box-shadow:0 4px 14px rgba(0,0,0,.10)!important;
-}
-html[data-theme="dark"] #dash .machineActiveBox.running,
-html[data-theme="dark"] #ops .row.running{
-  background:linear-gradient(155deg,#1c5147,#1b424c)!important;
-  border-color:#3d876f!important;
-}
-</style>
-
-
-<style id="luys-final-progress-fix">
-/* FINAL readability fix: all progress / percentage indicators */
-html[data-theme="light"] progress{
-  height:10px!important;
-  min-height:10px!important;
   border:0!important;
-  border-radius:999px!important;
-  overflow:hidden!important;
-  background:#dfe8ee!important;
-  accent-color:#1f9d63!important;
+  border-top:1px solid #e7edf2!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  color:#24415b!important;
 }
-html[data-theme="light"] progress::-webkit-progress-bar{
-  background:#dfe8ee!important;
-  border-radius:999px!important;
-}
-html[data-theme="light"] progress::-webkit-progress-value{
-  background:#1f9d63!important;
-  border-radius:999px!important;
-  min-width:4px;
-}
-html[data-theme="light"] progress::-moz-progress-bar{
-  background:#1f9d63!important;
-  border-radius:999px!important;
-}
+#dash .machineMini small{color:#7c8c99!important}
+#dash .machineMini b{color:#24415b!important}
 
-/* Common custom bars across dashboard, operations, labour and part-time pages */
-html[data-theme="light"] .progress,
-html[data-theme="light"] .progressBar,
-html[data-theme="light"] .progress-bar,
-html[data-theme="light"] .bar,
-html[data-theme="light"] [class*="progressTrack"],
-html[data-theme="light"] [class*="progress-track"]{
-  min-height:10px!important;
-  border-radius:999px!important;
-  background:#dfe8ee!important;
-  overflow:hidden!important;
-}
-html[data-theme="light"] .progress > *,
-html[data-theme="light"] .progressBar > *,
-html[data-theme="light"] .progress-bar > *,
-html[data-theme="light"] .bar > *,
-html[data-theme="light"] [class*="progressFill"],
-html[data-theme="light"] [class*="progress-fill"]{
-  min-height:10px!important;
-  border-radius:999px!important;
-  opacity:1!important;
-}
+/* Progress text and percentage must stay visible */
+#dash .progressHead{color:#647789!important}
+#dash .progressHead span{color:#647789!important}
+#dash .progressHead b{color:#23425d!important;opacity:1!important;visibility:visible!important}
+#dash .progressTrack{background:#e5edf3!important}
+#dash .progressTrack i{background:#1a9b59!important}
 
-/* Percentage/value text must stay readable everywhere */
-html[data-theme="light"] [class*="percent"],
-html[data-theme="light"] [class*="Percent"],
-html[data-theme="light"] [class*="progress"] b,
-html[data-theme="light"] [class*="progress"] strong,
-html[data-theme="light"] [class*="progress"] span{
-  color:#29495d!important;
-  opacity:1!important;
+#dash .machineDue{
+  background:transparent!important;
+  border:0!important;
+  border-top:1px solid #e7edf2!important;
+  border-radius:0!important;
+  box-shadow:none!important;
 }
+#dash .machineDue small{color:#7c8c99!important}
+#dash .machineDue b{color:#24415b!important}
+#dash .termBadge.ok{background:#def5e8!important;color:#177246!important;border-color:#bfe5cf!important}
+#dash .termBadge.risk{background:#fde8ea!important;color:#a92d39!important;border-color:#efc4c9!important}
+#dash .termBadge.warn{background:#fff4d8!important;color:#8b6816!important;border-color:#ecd89d!important}
 
-/* Termin table progress: stronger amber + visible tiny values */
-html[data-theme="light"] #dash table progress,
-html[data-theme="light"] #dash [class*="progress"]{
-  accent-color:#e9a11b!important;
+/* Approved screenshot: only Başlangıç Planı / Güncel Tahmin stay as white mini cards */
+#dash .machineActiveBox .unitCompare>div,
+#dash .machineActiveBox [class*="planTrack"]>div,
+#dash .machineActiveBox [class*="plan-track"]>div{
+  background:#fff!important;
+  color:#24415b!important;
+  border-color:#dce5eb!important;
 }
-html[data-theme="light"] #dash table progress::-webkit-progress-value{
-  background:#e9a11b!important;
-  min-width:5px!important;
-}
-html[data-theme="light"] #dash table progress::-moz-progress-bar{
-  background:#e9a11b!important;
-  min-width:5px!important;
-}
-html[data-theme="light"] #dash table td{
-  opacity:1!important;
-}
-html[data-theme="light"] #dash table td:last-child,
-html[data-theme="light"] #dash table td:last-child *{
-  color:#29495d!important;
-  opacity:1!important;
-}
+#dash .unitCompare small{color:#7c8c99!important}
+#dash .unitCompare b{color:#24415b!important}
+#dash .unitCompare .ahead{color:#177246!important}
+#dash .unitCompare .behind{color:#b93440!important}
+#dash .unitCompare .same{color:#667887!important}
 
-/* Running-machine / operation progress stays green */
-html[data-theme="light"] .machineActiveBox progress,
-html[data-theme="light"] #ops progress{
-  accent-color:#1f9d63!important;
-}
-html[data-theme="light"] .machineActiveBox progress::-webkit-progress-value,
-html[data-theme="light"] #ops progress::-webkit-progress-value{
-  background:#1f9d63!important;
-}
+/* Queue area below each machine remains light like the approved version */
+#dash .nextOps{border-color:#e7edf2!important;background:transparent!important}
+#dash .nextOpsTitle{color:#647789!important}
+#dash .nextOpItem{border-bottom-color:#edf1f4!important}
+#dash .nextNo{border-color:#8da0ad!important;color:#29445d!important}
+#dash .nextOpItem b{color:#29445d!important}
+#dash .nextOpItem span{color:#7c8d9a!important}
 
-/* Dark mode: same visibility, brighter track/fill */
-html[data-theme="dark"] progress{
-  height:10px!important;
-  min-height:10px!important;
-  border-radius:999px!important;
-  background:#31546a!important;
-  accent-color:#43d990!important;
-}
-html[data-theme="dark"] progress::-webkit-progress-bar{
-  background:#31546a!important;
-  border-radius:999px!important;
-}
-html[data-theme="dark"] progress::-webkit-progress-value{
-  background:#43d990!important;
-  border-radius:999px!important;
-  min-width:5px!important;
-}
-html[data-theme="dark"] progress::-moz-progress-bar{
-  background:#43d990!important;
-  border-radius:999px!important;
+/* Percentage values elsewhere: never disappear on light report/table backgrounds */
+#dash td b,#dash .planCard td,#dash .planCard td b{opacity:1!important;visibility:visible!important}
+#dash .planCard{background:#fff!important;color:#29445d!important;border-color:#d9e2e8!important}
+#dash .planCard h2{color:#29445d!important}
+#dash .planCard th{background:#f7f9fb!important;color:#617488!important}
+#dash .planCard td{color:#29445d!important}
+
+@media(max-width:800px){
+  #dash .machineCards .card{background:#fff!important;color:#173a57!important}
+  #dash .machineActiveBox.running{background:#f3fff7!important}
+  #dash .machineActiveBox .machineMini,
+  #dash .machineActiveBox .machineDue{background:transparent!important;color:#24415b!important}
 }
 </style>
 
@@ -2170,8 +1132,6 @@ html[data-theme="dark"] progress::-moz-progress-bar{
   <div class="brand"><h1>LÜYS</h1><small>LUUKMAS Üretim Yönetim Sistemi</small></div>
   <div class="userbox" id="userbox">Kullanıcı…</div>
   <div class="sync" id="sync">Bağlanıyor…</div>
-  <button class="themeTop" id="themeTop" type="button" title="Tema değiştir" aria-label="Tema değiştir">☀️</button>
-  <a class="logoutTop" href="/logout" title="Çıkış yap" aria-label="Çıkış yap">↪ <span>Çıkış</span></a>
 </header>
 <div class="wrap">
   
@@ -2455,7 +1415,7 @@ function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate
 function localISO(d){return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
 function fmt(s){if(!s)return '-';let d=new Date(s);if(String(s).length===10)d=new Date(s+'T12:00');return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+(String(s).includes('T')?' '+pad(d.getHours())+':'+pad(d.getMinutes()):'')}
 function canEdit(){return me.can_edit===true}
-async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"],[data-p="parttimes"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pt=$('parttimes');if(pt&&!canEdit())pt.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none';if(!canEdit()&&document.querySelector('.page.active')?.id==='parttimes'){document.querySelector('[data-p="dash"]')?.click()}}
+async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none'}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
 function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o);if(!o.baselineProductEnd&&(o.ops||[]).some(op=>op.actualStart)){let b=baselineProductEnd(o);if(b)o.baselineProductEnd=b}})}
@@ -4274,29 +3234,6 @@ window.editDaily=id=>{
    });
  });
  window.__luysRenderProfit=render;
-})();
-</script>
-
-
-<script id="luys-theme-controller">
-(function(){
- const KEY='luys_theme';
- function readTheme(){try{return localStorage.getItem(KEY)==='light'?'light':'dark'}catch(e){return 'dark'}}
- function applyTheme(t){
-   document.documentElement.setAttribute('data-theme',t);
-   const b=document.getElementById('themeTop');
-   if(b){b.textContent=t==='light'?'🌙':'☀️';b.title=t==='light'?'Koyu temaya geç':'Açık temaya geç'}
- }
- applyTheme(readTheme());
- document.addEventListener('DOMContentLoaded',()=>{
-   applyTheme(readTheme());
-   const b=document.getElementById('themeTop');
-   if(b)b.addEventListener('click',()=>{
-     const next=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
-     try{localStorage.setItem(KEY,next)}catch(e){}
-     applyTheme(next);
-   });
- });
 })();
 </script>
 
