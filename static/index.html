@@ -1051,6 +1051,52 @@ h1,h2,h3,h4{color:#f3f9ff!important}
 }
 </style>
 
+
+<style id="luys-amber-visibility-fix">
+/* Stronger amber/orange progress visibility in LIGHT mode */
+html[data-theme="light"] #dash table progress{
+  height:8px!important;
+  background:#e6edf2!important;
+  accent-color:#e28a00!important;
+}
+html[data-theme="light"] #dash table progress::-webkit-progress-bar{
+  background:#e6edf2!important;
+  border-radius:999px!important;
+}
+html[data-theme="light"] #dash table progress::-webkit-progress-value{
+  background:#e28a00!important;
+  border-radius:999px!important;
+  min-width:6px!important;
+  box-shadow:0 0 0 1px rgba(167,94,0,.08) inset!important;
+}
+html[data-theme="light"] #dash table progress::-moz-progress-bar{
+  background:#e28a00!important;
+  border-radius:999px!important;
+  min-width:6px!important;
+}
+
+/* Custom amber bars, if present */
+html[data-theme="light"] #dash .warnBar,
+html[data-theme="light"] #dash .progressWarn,
+html[data-theme="light"] #dash [class*="amber"],
+html[data-theme="light"] #dash [class*="orange"]{
+  background:#e28a00!important;
+  opacity:1!important;
+}
+
+/* Make the YAKLAŞIYOR pill clearer too */
+html[data-theme="light"] .termBadge.warn,
+html[data-theme="light"] .warn,
+html[data-theme="light"] .wait{
+  color:#8d5d00!important;
+}
+html[data-theme="light"] .termBadge.warn{
+  background:#fff0c9!important;
+  border-color:#e6c46f!important;
+  font-weight:800!important;
+}
+</style>
+
 </head>
 <body>
 <header>
