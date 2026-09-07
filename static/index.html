@@ -1039,496 +1039,152 @@ h1,h2,h3,h4{color:#f3f9ff!important}
 </style>
 
 
-<style id="luys-dual-theme">
-.themeTop{display:flex;align-items:center;justify-content:center;min-width:42px;height:38px;padding:0 9px;border-radius:11px;border:1px solid #2a5875;background:#102b3f;color:#eef8ff;font-size:17px;cursor:pointer}
-html[data-theme="light"] body{background:#eef4f8!important;color:#173247!important}
-html[data-theme="light"] header{background:linear-gradient(110deg,#0b426c,#12547e)!important;border-bottom-color:#2878a8!important}
-html[data-theme="light"] .tabs{background:#edf3f7!important}
-html[data-theme="light"] .tabs button{background:#fff!important;color:#102d42!important;border-color:#dce7ee!important;box-shadow:0 2px 8px rgba(20,55,80,.05)!important}
-html[data-theme="light"] .tabs button.active{background:linear-gradient(110deg,#087bb7,#13a2dc)!important;color:#fff!important;border-color:#159bd4!important}
-html[data-theme="light"] main,html[data-theme="light"] .page,html[data-theme="light"] .wrap{background:#eef4f8!important;color:#173247!important}
+<style id="luys-clean-dual-theme">
+.themeTop{
+ display:flex;align-items:center;justify-content:center;min-width:42px;height:38px;padding:0 9px;
+ border-radius:11px;border:1px solid #2a5875;background:#102b3f;color:#eef8ff;font-size:17px;cursor:pointer
+}
+
+/* ===== LIGHT: exact reference look ===== */
+html[data-theme="light"] body{background:#eef3f8!important;color:#16324a!important}
+html[data-theme="light"] header{background:#0d3456!important;color:#fff!important;border-bottom-color:#1b537a!important}
+html[data-theme="light"] .tabs{background:#eef3f8!important}
+html[data-theme="light"] .tabs button{background:#fff!important;color:#16324a!important;border-color:#e1e8ed!important;box-shadow:none!important}
+html[data-theme="light"] .tabs button.active{background:#0b79ae!important;color:#fff!important;border-color:#0b79ae!important}
+
+html[data-theme="light"] #dash .metric{
+ background:#fff!important;border-color:#dbe4eb!important;color:#536d7f!important;
+ box-shadow:0 3px 14px #0001!important
+}
+html[data-theme="light"] #dash .metric b{color:#16324a!important}
+html[data-theme="light"] #dash .metric small{color:#7b8c98!important}
+html[data-theme="light"] #dash .metric:before{background:#e9f5fb!important;color:#1781b6!important}
+html[data-theme="light"] #dash .metric:nth-child(2):before{background:#e8f7ef!important;color:#1d9c63!important}
+html[data-theme="light"] #dash .metric:nth-child(3):before{background:#f2eafa!important;color:#8d61c4!important}
+html[data-theme="light"] #dash .metric:nth-child(4):before{background:#fdebed!important;color:#d95660!important}
+html[data-theme="light"] .dashSectionTitle b,
+html[data-theme="light"] .dashCardHead b{color:#27445b!important}
+html[data-theme="light"] .dashSectionTitle span,
+html[data-theme="light"] .dashCardHead span{color:#1781b6!important}
+
+html[data-theme="light"] #dash .machineCards .card,
+html[data-theme="light"] #dash .planCard,
+html[data-theme="light"] .dashLower .card{
+ background:#fff!important;border-color:#dbe4eb!important;color:#16324a!important;
+ box-shadow:0 3px 14px #0001!important
+}
+html[data-theme="light"] #dash .machineCards h2{color:#173a57!important}
+html[data-theme="light"] .machineIcon{background:#eaf5fb!important;border-color:#cfe4ef!important}
+html[data-theme="light"] .machineStatus{color:#1d9c63!important}
+html[data-theme="light"] .machineStatus.wait{color:#7f909b!important}
+
+html[data-theme="light"] .machineActiveBox{
+ background:#f7faff!important;border-color:#e6edf4!important;color:#16324a!important
+}
+html[data-theme="light"] .machineActiveBox.running{
+ background:#f3fff7!important;border-color:#d7f0e1!important
+}
+html[data-theme="light"] .machineActiveBox.riskBox{
+ background:#fff7f7!important;border-color:#f1cccc!important
+}
+html[data-theme="light"] .machineLabel{color:#1781b6!important}
+html[data-theme="light"] .machineJob{color:#24415b!important}
+
+html[data-theme="light"] .machineBadge,
+html[data-theme="light"] .termBadge,
+html[data-theme="light"] .queueBadge{background:#e7eef3!important;color:#536b7a!important}
+html[data-theme="light"] .machineBadge.run,
+html[data-theme="light"] .termBadge.ok{
+ background:#dff6e7!important;color:#176b3d!important;border-color:#bfe7cf!important
+}
+html[data-theme="light"] .termBadge.risk{
+ background:#ffe4e6!important;color:#a53038!important;border-color:#efc1c5!important
+}
+html[data-theme="light"] .termBadge.warn{
+ background:#fff2d8!important;color:#93630d!important;border-color:#edd7a8!important
+}
+
+html[data-theme="light"] .machineMini{
+ background:transparent!important;color:#24415b!important;border-color:#e7edf2!important;
+ box-shadow:none!important
+}
+html[data-theme="light"] .machineMini small,
+html[data-theme="light"] .machineDue small{color:#7c8c99!important}
+html[data-theme="light"] .machineMini b,
+html[data-theme="light"] .machineDue b{color:#24415b!important}
+html[data-theme="light"] .machineDue,
+html[data-theme="light"] .nextOps{background:transparent!important;border-color:#e1e8ed!important}
+html[data-theme="light"] .progressHead{color:#7c8c99!important}
+html[data-theme="light"] .progressHead b{color:#24415b!important}
+html[data-theme="light"] .progressTrack{background:#e5edf3!important}
+html[data-theme="light"] .planTrackItem{
+ background:#fff!important;border-color:#e5ecef!important;color:#27445b!important
+}
+html[data-theme="light"] .planTrackItem small{color:#7a8b97!important}
+html[data-theme="light"] .planTrackItem b{color:#27445b!important}
+
 html[data-theme="light"] .card,
-html[data-theme="light"] .panel,html[data-theme="light"] .box,html[data-theme="light"] .tile,
-html[data-theme="light"] .infoBox,html[data-theme="light"] .miniCard,html[data-theme="light"] .formCard,
-html[data-theme="light"] .reportCard,html[data-theme="light"] .summaryCard,html[data-theme="light"] .statCard,
-html[data-theme="light"] .dailyCard,html[data-theme="light"] .dayCard,html[data-theme="light"] .historyCard,
-html[data-theme="light"] .weekCard,html[data-theme="light"] .kpiCard,html[data-theme="light"] .priceCard,
-html[data-theme="light"] .valueCard,html[data-theme="light"] .metric,html[data-theme="light"] .accMetric,
-html[data-theme="light"] .machineMini,html[data-theme="light"] .unitCompare>div,
-html[data-theme="light"] .actualEditor,html[data-theme="light"] .dashListItem,
-html[data-theme="light"] .notice,html[data-theme="light"] .finishbox,html[data-theme="light"] .readonlyNotice,
-html[data-theme="light"] .partRateKpi,html[data-theme="light"] .profitKpi,html[data-theme="light"] .profitCard,
-html[data-theme="light"] .profitForm,html[data-theme="light"] .dailyWeek,html[data-theme="light"] .dailyDayPanel,
-html[data-theme="light"] .dailyEntry,html[data-theme="light"] .dailySummaryBox{
- background:#fff!important;color:#173247!important;border-color:#d7e3eb!important;
- box-shadow:0 5px 16px rgba(26,62,88,.07)!important}
-html[data-theme="light"] input,html[data-theme="light"] select,html[data-theme="light"] textarea{
- background:#fff!important;color:#173247!important;border-color:#cbdbe6!important}
-html[data-theme="light"] table{color:#173247!important}
-html[data-theme="light"] th{background:#e8f1f6!important;color:#24465d!important;border-color:#d4e2eb!important}
-html[data-theme="light"] td{background:#fff!important;color:#173247!important;border-color:#dce7ee!important}
-html[data-theme="light"] .card small,html[data-theme="light"] .row small,html[data-theme="light"] .panel small,
-html[data-theme="light"] .box small,html[data-theme="light"] .muted,html[data-theme="light"] label{color:#718594!important}
-html[data-theme="light"] .card b,html[data-theme="light"] .row b,html[data-theme="light"] .panel b,
-html[data-theme="light"] .box b,html[data-theme="light"] strong{color:#173247!important}
-html[data-theme="light"] .ok,html[data-theme="light"] .good,html[data-theme="light"] .ahead{color:#15955b!important}
-html[data-theme="light"] .risk,html[data-theme="light"] .bad,html[data-theme="light"] .behind{color:#d53f4c!important}
-html[data-theme="light"] .warn,html[data-theme="light"] .wait{color:#b57a00!important}
-html[data-theme="light"] .themeTop{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.3);color:#fff}
-@media(max-width:800px){.themeTop{min-width:42px;padding:0 8px}html[data-theme="light"] body{background:#eef4f8!important}}
-</style>
-
-
-<style id="luys-soft-light-v2">
-/* Softer premium light theme: less glare, calmer borders, flatter hierarchy */
-html[data-theme="light"] body{
-  background:#edf3f6!important;
-  color:#294355!important;
-}
-html[data-theme="light"] main,
-html[data-theme="light"] .page,
-html[data-theme="light"] .wrap{
-  background:#edf3f6!important;
-}
-html[data-theme="light"] header{
-  background:linear-gradient(110deg,#0e456b,#15587f)!important;
-  box-shadow:0 2px 10px rgba(17,61,91,.12)!important;
-}
-html[data-theme="light"] .tabs{
-  background:#e8eff3!important;
-  border-bottom:1px solid #d8e3e9!important;
-  box-shadow:none!important;
-}
-html[data-theme="light"] .tabs button{
-  background:#f7fafb!important;
-  color:#294355!important;
-  border:1px solid #d9e4ea!important;
-  box-shadow:none!important;
-  font-weight:700!important;
-}
-html[data-theme="light"] .tabs button.active{
-  background:linear-gradient(110deg,#1591cb,#2ea9db)!important;
-  color:#fff!important;
-  border-color:#1591cb!important;
-  box-shadow:0 4px 12px rgba(28,143,194,.18)!important;
-}
-
-html[data-theme="light"] .card,
+html[data-theme="light"] .row,
 html[data-theme="light"] .panel,
 html[data-theme="light"] .box,
-html[data-theme="light"] .tile,
-html[data-theme="light"] .infoBox,
-html[data-theme="light"] .miniCard,
-html[data-theme="light"] .formCard,
-html[data-theme="light"] .reportCard,
-html[data-theme="light"] .summaryCard,
-html[data-theme="light"] .statCard,
-html[data-theme="light"] .dailyCard,
-html[data-theme="light"] .dayCard,
-html[data-theme="light"] .historyCard,
-html[data-theme="light"] .weekCard,
-html[data-theme="light"] .kpiCard,
-html[data-theme="light"] .priceCard,
-html[data-theme="light"] .valueCard,
 html[data-theme="light"] .metric,
 html[data-theme="light"] .accMetric,
-html[data-theme="light"] .machineMini,
 html[data-theme="light"] .unitCompare>div,
 html[data-theme="light"] .actualEditor,
 html[data-theme="light"] .dashListItem,
+html[data-theme="light"] .cal>div,
 html[data-theme="light"] .notice,
 html[data-theme="light"] .finishbox,
-html[data-theme="light"] .readonlyNotice,
-html[data-theme="light"] .partRateKpi,
-html[data-theme="light"] .profitKpi,
-html[data-theme="light"] .profitCard,
-html[data-theme="light"] .profitForm,
-html[data-theme="light"] .dailyWeek,
-html[data-theme="light"] .dailyDayPanel,
-html[data-theme="light"] .dailyEntry,
-html[data-theme="light"] .dailySummaryBox{
-  background:#f8fbfc!important;
-  color:#294355!important;
-  border-color:#d9e5ea!important;
-  box-shadow:0 3px 10px rgba(33,75,102,.05)!important;
+html[data-theme="light"] .readonlyNotice{
+ background:#fff!important;color:#16324a!important;border-color:#dbe4eb!important
 }
-
-html[data-theme="light"] .machineCards .card{
-  background:#f8fbfc!important;
-  border-color:#d7e4ea!important;
-}
-html[data-theme="light"] .machineCards .card [style*="background:#"],
-html[data-theme="light"] .machineCards .card [class*="active"]{
-  box-shadow:none!important;
-}
-
-html[data-theme="light"] input,
-html[data-theme="light"] select,
-html[data-theme="light"] textarea{
-  background:#f9fbfc!important;
-  color:#294355!important;
-  border-color:#d4e0e6!important;
-  box-shadow:none!important;
-}
-html[data-theme="light"] input:focus,
-html[data-theme="light"] select:focus,
-html[data-theme="light"] textarea:focus{
-  border-color:#7bbbd9!important;
-  box-shadow:0 0 0 2px rgba(74,164,205,.10)!important;
-}
-
-html[data-theme="light"] table{color:#294355!important}
-html[data-theme="light"] th{
-  background:#e7eff3!important;
-  color:#496375!important;
-  border-color:#d9e4ea!important;
-}
-html[data-theme="light"] td{
-  background:#f9fbfc!important;
-  color:#294355!important;
-  border-color:#e2eaee!important;
-}
-html[data-theme="light"] tr:nth-child(even) td{
-  background:#f4f8fa!important;
-}
-
 html[data-theme="light"] .card small,
 html[data-theme="light"] .row small,
 html[data-theme="light"] .panel small,
 html[data-theme="light"] .box small,
 html[data-theme="light"] .muted,
-html[data-theme="light"] label{
-  color:#7a8f9d!important;
-}
+html[data-theme="light"] label{color:#687b89!important}
 html[data-theme="light"] .card b,
 html[data-theme="light"] .row b,
 html[data-theme="light"] .panel b,
 html[data-theme="light"] .box b,
-html[data-theme="light"] strong{
-  color:#294355!important;
-}
-html[data-theme="light"] .ok,
-html[data-theme="light"] .good,
-html[data-theme="light"] .ahead{color:#2f9a6a!important}
-html[data-theme="light"] .risk,
-html[data-theme="light"] .bad,
-html[data-theme="light"] .behind{color:#c65b63!important}
-html[data-theme="light"] .warn,
-html[data-theme="light"] .wait{color:#a97a20!important}
-
-/* calmer progress/status surfaces */
-html[data-theme="light"] [style*="background:#eaff"],
-html[data-theme="light"] [style*="background:#ecfff"],
-html[data-theme="light"] [style*="background:#efff"],
-html[data-theme="light"] [style*="background:#f0fff"]{
-  background:#eef8f2!important;
-}
-html[data-theme="light"] progress,
-html[data-theme="light"] .progress,
-html[data-theme="light"] [class*="progress"]{
-  filter:saturate(.82) brightness(.98);
-}
-
-/* quieter top controls */
-html[data-theme="light"] .sync,
-html[data-theme="light"] .logoutTop,
-html[data-theme="light"] .themeTop{
-  box-shadow:none!important;
-}
-html[data-theme="light"] .logoutTop,
-html[data-theme="light"] .themeTop{
-  background:rgba(255,255,255,.10)!important;
-  border-color:rgba(255,255,255,.22)!important;
-}
-
-/* softer corners/spacing perception on mobile */
-@media(max-width:800px){
-  html[data-theme="light"] .card,
-  html[data-theme="light"] .panel,
-  html[data-theme="light"] .box{
-    box-shadow:0 2px 8px rgba(33,75,102,.05)!important;
-  }
-  html[data-theme="light"] .tabs{
-    background:#e9f0f4!important;
-  }
-}
-</style>
-
-
-<style id="luys-theme-polish-v3">
-/* LIGHT = return to the clean white dashboard look */
-html[data-theme="light"] body,
-html[data-theme="light"] main,
-html[data-theme="light"] .page,
-html[data-theme="light"] .wrap{background:#f2f6f9!important;color:#173247!important}
-
-html[data-theme="light"] .card,
-html[data-theme="light"] .panel,
-html[data-theme="light"] .box,
-html[data-theme="light"] .tile,
-html[data-theme="light"] .machineCard,
-html[data-theme="light"] .machineCards .card,
-html[data-theme="light"] .infoBox,
-html[data-theme="light"] .miniCard,
-html[data-theme="light"] .statCard,
-html[data-theme="light"] .summaryCard,
-html[data-theme="light"] .kpiCard,
-html[data-theme="light"] .partRateKpi,
-html[data-theme="light"] .profitKpi,
-html[data-theme="light"] .profitCard,
-html[data-theme="light"] .dailyWeek,
-html[data-theme="light"] .dailyDayPanel,
-html[data-theme="light"] .dailyEntry,
-html[data-theme="light"] .dailySummaryBox{
- background:#fff!important;color:#173247!important;border-color:#d7e2e9!important;
- box-shadow:0 4px 13px rgba(30,65,90,.06)!important
-}
-
-/* Active production surface in light mode */
-html[data-theme="light"] .activeJob,
-html[data-theme="light"] .active-job,
-html[data-theme="light"] .jobActive{
- background:#f1fbf5!important;border-color:#c9ead8!important;color:#173247!important
-}
-
-/* Undo the accidental white blocks inside dark machine cards */
-html[data-theme="light"] .machineCards .card div,
-html[data-theme="light"] .machineCards .card span,
-html[data-theme="light"] .machineCards .card section{
- color:inherit
-}
-html[data-theme="light"] .machineCards .card [style*="background"]{
- box-shadow:none!important
-}
-html[data-theme="light"] .machineCards .card [class*="metric"],
-html[data-theme="light"] .machineCards .card [class*="stat"],
-html[data-theme="light"] .machineCards .card [class*="forecast"],
-html[data-theme="light"] .machineCards .card [class*="plan"]{
- background:#fff!important;color:#173247!important;border-color:#dce6ec!important
-}
-
+html[data-theme="light"] strong{color:#16324a!important}
+html[data-theme="light"] table{color:#16324a!important}
+html[data-theme="light"] th{background:#f3f7fa!important;color:#385266!important}
+html[data-theme="light"] td{background:transparent!important;color:#16324a!important;border-bottom-color:#dfe7ed!important}
 html[data-theme="light"] input,
 html[data-theme="light"] select,
-html[data-theme="light"] textarea{
- background:#fff!important;color:#173247!important;border-color:#ccdbe4!important
-}
-html[data-theme="light"] th{background:#edf3f6!important;color:#385366!important}
-html[data-theme="light"] td{background:#fff!important;color:#173247!important}
-html[data-theme="light"] .muted,
-html[data-theme="light"] small,
-html[data-theme="light"] label{color:#7a8c98!important}
+html[data-theme="light"] textarea{background:#fff!important;color:#16324a!important;border-color:#9dafbe!important}
 
-/* DARK = softer navy instead of near-black */
-html[data-theme="dark"] body,
-html[data-theme="dark"] main,
-html[data-theme="dark"] .page,
-html[data-theme="dark"] .wrap{
- background:#0b1822!important;color:#e4edf3!important
+/* ===== DARK: same premium look, just a little brighter/softer ===== */
+html[data-theme="dark"] body{background:#0c1c28!important}
+html[data-theme="dark"] header{background:linear-gradient(110deg,#123751,#174b69)!important}
+html[data-theme="dark"] .tabs{background:#102735!important}
+html[data-theme="dark"] .tabs button{background:#173345!important;border-color:#315b74!important}
+html[data-theme="dark"] #dash .metric,
+html[data-theme="dark"] #dash .machineCards .card,
+html[data-theme="dark"] #dash .planCard,
+html[data-theme="dark"] .dashLower .card{
+ background:linear-gradient(155deg,#173445,#112a39)!important;
+ border-color:#345f78!important
 }
-html[data-theme="dark"] header{
- background:linear-gradient(110deg,#12324a,#17445f)!important;
- border-bottom-color:#285875!important
+html[data-theme="dark"] .machineActiveBox{background:#112b3a!important;border-color:#31576e!important}
+html[data-theme="dark"] .machineActiveBox.running{
+ background:linear-gradient(155deg,#123d39,#12303a)!important;border-color:#28735e!important
 }
-html[data-theme="dark"] .tabs{
- background:#102431!important
-}
-html[data-theme="dark"] .tabs button{
- background:#152c3b!important;color:#d9e6ee!important;border-color:#2c5067!important
-}
-html[data-theme="dark"] .tabs button.active{
- background:linear-gradient(110deg,#1689c4,#27a5dc)!important;color:#fff!important
+html[data-theme="dark"] .machineMini,
+html[data-theme="dark"] .machineDue,
+html[data-theme="dark"] .planTrackItem{
+ background:#153244!important;border-color:#365f78!important
 }
 html[data-theme="dark"] .card,
 html[data-theme="dark"] .panel,
-html[data-theme="dark"] .box,
-html[data-theme="dark"] .tile,
-html[data-theme="dark"] .machineCard,
-html[data-theme="dark"] .machineCards .card,
-html[data-theme="dark"] .infoBox,
-html[data-theme="dark"] .miniCard,
-html[data-theme="dark"] .statCard,
-html[data-theme="dark"] .summaryCard,
-html[data-theme="dark"] .kpiCard,
-html[data-theme="dark"] .partRateKpi,
-html[data-theme="dark"] .profitKpi,
-html[data-theme="dark"] .profitCard,
-html[data-theme="dark"] .dailyWeek,
-html[data-theme="dark"] .dailyDayPanel,
-html[data-theme="dark"] .dailyEntry,
-html[data-theme="dark"] .dailySummaryBox{
- background:#142b3a!important;color:#e4edf3!important;border-color:#31566c!important;
- box-shadow:0 4px 14px rgba(0,0,0,.13)!important
-}
-html[data-theme="dark"] input,
-html[data-theme="dark"] select,
-html[data-theme="dark"] textarea{
- background:#102533!important;color:#e7f0f5!important;border-color:#365a70!important
-}
-html[data-theme="dark"] .muted,
-html[data-theme="dark"] small,
-html[data-theme="dark"] label{color:#9bb0bd!important}
-</style>
-
-
-<style id="luys-theme-final-reference">
-/* ===== LIGHT / REFERENCE LOOK ===== */
-html[data-theme="light"] body,
-html[data-theme="light"] main,
-html[data-theme="light"] .page,
-html[data-theme="light"] .wrap{
-  background:#f1f6f9!important;
-  color:#17384c!important;
+html[data-theme="dark"] .box{
+ background:linear-gradient(155deg,#173445,#112a39)!important;border-color:#345f78!important
 }
 
-/* KPI cards */
-html[data-theme="light"] .dashKpi,
-html[data-theme="light"] .dashKpis > *,
-html[data-theme="light"] .kpi,
-html[data-theme="light"] .kpiCard{
-  background:#ffffff!important;
-  color:#17384c!important;
-  border-color:#dce6ec!important;
-  box-shadow:0 4px 14px rgba(28,61,83,.07)!important;
-}
-
-/* Machine outer cards */
-html[data-theme="light"] .machine,
-html[data-theme="light"] .machineCard,
-html[data-theme="light"] .machineCards > *,
-html[data-theme="light"] .machineCards .card{
-  background:#ffffff!important;
-  color:#17384c!important;
-  border-color:#d8e4ea!important;
-  box-shadow:0 4px 14px rgba(28,61,83,.07)!important;
-}
-
-/* The dashboard's green active-operation panel.
-   Use broad dashboard descendants so old dark inline/card rules cannot win. */
-html[data-theme="light"] .machine .active,
-html[data-theme="light"] .machineCard .active,
-html[data-theme="light"] .machineCards .active,
-html[data-theme="light"] .machine .activeJob,
-html[data-theme="light"] .machineCard .activeJob,
-html[data-theme="light"] .machineCards .activeJob,
-html[data-theme="light"] .machine .jobCard,
-html[data-theme="light"] .machineCard .jobCard,
-html[data-theme="light"] .machineCards .jobCard{
-  background:#f0fbf4!important;
-  color:#17384c!important;
-  border-color:#ccebd9!important;
-}
-
-/* Any nested dashboard metric blocks that previous theme CSS forced dark/white */
-html[data-theme="light"] .machineCards .metric,
-html[data-theme="light"] .machineCards .stat,
-html[data-theme="light"] .machineCards .forecast,
-html[data-theme="light"] .machineCards .plan,
-html[data-theme="light"] .machineCards .mini,
-html[data-theme="light"] .machineCards .kv,
-html[data-theme="light"] .machineCards .valueBox{
-  background:transparent!important;
-  color:#17384c!important;
-  border-color:#dce8ed!important;
-  box-shadow:none!important;
-}
-
-/* Text inside machine dashboard */
-html[data-theme="light"] .machineCards,
-html[data-theme="light"] .machineCards div,
-html[data-theme="light"] .machineCards span,
-html[data-theme="light"] .machineCards b,
-html[data-theme="light"] .machineCards strong{
-  color:#17384c;
-}
-html[data-theme="light"] .machineCards small,
-html[data-theme="light"] .machineCards label,
-html[data-theme="light"] .machineCards .muted{
-  color:#7b909d!important;
-}
-
-/* Generic content cards remain clean white */
-html[data-theme="light"] .card,
-html[data-theme="light"] .panel,
-html[data-theme="light"] .box,
-html[data-theme="light"] .tile,
-html[data-theme="light"] .infoBox,
-html[data-theme="light"] .miniCard,
-html[data-theme="light"] .formCard,
-html[data-theme="light"] .reportCard,
-html[data-theme="light"] .summaryCard,
-html[data-theme="light"] .statCard,
-html[data-theme="light"] .partRateKpi,
-html[data-theme="light"] .profitKpi,
-html[data-theme="light"] .profitCard,
-html[data-theme="light"] .profitForm,
-html[data-theme="light"] .dailyWeek,
-html[data-theme="light"] .dailyDayPanel,
-html[data-theme="light"] .dailyEntry,
-html[data-theme="light"] .dailySummaryBox{
-  background:#fff!important;
-  color:#17384c!important;
-  border-color:#dbe6ec!important;
-  box-shadow:0 4px 14px rgba(28,61,83,.06)!important;
-}
-
-/* ===== DARK / SOFTER + BRIGHTER NAVY ===== */
-html[data-theme="dark"] body,
-html[data-theme="dark"] main,
-html[data-theme="dark"] .page,
-html[data-theme="dark"] .wrap{
-  background:#102431!important;
-  color:#e8f1f6!important;
-}
-html[data-theme="dark"] header{
-  background:linear-gradient(110deg,#17405a,#1d5572)!important;
-}
-html[data-theme="dark"] .tabs{
-  background:#142d3d!important;
-}
-html[data-theme="dark"] .tabs button{
-  background:#1b3749!important;
-  border-color:#365f78!important;
-  color:#e0ebf1!important;
-}
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .panel,
-html[data-theme="dark"] .box,
-html[data-theme="dark"] .tile,
-html[data-theme="dark"] .machine,
-html[data-theme="dark"] .machineCard,
-html[data-theme="dark"] .machineCards > *,
-html[data-theme="dark"] .machineCards .card,
-html[data-theme="dark"] .dashKpi,
-html[data-theme="dark"] .dashKpis > *,
-html[data-theme="dark"] .kpi,
-html[data-theme="dark"] .kpiCard,
-html[data-theme="dark"] .infoBox,
-html[data-theme="dark"] .miniCard,
-html[data-theme="dark"] .statCard,
-html[data-theme="dark"] .summaryCard,
-html[data-theme="dark"] .partRateKpi,
-html[data-theme="dark"] .profitKpi,
-html[data-theme="dark"] .profitCard,
-html[data-theme="dark"] .dailyWeek,
-html[data-theme="dark"] .dailyDayPanel,
-html[data-theme="dark"] .dailyEntry,
-html[data-theme="dark"] .dailySummaryBox{
-  background:#193748!important;
-  color:#e8f1f6!important;
-  border-color:#3a6279!important;
-  box-shadow:0 3px 12px rgba(0,0,0,.10)!important;
-}
-html[data-theme="dark"] .machine .active,
-html[data-theme="dark"] .machineCard .active,
-html[data-theme="dark"] .machineCards .active,
-html[data-theme="dark"] .machine .activeJob,
-html[data-theme="dark"] .machineCard .activeJob,
-html[data-theme="dark"] .machineCards .activeJob,
-html[data-theme="dark"] .machine .jobCard,
-html[data-theme="dark"] .machineCard .jobCard,
-html[data-theme="dark"] .machineCards .jobCard{
-  background:#16463f!important;
-  border-color:#287660!important;
+@media(max-width:800px){
+ .themeTop{min-width:42px;padding:0 8px}
 }
 </style>
 
@@ -2131,9 +1787,7 @@ function automaticPlanningPDF(){
   ${machineSections}
   <footer>Planlanan başlangıç ve bitiş süreleri tahminidir. Gerçek süreler operasyon ve günlük üretim kayıtlarına göre güncellenir.</footer>
   <script>window.onload=()=>{setTimeout(()=>window.print(),250)}<\/script>
-  
-
-</body></html>`;
+  </body></html>`;
 
   const w=window.open('','_blank');
   if(!w){alert('PDF penceresi açılamadı. Tarayıcıda açılır pencereye izin ver.');return}
@@ -3652,24 +3306,20 @@ window.editDaily=id=>{
 <script id="luys-theme-controller">
 (function(){
  const KEY='luys_theme';
- function saved(){try{return localStorage.getItem(KEY)==='light'?'light':'dark'}catch(e){return 'dark'}}
- function apply(t){
+ function readTheme(){try{return localStorage.getItem(KEY)==='light'?'light':'dark'}catch(e){return 'dark'}}
+ function applyTheme(t){
    document.documentElement.setAttribute('data-theme',t);
    const b=document.getElementById('themeTop');
-   if(b){
-     b.textContent=t==='light'?'🌙':'☀️';
-     b.title=t==='light'?'Koyu temaya geç':'Açık temaya geç';
-     b.setAttribute('aria-label',b.title);
-   }
+   if(b){b.textContent=t==='light'?'🌙':'☀️';b.title=t==='light'?'Koyu temaya geç':'Açık temaya geç'}
  }
- apply(saved());
+ applyTheme(readTheme());
  document.addEventListener('DOMContentLoaded',()=>{
-   apply(saved());
+   applyTheme(readTheme());
    const b=document.getElementById('themeTop');
    if(b)b.addEventListener('click',()=>{
-     const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
-     try{localStorage.setItem(KEY,t)}catch(e){}
-     apply(t);
+     const next=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+     try{localStorage.setItem(KEY,next)}catch(e){}
+     applyTheme(next);
    });
  });
 })();
