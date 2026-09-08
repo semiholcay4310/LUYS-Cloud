@@ -2843,8 +2843,55 @@ function hesaplaVerim(){
   if(el)el.addEventListener('input',hesaplaVerim);
 });
 
-$('dailyOrder').addEventListener('change',()=>{fillDailyOps();setTimeout(()=>{hesaplaVerim();renderSmartTimeAnalysis()},50)});
-$('dailyOp').addEventListener('change',()=>{hesaplaVerim();renderSmartTimeAnalysis()});
+// Günlük kayıtta giriş saatini aynı tezgâhın o günkü akışından otomatik öner.
+// İlk kayıt 08:00; sonraki kayıt, o tezgâhta en son girilen kaydın çıkış saatinden başlar.
+// Düzenlenen mevcut kayıtta ve son kaydın çıkış saati boşsa otomatik müdahale etmez.
+function autoDailyStartTime(){
+  const f=$('dailyForm');
+  if(!f || f.recId?.value)return;
+
+  const o=order(f.orderId?.value);
+  const tarih=f.date?.value;
+  if(!o || !tarih || !f.startTime)return;
+
+  const machine=String(o.machine||'').trim();
+  if(!machine)return;
+
+  const sameMachineDay=(state.daily||[]).filter(r=>{
+    if(r.date!==tarih)return false;
+    const ro=order(r.orderId);
+    return ro && String(ro.machine||'').trim()===machine;
+  });
+
+  if(!sameMachineDay.length){
+    f.startTime.value='08:00';
+  }else{
+    // state.daily kayıt sırası, gün içindeki en son kaydedilen oturumu temsil eder.
+    const last=sameMachineDay[sameMachineDay.length-1];
+    if(!last.endTime){
+      f.startTime.value='';
+      return;
+    }
+    f.startTime.value=last.endTime;
+  }
+
+  hesaplaVerim();
+}
+
+$('dailyOrder').addEventListener('change',()=>{
+  fillDailyOps();
+  setTimeout(()=>{autoDailyStartTime();hesaplaVerim();renderSmartTimeAnalysis()},50);
+});
+$('dailyOp').addEventListener('change',()=>{
+  autoDailyStartTime();
+  hesaplaVerim();
+  renderSmartTimeAnalysis();
+});
+$('dailyForm').elements.date.addEventListener('change',()=>{
+  autoDailyStartTime();
+  hesaplaVerim();
+  renderSmartTimeAnalysis();
+});
 
 $('dailyForm').onsubmit=async e=>{
   e.preventDefault();
