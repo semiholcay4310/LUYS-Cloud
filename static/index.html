@@ -3688,6 +3688,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#3c6d88}
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', {scope:'/'})
+      .then(reg => reg.update().catch(()=>{}))
       .catch(err => console.warn('LÜYS PWA:', err));
   });
 }
