@@ -2496,7 +2496,7 @@ function renderOps(){
 function renderDaily(){$('dailyList').innerHTML=[...state.daily].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{let o=order(r.orderId),op=opBy(o,r.opId);return `<div class="row"><b>${r.date} • ${esc(o?.part||'-')} • ${esc(op?.name||'-')}</b><div class="small">Sağlam ${r.good} • Hurda ${r.scrap} • Toplam işlenen ${n(r.good)+n(r.scrap)} • Brüt ${r.hours} saat • Duruş ${r.downtime||0} dk</div>${canEdit()?`<div class="inline"><button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button><button class="btn red" onclick="delDaily('${r.id}')">Sil</button></div>`:''}</div>`}).join('')||'<div class="small">Henüz günlük kayıt yok.</div>'}
 function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>`<div><b>${x}</b><label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${state.calendar[i]?.h||0}" ${canEdit()?'':'disabled'}></label><label class="small">Mola<input data-day="${i}" data-k="b" type="number" step="0.25" value="${state.calendar[i]?.b||0}" ${canEdit()?'':'disabled'}></label></div>`).join('')}
 function fillSelects(){let active=state.orders.filter(o=>o.stage!=='done').sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));let activeOpts='<option value="">Seç</option>'+active.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=activeOpts;if([...el.options].some(x=>x.value===old))el.value=old});let cmm=$('cmmOrder');if(cmm){let old=cmm.value;cmm.innerHTML='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');if([...cmm.options].some(x=>x.value===old))cmm.value=old}fillDailyOps();syncOpAuto()}
-function fillDailyOps(){let el=$('dailyOp');if(!el)return;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''))}
+function fillDailyOps(){let el=$('dailyOp');if(!el)return;let old=el.value;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''));if([...el.options].some(x=>x.value===old))el.value=old}
 function opNameKey(v){return String(v||'').trim().replace(/\s+/g,'').toLocaleUpperCase('tr-TR')}
 function previousSavedOp(o,opName=''){
   if(!o)return null;
@@ -2850,6 +2850,10 @@ function autoDailyStartTime(){
   const f=$('dailyForm');
   if(!f || f.recId?.value)return;
 
+  // Kullanıcı bir saat girdiyse artık otomatik sistem o değere dokunmaz.
+  // 08:00 / önceki çıkış saati yalnızca boş giriş alanına ilk öneri olarak yazılır.
+  if(f.startTime?.value)return;
+
   const o=order(f.orderId?.value);
   const tarih=f.date?.value;
   if(!o || !tarih || !f.startTime)return;
@@ -2866,12 +2870,9 @@ function autoDailyStartTime(){
   if(!sameMachineDay.length){
     f.startTime.value='08:00';
   }else{
-    // state.daily kayıt sırası, gün içindeki en son kaydedilen oturumu temsil eder.
     const last=sameMachineDay[sameMachineDay.length-1];
-    if(!last.endTime){
-      f.startTime.value='';
-      return;
-    }
+    // Son oturum kapanmadıysa saat uydurma; kullanıcının girmesini bekle.
+    if(!last.endTime)return;
     f.startTime.value=last.endTime;
   }
 
@@ -2879,7 +2880,7 @@ function autoDailyStartTime(){
 }
 
 $('dailyOrder').addEventListener('change',()=>{
-  fillDailyOps();
+  // fillDailyOps zaten mevcut onchange ile çalışıyor; burada ikinci kez çağırıp OP'yi sıfırlama.
   setTimeout(()=>{autoDailyStartTime();hesaplaVerim();renderSmartTimeAnalysis()},50);
 });
 $('dailyOp').addEventListener('change',()=>{
