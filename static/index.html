@@ -1281,7 +1281,7 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
 </section>
 
 <section id="calendar" class="page">
-  <div class="card"><h2>Çalışma Takvimi</h2><div class="cal" id="cal"></div><div class="inline editOnly"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div><p class="small">Brüt saatten mola düşülür. Ayar süresi her OP başlangıcında bir kez hesaplanır.</p></div>
+  <div class="card"><h2>Çalışma Takvimi</h2><div class="cal" id="cal"></div><div class="inline editOnly"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div><p class="small">Mesai başlangıcını vardiyaya göre değiştirebilirsin. Bitiş saati başlangıç + brüt saate göre hesaplanır; gece vardiyası ertesi güne taşar. Brüt saatten mola düşülür. Ayar süresi her OP başlangıcında bir kez hesaplanır.</p></div>
 </section>
 
 
@@ -1418,7 +1418,7 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
 </div>
 <script>
 const $=id=>document.getElementById(id), n=v=>Number(v||0), uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let state={orders:[],daily:[],calendar:{0:{h:0,b:0},1:{h:10,b:1},2:{h:10,b:1},3:{h:10,b:1},4:{h:10,b:1},5:{h:10,b:1},6:{h:10,b:1}},accounting:{incomes:[],expenses:[]}};
+let state={orders:[],daily:[],calendar:{0:{h:0,b:0,s:'08:00'},1:{h:10,b:1,s:'08:00'},2:{h:10,b:1,s:'08:00'},3:{h:10,b:1,s:'08:00'},4:{h:10,b:1,s:'08:00'},5:{h:10,b:1,s:'08:00'},6:{h:10,b:1,s:'08:00'}},accounting:{incomes:[],expenses:[]}};
 
 window.__luysGetState=()=>state;
 let me={username:'',role:'viewer',can_edit:false};
@@ -1431,7 +1431,7 @@ function canEdit(){return me.can_edit===true}
 async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"],[data-p="parttimes"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pt=$('parttimes');if(pt&&!canEdit())pt.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none';if(!canEdit()&&document.querySelector('.page.active')?.id==='parttimes'){document.querySelector('[data-p="dash"]')?.click()}}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
-function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++)state.calendar[i]=state.calendar[i]||{h:0,b:0};state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o);if(!o.baselineProductEnd&&(o.ops||[]).some(op=>op.actualStart)){let b=baselineProductEnd(o);if(b)o.baselineProductEnd=b}})}
+function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++){state.calendar[i]=state.calendar[i]||{h:0,b:0,s:'08:00'};if(!/^\d{2}:\d{2}$/.test(String(state.calendar[i].s||'')))state.calendar[i].s='08:00'}state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o);if(!o.baselineProductEnd&&(o.ops||[]).some(op=>op.actualStart)){let b=baselineProductEnd(o);if(b)o.baselineProductEnd=b}})}
 function autoNo(){let d=new Date(),pre='LUK-'+String(d.getFullYear()).slice(-2)+pad(d.getMonth()+1)+'-',used=new Set(state.orders.map(o=>o.orderNo));for(let i=1;i<1000;i++){let x=pre+String(i).padStart(3,'0');if(!used.has(x))return x}return pre+'999'}
 function activeOrdersForMachine(machine){return state.orders.filter(o=>o.machine===machine && o.stage!=='done')}
 function compactQueues(machine){let a=activeOrdersForMachine(machine).sort((x,y)=>n(x.queue)-n(y.queue)||String(x.orderNo||'').localeCompare(String(y.orderNo||'')));a.forEach((o,i)=>o.queue=i+1)}
@@ -1511,16 +1511,35 @@ function syncCompletedOps(){
   return changed;
 }
 function status(o){let op=currentOp(o);if(op?.runState==='running')return 'Üretimde';if(op?.runState==='paused')return 'Durduruldu';if(o.cmm?.status&&o.cmm.status!=='Onay')return 'CMM';return progress(o)>=100?'Üretim tamamlandı':'Planlandı'}
-function cal(d){let c=state.calendar[new Date(d).getDay()]||{h:0,b:0};return {gross:n(c.h),br:n(c.b),net:Math.max(0,n(c.h)-n(c.b))}}
-function windows(day){let c=cal(day);if(c.net<=0)return[];let st=new Date(day+'T08:00'),en=new Date(st.getTime()+c.gross*3600000),bs=new Date(day+'T12:00'),be=new Date(bs.getTime()+c.br*3600000);if(c.br<=0)return[[st,en]];let a=[];if(bs>st)a.push([st,new Date(Math.min(bs,en))]);if(be<en)a.push([be,en]);return a}
-function nextMoment(v){let d=new Date(v);for(let g=0;g<60;g++){let day=ymd(d),ws=windows(day);for(let [a,b] of ws){if(d<=a)return new Date(a);if(d>=a&&d<b)return d}d.setDate(d.getDate()+1);d.setHours(8,0,0,0)}return d}
+function cal(d){let c=state.calendar[new Date(d).getDay()]||{h:0,b:0,s:'08:00'};let start=/^\d{2}:\d{2}$/.test(String(c.s||''))?String(c.s):'08:00';return {gross:n(c.h),br:n(c.b),net:Math.max(0,n(c.h)-n(c.b)),start}}
+function windows(day){
+  let c=cal(day);if(c.net<=0||c.gross<=0)return[];
+  let st=new Date(day+'T'+c.start),en=new Date(st.getTime()+c.gross*3600000);
+  // Eski düzende mola 08:00 başlangıcından 4 saat sonra (12:00) idi.
+  // Vardiya başlangıcı değişince mola da vardiyayla birlikte kayar.
+  let bs=new Date(st.getTime()+Math.min(4,c.gross)*3600000),be=new Date(bs.getTime()+c.br*3600000);
+  if(c.br<=0||bs>=en)return[[st,en]];
+  let a=[];if(bs>st)a.push([st,new Date(Math.min(bs,en))]);if(be<en)a.push([be,en]);return a
+}
+function windowsAround(d){
+  let cur=new Date(d),prev=new Date(cur);prev.setDate(prev.getDate()-1);
+  return [...windows(ymd(prev)),...windows(ymd(cur))].sort((x,y)=>x[0]-y[0]);
+}
+function nextMoment(v){
+  let d=new Date(v);
+  for(let g=0;g<90;g++){
+    let ws=windowsAround(d);
+    for(let [a,b] of ws){if(d<=a)return new Date(a);if(d>=a&&d<b)return d}
+    d.setDate(d.getDate()+1);d.setHours(0,0,0,0);
+  }
+  return d
+}
 function nextWorkdayStartAfter(dateStr){
-  let d=new Date(String(dateStr).slice(0,10)+'T08:00');
+  let d=new Date(String(dateStr).slice(0,10)+'T00:00');
   d.setDate(d.getDate()+1);
-  d.setHours(8,0,0,0);
   return nextMoment(d);
 }
-function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<2000&&left>0;g++){d=nextMoment(d);let w=windows(ymd(d)).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(8,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
+function addWork(v,mins){let d=nextMoment(v),left=Math.max(0,Math.round(mins));for(let g=0;g<3000&&left>0;g++){d=nextMoment(d);let w=windowsAround(d).find(([a,b])=>d>=a&&d<b);if(!w){d.setDate(d.getDate()+1);d.setHours(0,0,0,0);continue}let av=Math.floor((w[1]-d)/60000);if(left<=av){d=new Date(d.getTime()+left*60000);left=0}else{left-=av;d=new Date(w[1].getTime()+60000)}}return d}
 function opIsComplete(o,op){
   // Tamamlanmış/arsivlenmiş iş emri tekrar açılmaz.
   if(o?.stage==='done'||o?.completedAt)return true;
@@ -1978,7 +1997,7 @@ function shiftWorkingMoment(base,deltaMinutes){
   const dir=deltaMinutes>=0?1:-1;
 
   for(let guard=0;guard<10000 && left>0;guard++){
-    const ws=windows(ymd(cur));
+    const ws=windowsAround(cur);
 
     if(dir>0){
       let used=false;
@@ -2494,7 +2513,23 @@ function renderOps(){
   $('opList').innerHTML=`<div class="activeListTitle">AKTİF OPERASYONLAR • Tezgâh ve imalat sırasına göre</div>${activeHtml}<div class="historyWrap"><div class="historyTitle"><b>📦 BİTEN OPERASYONLAR / GEÇMİŞ</b><span>Tarihe tıklayarak aç</span></div>${histHtml}</div>`;
 }
 function renderDaily(){$('dailyList').innerHTML=[...state.daily].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{let o=order(r.orderId),op=opBy(o,r.opId);return `<div class="row"><b>${r.date} • ${esc(o?.part||'-')} • ${esc(op?.name||'-')}</b><div class="small">Sağlam ${r.good} • Hurda ${r.scrap} • Toplam işlenen ${n(r.good)+n(r.scrap)} • Brüt ${r.hours} saat • Duruş ${r.downtime||0} dk</div>${canEdit()?`<div class="inline"><button class="btn alt" onclick="editDaily('${r.id}')">Düzenle</button><button class="btn red" onclick="delDaily('${r.id}')">Sil</button></div>`:''}</div>`}).join('')||'<div class="small">Henüz günlük kayıt yok.</div>'}
-function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>`<div><b>${x}</b><label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${state.calendar[i]?.h||0}" ${canEdit()?'':'disabled'}></label><label class="small">Mola<input data-day="${i}" data-k="b" type="number" step="0.25" value="${state.calendar[i]?.b||0}" ${canEdit()?'':'disabled'}></label></div>`).join('')}
+function calendarEndText(dayIndex){
+  const c=state.calendar[dayIndex]||{h:0,b:0,s:'08:00'};
+  const start=/^\d{2}:\d{2}$/.test(String(c.s||''))?String(c.s):'08:00';
+  const [hh,mm]=start.split(':').map(Number),gross=n(c.h);
+  if(gross<=0)return 'Çalışma yok';
+  const total=hh*60+mm+Math.round(gross*60),days=Math.floor(total/1440),mins=((total%1440)+1440)%1440;
+  return 'Bitiş: '+pad(Math.floor(mins/60))+':'+pad(mins%60)+(days>0?' (+'+days+' gün)':'');
+}
+window.refreshCalEnd=el=>{
+  const i=n(el?.dataset?.day),box=$('calEnd-'+i);if(!box)return;
+  const card=el.closest('div'),start=card?.querySelector('input[data-k="s"]')?.value||'08:00',gross=n(card?.querySelector('input[data-k="h"]')?.value);
+  const [hh,mm]=start.split(':').map(Number);
+  if(gross<=0||Number.isNaN(hh)||Number.isNaN(mm)){box.textContent='Çalışma yok';return}
+  const total=hh*60+mm+Math.round(gross*60),days=Math.floor(total/1440),mins=((total%1440)+1440)%1440;
+  box.textContent='Bitiş: '+pad(Math.floor(mins/60))+':'+pad(mins%60)+(days>0?' (+'+days+' gün)':'');
+};
+function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>`<div><b>${x}</b><label class="small">Mesai başlangıç<input data-day="${i}" data-k="s" type="time" value="${state.calendar[i]?.s||'08:00'}" oninput="refreshCalEnd(this)" ${canEdit()?'':'disabled'}></label><label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${state.calendar[i]?.h||0}" oninput="refreshCalEnd(this)" ${canEdit()?'':'disabled'}></label><label class="small">Mola<input data-day="${i}" data-k="b" type="number" step="0.25" value="${state.calendar[i]?.b||0}" ${canEdit()?'':'disabled'}></label><div class="small" id="calEnd-${i}" style="margin-top:7px;font-weight:800">${calendarEndText(i)}</div></div>`).join('')}
 function fillSelects(){let active=state.orders.filter(o=>o.stage!=='done').sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));let activeOpts='<option value="">Seç</option>'+active.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=activeOpts;if([...el.options].some(x=>x.value===old))el.value=old});let cmm=$('cmmOrder');if(cmm){let old=cmm.value;cmm.innerHTML='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');if([...cmm.options].some(x=>x.value===old))cmm.value=old}fillDailyOps();syncOpAuto()}
 function fillDailyOps(){let el=$('dailyOp');if(!el)return;let old=el.value;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''));if([...el.options].some(x=>x.value===old))el.value=old}
 function opNameKey(v){return String(v||'').trim().replace(/\s+/g,'').toLocaleUpperCase('tr-TR')}
@@ -2741,7 +2776,7 @@ $('dailyForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=
 window.editDaily=id=>{if(!canEdit())return;let r=state.daily.find(x=>x.id===id),f=$('dailyForm');for(let k of ['recId','orderId','opId','date','hours','good','scrap','downtime','reason'])if(f.elements[k])f.elements[k].value=r[k]??'';fillDailyOps();f.opId.value=r.opId;$('dailyTitle').textContent='Günlük Kaydı Düzenle';document.querySelector('[data-p="daily"]').click();window.scrollTo(0,0)}
 window.delDaily=async id=>{if(!canEdit())return;if(confirm('Günlük kayıt silinsin mi?')){let old=state.daily.find(r=>r.id===id),oid=old?.orderId||'';state.daily=state.daily.filter(r=>r.id!==id);syncCompletedOps();let o=order(oid);if(o)refreshForecastSnapshot(o);await save()}}
 $('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;o.cmm={firm:f.get('firm'),sent:f.get('sent'),sentDate:f.get('sentDate'),expected:f.get('expected'),returned:f.get('returned'),status:f.get('status'),reportNo:f.get('reportNo')};await save()}
-$('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>state.calendar[i.dataset.day][i.dataset.k]=n(i.value));await save()}
+$('saveCal').onclick=async()=>{if(!canEdit())return;document.querySelectorAll('#cal input').forEach(i=>{const c=state.calendar[i.dataset.day]||(state.calendar[i.dataset.day]={h:0,b:0,s:'08:00'});c[i.dataset.k]=i.dataset.k==='s'?(i.value||'08:00'):n(i.value)});schedule();await save()}
 Promise.all([loadMe(),load()]).then(async()=>{if(canEdit()){if(repairLiveReferences())await save();newOrderForm()}if($('dailyForm')){$('dailyForm').date.value=ymd(new Date());$('dailyForm').hours.value=0}}).catch(e=>{$('sync').textContent='Bağlantı hatası';console.error(e)});
 setInterval(()=>load().catch(()=>{}),15000);
 function saatFarki(startTime,endTime){
@@ -2868,7 +2903,7 @@ function autoDailyStartTime(){
   });
 
   if(!sameMachineDay.length){
-    f.startTime.value='08:00';
+    f.startTime.value=cal(tarih).start||'08:00';
   }else{
     const last=sameMachineDay[sameMachineDay.length-1];
     // Son oturum kapanmadıysa saat uydurma; kullanıcının girmesini bekle.
