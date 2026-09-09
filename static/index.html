@@ -3003,6 +3003,10 @@ function dailyRecordMetrics(r){
   if(verim===undefined)verim=hedef>0?n(r.good)/hedef*100:0;
   return {o,op,net,hedef,verim};
 }
+// Geçmiş günlük verilerde kullanıcının seçtiği hafta/gün render sonrası kaybolmasın.
+let dailyHistorySelectedDay={};
+let dailyHistoryOpenWeek='';
+
 function renderDaily(){
   const records=[...state.daily].sort((a,b)=>b.date.localeCompare(a.date));
   if(!records.length){$('dailyList').innerHTML='<div class="small">Henüz günlük kayıt yok.</div>';return}
@@ -3035,7 +3039,12 @@ function renderDaily(){
     const total=arr.reduce((a,r)=>a+n(r.good),0);
     const isCurrent=wk===currentWeek;
     const dates=[...new Set(arr.map(r=>r.date))].sort();
-    const selected=(isCurrent && dates.includes(today))?today:dates[dates.length-1];
+    const remembered=dailyHistorySelectedDay[wk];
+    const selected=(remembered && dates.includes(remembered))
+      ? remembered
+      : ((isCurrent && dates.includes(today))?today:dates[dates.length-1]);
+    dailyHistorySelectedDay[wk]=selected;
+    const isOpen=dailyHistoryOpenWeek ? wk===dailyHistoryOpenWeek : isCurrent;
     const dayButtons=dates.map(d=>{
       const dayTotal=arr.filter(r=>r.date===d).reduce((a,r)=>a+n(r.good),0);
       return `<button type="button" class="dailyDayBtn ${d===selected?'active':''}" data-week="${wk}" data-day="${d}">
@@ -3069,7 +3078,7 @@ function renderDaily(){
       </div>`;
     }).join('');
 
-    return `<div class="dailyWeek ${isCurrent?'open':''}" data-week-box="${wk}">
+    return `<div class="dailyWeek ${isOpen?'open':''}" data-week-box="${wk}">
       <div class="dailyWeekHead" data-week-toggle="${wk}">
         <div class="left"><div class="weekIcon">📅</div><div><b>${dailyDateLabel(wk)} – ${dailyDateLabel(weekEnd)}</b>${isCurrent?'<br><small>Bu Hafta</small>':''}</div></div>
         <div class="weekTotal">Toplam: ${total} adet ${isCurrent?'⌃':'⌄'}</div>
@@ -3088,12 +3097,18 @@ document.addEventListener('click',e=>{
   const wh=e.target.closest('[data-week-toggle]');
   if(wh){
     const wk=wh.dataset.weekToggle,box=document.querySelector(`[data-week-box="${wk}"]`);
-    if(box)box.classList.toggle('open');
+    if(box){
+      const opening=!box.classList.contains('open');
+      box.classList.toggle('open',opening);
+      dailyHistoryOpenWeek=opening?wk:'';
+    }
     return;
   }
   const db=e.target.closest('.dailyDayBtn');
   if(db){
     const wk=db.dataset.week,day=db.dataset.day;
+    dailyHistorySelectedDay[wk]=day;
+    dailyHistoryOpenWeek=wk;
     document.querySelectorAll(`.dailyDayBtn[data-week="${wk}"]`).forEach(x=>x.classList.toggle('active',x===db));
     document.querySelectorAll(`[data-week-panel="${wk}"]`).forEach(x=>x.style.display=x.dataset.dayPanel===day?'':'none');
   }
