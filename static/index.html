@@ -1281,7 +1281,17 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
 </section>
 
 <section id="calendar" class="page">
-  <div class="card"><h2>Çalışma Takvimi</h2><div class="cal" id="cal"></div><div class="inline editOnly"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div><p class="small">Mesai başlangıcını vardiyaya göre değiştirebilirsin. Bitiş saati başlangıç + brüt saate göre hesaplanır; gece vardiyası ertesi güne taşar. Brüt saatten mola düşülür. Ayar süresi her OP başlangıcında bir kez hesaplanır.</p></div>
+  <div class="card">
+    <h2>Çalışma Takvimi</h2>
+    <div id="breakConfig" style="margin:0 0 14px;padding:12px;border:1px solid #dfe7ee;border-radius:12px">
+      <b>Ortak Molalar • Tüm çalışma günleri</b>
+      <div class="small" style="margin-top:4px">Saat ve süreyi bir kez ayarla; bütün günlerde aynı mola planı kullanılır.</div>
+      <div id="breakRows" class="inline" style="margin-top:8px"></div>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="inline editOnly"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div>
+    <p class="small">Mesai başlangıcı ve brüt saat gün bazında değişebilir. Molalar yukarıdaki ortak saatlere göre otomatik düşülür. Vardiya aralığına denk gelmeyen mola hesaba katılmaz. Ayar süresi OP ilk kez başlarken yalnızca bir kez eklenir; durdurup yeniden başlatmada tekrar eklenmez.</p>
+  </div>
 </section>
 
 
@@ -1431,7 +1441,17 @@ function canEdit(){return me.can_edit===true}
 async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"],[data-p="parttimes"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pt=$('parttimes');if(pt&&!canEdit())pt.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none';if(!canEdit()&&document.querySelector('.page.active')?.id==='parttimes'){document.querySelector('[data-p="dash"]')?.click()}}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
-function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++){state.calendar[i]=state.calendar[i]||{h:0,b:0,s:'08:00'};if(!/^\d{2}:\d{2}$/.test(String(state.calendar[i].s||'')))state.calendar[i].s='08:00'}state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o);if(!o.baselineProductEnd&&(o.ops||[]).some(op=>op.actualStart)){let b=baselineProductEnd(o);if(b)o.baselineProductEnd=b}})}
+function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};
+state.breaks=Array.isArray(state.breaks)&&state.breaks.length?state.breaks:[
+  {time:'09:00',min:15},
+  {time:'12:00',min:30},
+  {time:'15:00',min:15}
+];
+state.breaks=state.breaks.slice(0,3).map((b,i)=>({
+  time:/^\d{2}:\d{2}$/.test(String(b?.time||''))?String(b.time):['09:00','12:00','15:00'][i],
+  min:Math.max(0,n(b?.min))
+}));
+state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++){state.calendar[i]=state.calendar[i]||{h:0,b:0,s:'08:00'};if(!/^\d{2}:\d{2}$/.test(String(state.calendar[i].s||'')))state.calendar[i].s='08:00'}state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o);if(!o.baselineProductEnd&&(o.ops||[]).some(op=>op.actualStart)){let b=baselineProductEnd(o);if(b)o.baselineProductEnd=b}})}
 function autoNo(){let d=new Date(),pre='LUK-'+String(d.getFullYear()).slice(-2)+pad(d.getMonth()+1)+'-',used=new Set(state.orders.map(o=>o.orderNo));for(let i=1;i<1000;i++){let x=pre+String(i).padStart(3,'0');if(!used.has(x))return x}return pre+'999'}
 function activeOrdersForMachine(machine){return state.orders.filter(o=>o.machine===machine && o.stage!=='done')}
 function compactQueues(machine){let a=activeOrdersForMachine(machine).sort((x,y)=>n(x.queue)-n(y.queue)||String(x.orderNo||'').localeCompare(String(y.orderNo||'')));a.forEach((o,i)=>o.queue=i+1)}
@@ -1511,15 +1531,75 @@ function syncCompletedOps(){
   return changed;
 }
 function status(o){let op=currentOp(o);if(op?.runState==='running')return 'Üretimde';if(op?.runState==='paused')return 'Durduruldu';if(o.cmm?.status&&o.cmm.status!=='Onay')return 'CMM';return progress(o)>=100?'Üretim tamamlandı':'Planlandı'}
-function cal(d){let c=state.calendar[new Date(d).getDay()]||{h:0,b:0,s:'08:00'};let start=/^\d{2}:\d{2}$/.test(String(c.s||''))?String(c.s):'08:00';return {gross:n(c.h),br:n(c.b),net:Math.max(0,n(c.h)-n(c.b)),start}}
+function commonBreaks(){
+  const defs=[{time:'09:00',min:15},{time:'12:00',min:30},{time:'15:00',min:15}];
+  const src=Array.isArray(state.breaks)&&state.breaks.length?state.breaks:defs;
+  return defs.map((d,i)=>{
+    const b=src[i]||d;
+    return {
+      time:/^\d{2}:\d{2}$/.test(String(b.time||''))?String(b.time):d.time,
+      min:Math.max(0,n(b.min))
+    };
+  });
+}
+function shiftRaw(day){
+  const dt=new Date(day+'T00:00');
+  const c=state.calendar[dt.getDay()]||{h:0,s:'08:00'};
+  const start=/^\d{2}:\d{2}$/.test(String(c.s||''))?String(c.s):'08:00';
+  const gross=Math.max(0,n(c.h));
+  const st=new Date(day+'T'+start);
+  const en=new Date(st.getTime()+gross*3600000);
+  return {start,gross,st,en};
+}
+function breakWindowsForShift(day){
+  const sh=shiftRaw(day);
+  if(sh.gross<=0)return[];
+  const out=[];
+  for(const b of commonBreaks()){
+    if(!b.min)continue;
+    // Gece vardiyası ertesi güne taşabileceği için aynı mola saatini
+    // vardiyanın başladığı gün ve ertesi gün için kontrol et.
+    for(let off=0;off<=1;off++){
+      const bd=new Date(day+'T00:00');
+      bd.setDate(bd.getDate()+off);
+      const [hh,mm]=b.time.split(':').map(Number);
+      bd.setHours(hh,mm,0,0);
+      const be=new Date(bd.getTime()+b.min*60000);
+      const a=new Date(Math.max(sh.st.getTime(),bd.getTime()));
+      const z=new Date(Math.min(sh.en.getTime(),be.getTime()));
+      if(z>a)out.push([a,z]);
+    }
+  }
+  out.sort((a,b)=>a[0]-b[0]);
+  // Çakışan molaları tek pencere yap; çift mola düşülmesin.
+  const merged=[];
+  for(const w of out){
+    const last=merged[merged.length-1];
+    if(last && w[0]<=last[1]){
+      if(w[1]>last[1])last[1]=w[1];
+    }else merged.push([new Date(w[0]),new Date(w[1])]);
+  }
+  return merged;
+}
+function cal(d){
+  const day=typeof d==='string'?String(d).slice(0,10):ymd(new Date(d));
+  const sh=shiftRaw(day);
+  const breakMin=breakWindowsForShift(day).reduce((s,w)=>s+(w[1]-w[0])/60000,0);
+  return {gross:sh.gross,br:breakMin/60,net:Math.max(0,sh.gross-breakMin/60),start:sh.start};
+}
 function windows(day){
-  let c=cal(day);if(c.net<=0||c.gross<=0)return[];
-  let st=new Date(day+'T'+c.start),en=new Date(st.getTime()+c.gross*3600000);
-  // Eski düzende mola 08:00 başlangıcından 4 saat sonra (12:00) idi.
-  // Vardiya başlangıcı değişince mola da vardiyayla birlikte kayar.
-  let bs=new Date(st.getTime()+Math.min(4,c.gross)*3600000),be=new Date(bs.getTime()+c.br*3600000);
-  if(c.br<=0||bs>=en)return[[st,en]];
-  let a=[];if(bs>st)a.push([st,new Date(Math.min(bs,en))]);if(be<en)a.push([be,en]);return a
+  const sh=shiftRaw(day);
+  if(sh.gross<=0)return[];
+  const br=breakWindowsForShift(day);
+  if(!br.length)return[[sh.st,sh.en]];
+  const out=[];
+  let cursor=new Date(sh.st);
+  for(const [bs,be] of br){
+    if(bs>cursor)out.push([new Date(cursor),new Date(bs)]);
+    if(be>cursor)cursor=new Date(be);
+  }
+  if(cursor<sh.en)out.push([cursor,sh.en]);
+  return out;
 }
 function windowsAround(d){
   let cur=new Date(d),prev=new Date(cur);prev.setDate(prev.getDate()-1);
@@ -2530,8 +2610,9 @@ window.refreshCalEnd=el=>{
   box.textContent='Bitiş: '+pad(Math.floor(mins/60))+':'+pad(mins%60)+(days>0?' (+'+days+' gün)':'');
 };
 // Takvim taslağı sunucudan ayrı tutulur. Böylece 15 sn'lik otomatik yenileme
-// kullanıcı daha KAYDET demeden yazdığı saatleri 08:00'a geri çeviremez.
+// kullanıcı KAYDET demeden yazdığı saatleri geri çeviremez.
 window.calendarDraft=window.calendarDraft||{};
+window.calendarBreakDraft=window.calendarBreakDraft||{};
 window.calendarDraftInput=el=>{
   if(!el)return;
   const day=String(el.dataset.day??''),key=el.dataset.k;
@@ -2540,17 +2621,45 @@ window.calendarDraftInput=el=>{
   d[key]=el.value;
   refreshCalEnd(el);
 };
+window.calendarBreakDraftInput=el=>{
+  if(!el)return;
+  const idx=String(el.dataset.break??''),key=el.dataset.k;
+  if(idx===''||!key)return;
+  const d=window.calendarBreakDraft[idx]||(window.calendarBreakDraft[idx]={});
+  d[key]=el.value;
+};
 function calendarDraftValue(i,key,fallback){
   const d=window.calendarDraft?.[String(i)];
   return d && Object.prototype.hasOwnProperty.call(d,key) ? d[key] : fallback;
 }
-function renderCal(){$('cal').innerHTML=dayNames.map((x,i)=>{
-  const c=state.calendar[i]||{h:0,b:0,s:'08:00'};
-  const sv=calendarDraftValue(i,'s',c.s||'08:00');
-  const hv=calendarDraftValue(i,'h',c.h??0);
-  const bv=calendarDraftValue(i,'b',c.b??0);
-  return `<div><b>${x}</b><label class="small">Mesai başlangıç<input data-day="${i}" data-k="s" type="time" value="${sv}" oninput="calendarDraftInput(this)" ${canEdit()?'':'disabled'}></label><label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${hv}" oninput="calendarDraftInput(this)" ${canEdit()?'':'disabled'}></label><label class="small">Mola<input data-day="${i}" data-k="b" type="number" step="0.25" value="${bv}" oninput="calendarDraftInput(this)" ${canEdit()?'':'disabled'}></label><div class="small" id="calEnd-${i}" style="margin-top:7px;font-weight:800"></div></div>`;
-}).join('');
+function breakDraftValue(i,key,fallback){
+  const d=window.calendarBreakDraft?.[String(i)];
+  return d && Object.prototype.hasOwnProperty.call(d,key) ? d[key] : fallback;
+}
+function renderCal(){
+  const breaks=commonBreaks();
+  const br=$('breakRows');
+  if(br){
+    br.innerHTML=breaks.map((b,i)=>{
+      const tv=breakDraftValue(i,'time',b.time);
+      const mv=breakDraftValue(i,'min',b.min);
+      return `<div style="min-width:150px">
+        <b class="small">Mola ${i+1}</b>
+        <label class="small">Başlangıç<input data-break="${i}" data-k="time" type="time" value="${tv}" oninput="calendarBreakDraftInput(this)" ${canEdit()?'':'disabled'}></label>
+        <label class="small">Süre (dk)<input data-break="${i}" data-k="min" type="number" min="0" step="5" value="${mv}" oninput="calendarBreakDraftInput(this)" ${canEdit()?'':'disabled'}></label>
+      </div>`;
+    }).join('');
+  }
+  $('cal').innerHTML=dayNames.map((x,i)=>{
+    const c=state.calendar[i]||{h:0,s:'08:00'};
+    const sv=calendarDraftValue(i,'s',c.s||'08:00');
+    const hv=calendarDraftValue(i,'h',c.h??0);
+    return `<div><b>${x}</b>
+      <label class="small">Mesai başlangıç<input data-day="${i}" data-k="s" type="time" value="${sv}" oninput="calendarDraftInput(this)" ${canEdit()?'':'disabled'}></label>
+      <label class="small">Brüt saat<input data-day="${i}" data-k="h" type="number" step="0.5" value="${hv}" oninput="calendarDraftInput(this)" ${canEdit()?'':'disabled'}></label>
+      <div class="small" id="calEnd-${i}" style="margin-top:7px;font-weight:800"></div>
+    </div>`;
+  }).join('');
   document.querySelectorAll('#cal input[data-day]').forEach(refreshCalEnd);
 }
 function fillSelects(){let active=state.orders.filter(o=>o.stage!=='done').sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));let activeOpts='<option value="">Seç</option>'+active.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=activeOpts;if([...el.options].some(x=>x.value===old))el.value=old});let cmm=$('cmmOrder');if(cmm){let old=cmm.value;cmm.innerHTML='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');if([...cmm.options].some(x=>x.value===old))cmm.value=old}fillDailyOps();syncOpAuto()}
@@ -2801,13 +2910,28 @@ window.delDaily=async id=>{if(!canEdit())return;if(confirm('Günlük kayıt sili
 $('cmmForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;o.cmm={firm:f.get('firm'),sent:f.get('sent'),sentDate:f.get('sentDate'),expected:f.get('expected'),returned:f.get('returned'),status:f.get('status'),reportNo:f.get('reportNo')};await save()}
 $('saveCal').onclick=async()=>{
   if(!canEdit())return;
-  document.querySelectorAll('#cal input').forEach(i=>{
+  document.querySelectorAll('#cal input[data-day]').forEach(i=>{
     const c=state.calendar[i.dataset.day]||(state.calendar[i.dataset.day]={h:0,b:0,s:'08:00'});
     c[i.dataset.k]=i.dataset.k==='s'?(i.value||'08:00'):n(i.value);
+    // Eski günlük mola alanı artık kullanılmıyor; ortak mola planı geçerli.
+    c.b=0;
   });
+  const rows=[...document.querySelectorAll('#breakRows [data-break]')];
+  const tmp=[0,1,2].map(i=>{
+    const t=rows.find(x=>String(x.dataset.break)===String(i)&&x.dataset.k==='time');
+    const mn=rows.find(x=>String(x.dataset.break)===String(i)&&x.dataset.k==='min');
+    return {
+      time:t?.value||['09:00','12:00','15:00'][i],
+      min:Math.max(0,n(mn?.value))
+    };
+  });
+  state.breaks=tmp;
   schedule();
   const ok=await save();
-  if(ok)window.calendarDraft={};
+  if(ok){
+    window.calendarDraft={};
+    window.calendarBreakDraft={};
+  }
 }
 // Kullanıcı yetkisi önce alınır, sonra ekran çizilir. Böylece ilk açılışta
 // yönetici hesabı kısa süreliğine viewer sanılıp takvim alanları kilitlenmez.
