@@ -1136,6 +1136,22 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
   line-height:1.35!important;
 }
 </style>
+
+<style id="luys-breaks-mobile-fix">
+#breakRows{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;align-items:end!important}
+#breakRows>div{min-width:0!important} #breakRows label{display:block!important;margin-top:6px!important}
+#breakRows input{width:100%!important;box-sizing:border-box!important}
+@media(max-width:700px){
+#breakRows{grid-template-columns:1fr!important;gap:0!important}
+#breakRows>div{display:grid!important;grid-template-columns:82px minmax(0,1fr) 82px!important;gap:8px!important;align-items:end!important;padding:9px 0!important;border-bottom:1px solid #dfe7ee!important}
+#breakRows>div:last-child{border-bottom:0!important}
+#breakRows>div>b{grid-column:1!important;align-self:center!important;margin:0!important}
+#breakRows>div>label{margin:0!important;min-width:0!important}
+#breakRows>div>label:first-of-type{grid-column:2!important} #breakRows>div>label:last-of-type{grid-column:3!important}
+#breakRows label span{display:block!important;font-size:10px!important;margin-bottom:3px!important}
+#breakRows input{min-width:0!important;height:42px!important;padding:6px 8px!important;font-size:15px!important}}
+</style>
+
 </head>
 <body>
 <header>
@@ -1290,7 +1306,7 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
     </div>
     <div class="cal" id="cal"></div>
     <div class="inline editOnly"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div>
-    <p class="small">Mesai başlangıcı ve brüt saat gün bazında değişebilir. Molalar yukarıdaki ortak saatlere göre otomatik düşülür. Vardiya aralığına denk gelmeyen mola hesaba katılmaz. Ayar süresi OP ilk kez başlarken yalnızca bir kez eklenir; durdurup yeniden başlatmada tekrar eklenmez.</p>
+    <p class="small">Mesai başlangıcı ve brüt saat gün bazında değişebilir. Molalar ve ek kayıplar yukarıdaki ortak saatlere göre otomatik düşülür. Vardiya aralığına denk gelmeyen pencere hesaba katılmaz. Ayar süresi OP ilk kez başlarken yalnızca bir kez eklenir; durdurup yeniden başlatmada tekrar eklenmez.</p>
   </div>
 </section>
 
@@ -1442,15 +1458,20 @@ async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
 function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};
-state.breaks=Array.isArray(state.breaks)&&state.breaks.length?state.breaks:[
-  {time:'09:00',min:15},
-  {time:'12:00',min:30},
-  {time:'15:00',min:15}
+const defaultBreaks=[
+  {time:'09:00',min:15,label:'Mola 1'},
+  {time:'11:00',min:15,label:'Ek Kayıp 1'},
+  {time:'12:00',min:30,label:'Mola 2'},
+  {time:'15:00',min:15,label:'Mola 3'},
+  {time:'16:00',min:15,label:'Ek Kayıp 2'}
 ];
-state.breaks=state.breaks.slice(0,3).map((b,i)=>({
-  time:/^\d{2}:\d{2}$/.test(String(b?.time||''))?String(b.time):['09:00','12:00','15:00'][i],
-  min:Math.max(0,n(b?.min))
-}));
+if(!Array.isArray(state.breaks))state.breaks=[];
+state.breaks=defaultBreaks.map((d,i)=>{
+  let b;
+  if(state.breaks.length===3)b=(i===0?state.breaks[0]:i===2?state.breaks[1]:i===3?state.breaks[2]:null);
+  else b=state.breaks[i];
+  return {time:/^\d{2}:\d{2}$/.test(String(b?.time||''))?String(b.time):d.time,min:Math.max(0,b?.min!==undefined?n(b.min):d.min),label:d.label};
+});
 state.accounting=state.accounting||{};state.accounting.incomes=state.accounting.incomes||[];state.accounting.expenses=state.accounting.expenses||[];state.accounting.jobCosts=state.accounting.jobCosts||[];for(let i=0;i<7;i++){state.calendar[i]=state.calendar[i]||{h:0,b:0,s:'08:00'};if(!/^\d{2}:\d{2}$/.test(String(state.calendar[i].s||'')))state.calendar[i].s='08:00'}state.orders.forEach(o=>{o.ops=o.ops||[];o.stockStatus=o.stockStatus||'Bekleniyor';o.stockQty=n(o.stockQty);syncDone(o);if(!o.baselineProductEnd&&(o.ops||[]).some(op=>op.actualStart)){let b=baselineProductEnd(o);if(b)o.baselineProductEnd=b}})}
 function autoNo(){let d=new Date(),pre='LUK-'+String(d.getFullYear()).slice(-2)+pad(d.getMonth()+1)+'-',used=new Set(state.orders.map(o=>o.orderNo));for(let i=1;i<1000;i++){let x=pre+String(i).padStart(3,'0');if(!used.has(x))return x}return pre+'999'}
 function activeOrdersForMachine(machine){return state.orders.filter(o=>o.machine===machine && o.stage!=='done')}
@@ -1532,15 +1553,15 @@ function syncCompletedOps(){
 }
 function status(o){let op=currentOp(o);if(op?.runState==='running')return 'Üretimde';if(op?.runState==='paused')return 'Durduruldu';if(o.cmm?.status&&o.cmm.status!=='Onay')return 'CMM';return progress(o)>=100?'Üretim tamamlandı':'Planlandı'}
 function commonBreaks(){
-  const defs=[{time:'09:00',min:15},{time:'12:00',min:30},{time:'15:00',min:15}];
-  const src=Array.isArray(state.breaks)&&state.breaks.length?state.breaks:defs;
-  return defs.map((d,i)=>{
-    const b=src[i]||d;
-    return {
-      time:/^\d{2}:\d{2}$/.test(String(b.time||''))?String(b.time):d.time,
-      min:Math.max(0,n(b.min))
-    };
-  });
+  const defs=[
+    {time:'09:00',min:15,label:'Mola 1'},
+    {time:'11:00',min:15,label:'Ek Kayıp 1'},
+    {time:'12:00',min:30,label:'Mola 2'},
+    {time:'15:00',min:15,label:'Mola 3'},
+    {time:'16:00',min:15,label:'Ek Kayıp 2'}
+  ];
+  const src=Array.isArray(state.breaks)?state.breaks:[];
+  return defs.map((d,i)=>{const b=src[i]||d;return {time:/^\d{2}:\d{2}$/.test(String(b.time||''))?String(b.time):d.time,min:Math.max(0,b.min!==undefined?n(b.min):d.min),label:d.label};});
 }
 function shiftRaw(day){
   const dt=new Date(day+'T00:00');
@@ -2644,9 +2665,9 @@ function renderCal(){
       const tv=breakDraftValue(i,'time',b.time);
       const mv=breakDraftValue(i,'min',b.min);
       return `<div style="min-width:150px">
-        <b class="small">Mola ${i+1}</b>
-        <label class="small">Başlangıç<input data-break="${i}" data-k="time" type="time" value="${tv}" oninput="calendarBreakDraftInput(this)" ${canEdit()?'':'disabled'}></label>
-        <label class="small">Süre (dk)<input data-break="${i}" data-k="min" type="number" min="0" step="5" value="${mv}" oninput="calendarBreakDraftInput(this)" ${canEdit()?'':'disabled'}></label>
+        <b class="small">${b.label||('Mola '+(i+1))}</b>
+        <label class="small"><span>Başlangıç</span><input data-break="${i}" data-k="time" type="time" value="${tv}" oninput="calendarBreakDraftInput(this)" ${canEdit()?'':'disabled'}></label>
+        <label class="small"><span>Süre (dk)</span><input data-break="${i}" data-k="min" type="number" min="0" step="5" value="${mv}" oninput="calendarBreakDraftInput(this)" ${canEdit()?'':'disabled'}></label>
       </div>`;
     }).join('');
   }
@@ -2917,13 +2938,11 @@ $('saveCal').onclick=async()=>{
     c.b=0;
   });
   const rows=[...document.querySelectorAll('#breakRows [data-break]')];
-  const tmp=[0,1,2].map(i=>{
+  const defs=commonBreaks();
+  const tmp=[0,1,2,3,4].map(i=>{
     const t=rows.find(x=>String(x.dataset.break)===String(i)&&x.dataset.k==='time');
     const mn=rows.find(x=>String(x.dataset.break)===String(i)&&x.dataset.k==='min');
-    return {
-      time:t?.value||['09:00','12:00','15:00'][i],
-      min:Math.max(0,n(mn?.value))
-    };
+    return {time:t?.value||defs[i].time,min:Math.max(0,n(mn?.value)),label:defs[i].label};
   });
   state.breaks=tmp;
   schedule();
