@@ -1865,14 +1865,6 @@ function automaticPlanningPDF(){
   <footer>Planlanan başlangıç ve bitiş süreleri tahminidir. Gerçek süreler operasyon ve günlük üretim kayıtlarına göre güncellenir.</footer>
   <script>window.onload=()=>{setTimeout(()=>window.print(),250)}<\/script>
   
-<script id="luys-pwa-register">
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/static/sw.js', {scope:'/static/'})
-      .catch(err => console.warn('LÜYS PWA:', err));
-  });
-}
-</script>
 
 </body></html>`;
 
@@ -3690,6 +3682,15 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#3c6d88}
     if(btn) btn.addEventListener('click',toggleTheme);
   });
 })();
+</script>
+
+<script id="luys-pwa-register">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/static/sw.js', {scope:'/static/'})
+      .catch(err => console.warn('LÜYS PWA:', err));
+  });
+}
 </script>
 
 </body>
