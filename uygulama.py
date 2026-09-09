@@ -257,6 +257,14 @@ def home():
     return send_from_directory('static', 'index.html')
 
 
+@app.route('/sw.js')
+def service_worker():
+    response = send_from_directory('static', 'sw.js', mimetype='application/javascript')
+    response.headers['Service-Worker-Allowed'] = '/'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+
 @app.route('/api/me', methods=['GET'])
 def me():
     """Ön yüz, kullanıcının düzenleme yetkisini buradan öğrenebilir."""
