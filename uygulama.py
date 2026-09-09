@@ -244,7 +244,9 @@ def logout():
 
 @app.before_request
 def protect():
-    if request.path.startswith('/login') or request.path.startswith('/health'):
+    if (request.path.startswith('/login') or request.path.startswith('/health') or
+        request.path in ('/sw.js','/manifest.webmanifest','/icon-192.png',
+                         '/icon-512.png','/apple-touch-icon.png')):
         return None
     if not auth_ok():
         if request.path.startswith('/api/'):
