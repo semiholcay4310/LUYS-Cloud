@@ -3687,7 +3687,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#3c6d88}
 <script id="luys-pwa-register">
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/static/sw.js', {scope:'/static/'})
+    navigator.serviceWorker.register('/sw.js', {scope:'/'})
       .catch(err => console.warn('LÜYS PWA:', err));
   });
 }
