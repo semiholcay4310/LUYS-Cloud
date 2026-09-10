@@ -1747,12 +1747,27 @@ function schedule(){
       let startBase;
 
       if(isRunning){
-        // Çalışan OP için gelecekteki plan, son BAŞLAT/YENİDEN BAŞLAT anından yürür.
-        // actualStart yalnızca ilk gerçek başlangıç geçmişidir.
-        const live=op.lastResumeAt||op.sessionStartedAt;
-        startBase=live?new Date(live):now;
-        if(startBase<now)startBase=new Date(now);
-        startBase=nextMoment(startBase);
+        // Çalışan OP'nin kalan adedi, son kaydedilmiş üretim kaydından SONRA kalan adettir.
+        // Bu yüzden planı her ekran yenilemesinde "şimdi"ye taşımak hatalıdır:
+        // günün henüz girilmemiş üretimini yok sayıp bitişi yapay olarak ileri iter.
+        // Referans sırası: son günlük kayıt bitişi -> son başlat/yeniden başlat -> gerçek ilk başlangıç.
+        const recs=(state.daily||[])
+          .filter(r=>r.orderId===o.id&&r.opId===op.id&&r.date)
+          .sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.endTime||'').localeCompare(String(b.endTime||'')));
+        let ref='';
+        if(recs.length){
+          const r=recs[recs.length-1];
+          if(r.endTime){
+            ref=r.date+'T'+r.endTime;
+          }else{
+            // Eski kayıtlarda endTime yoksa o günün tanımlı vardiya bitişini kullan.
+            const sh=shiftRaw(r.date);
+            ref=localISO(sh.en);
+          }
+        }
+        const live=op.lastResumeAt||op.sessionStartedAt||op.actualStart;
+        if(live && (!ref || new Date(live)>new Date(ref)))ref=live;
+        startBase=nextMoment(ref?new Date(ref):now);
       }else{
         // Bekleyen/durdurulan OP geçmiş başlangıç tarihinden yürütülmez.
         // Makinede kendinden önce planlanan iş bittikten sonra veya şimdiden başlar.
@@ -1772,9 +1787,9 @@ function schedule(){
 
       let forecastStart=nextMoment(setupEnd);
 
-      // Eski günlük kayıt tarihleri gelecekteki planı geçmişe çekmez.
-      // Kalan iş her zaman BUGÜN / kuyruk başlangıcından ileri planlanır.
-      if(forecastStart<now)forecastStart=nextMoment(now);
+      // Bekleyen işler geçmişten planlanmaz; çalışan işte ise kalan adet son üretim
+      // kaydından sonraki gerçek referansa aittir. Çalışan OP'yi zorla "şimdi"ye çekme.
+      if(!isRunning && forecastStart<now)forecastStart=nextMoment(now);
 
       op.prodStart=localISO(forecastStart);
 
