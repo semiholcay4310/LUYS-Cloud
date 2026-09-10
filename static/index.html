@@ -1464,26 +1464,9 @@ function localISO(d){return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes())
 function fmt(s){if(!s)return '-';let d=new Date(s);if(String(s).length===10)d=new Date(s+'T12:00');return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+(String(s).includes('T')?' '+pad(d.getHours())+':'+pad(d.getMinutes()):'')}
 function canEdit(){return me.can_edit===true}
 async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"],[data-p="parttimes"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pt=$('parttimes');if(pt&&!canEdit())pt.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none';if(!canEdit()&&document.querySelector('.page.active')?.id==='parttimes'){document.querySelector('[data-p="dash"]')?.click()}}
-function localJson(key,def={}){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(def))}catch(e){return def}}
-function migrateLaborFinance(){
-  state.laborFinance=state.laborFinance||{};
-  state.laborFinance.costs=state.laborFinance.costs||{};
-  state.laborFinance.fx=state.laborFinance.fx||{};
-  let changed=false;
-  const localCosts=localJson('luys_profit_costs_v1',{});
-  const localFx=localJson('luys_profit_month_fx_v1',{});
-  Object.entries(localCosts||{}).forEach(([k,v])=>{
-    if(!state.laborFinance.costs[k] && v && Number(v.usd)>0){state.laborFinance.costs[k]=v;changed=true}
-  });
-  Object.entries(localFx||{}).forEach(([k,v])=>{
-    if(!(Number(state.laborFinance.fx[k])>0) && Number(v)>0){state.laborFinance.fx[k]=Number(v);changed=true}
-  });
-  return changed;
-}
-async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();const migrated=migrateLaborFinance();$('sync').textContent='Bulut bağlı';render();if(migrated&&canEdit())await save()}
+async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
-window.__luysSaveState=save;
-function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.laborFinance=state.laborFinance||{};state.laborFinance.costs=state.laborFinance.costs||{};state.laborFinance.fx=state.laborFinance.fx||{};
+function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};
 const defaultBreaks=[
   {time:'09:00',min:15,label:'Mola 1'},
   {time:'11:00',min:15,label:'Ek Kayıp 1'},
@@ -1747,27 +1730,12 @@ function schedule(){
       let startBase;
 
       if(isRunning){
-        // Çalışan OP'nin kalan adedi, son kaydedilmiş üretim kaydından SONRA kalan adettir.
-        // Bu yüzden planı her ekran yenilemesinde "şimdi"ye taşımak hatalıdır:
-        // günün henüz girilmemiş üretimini yok sayıp bitişi yapay olarak ileri iter.
-        // Referans sırası: son günlük kayıt bitişi -> son başlat/yeniden başlat -> gerçek ilk başlangıç.
-        const recs=(state.daily||[])
-          .filter(r=>r.orderId===o.id&&r.opId===op.id&&r.date)
-          .sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.endTime||'').localeCompare(String(b.endTime||'')));
-        let ref='';
-        if(recs.length){
-          const r=recs[recs.length-1];
-          if(r.endTime){
-            ref=r.date+'T'+r.endTime;
-          }else{
-            // Eski kayıtlarda endTime yoksa o günün tanımlı vardiya bitişini kullan.
-            const sh=shiftRaw(r.date);
-            ref=localISO(sh.en);
-          }
-        }
-        const live=op.lastResumeAt||op.sessionStartedAt||op.actualStart;
-        if(live && (!ref || new Date(live)>new Date(ref)))ref=live;
-        startBase=nextMoment(ref?new Date(ref):now);
+        // Çalışan OP için gelecekteki plan, son BAŞLAT/YENİDEN BAŞLAT anından yürür.
+        // actualStart yalnızca ilk gerçek başlangıç geçmişidir.
+        const live=op.lastResumeAt||op.sessionStartedAt;
+        startBase=live?new Date(live):now;
+        if(startBase<now)startBase=new Date(now);
+        startBase=nextMoment(startBase);
       }else{
         // Bekleyen/durdurulan OP geçmiş başlangıç tarihinden yürütülmez.
         // Makinede kendinden önce planlanan iş bittikten sonra veya şimdiden başlar.
@@ -1787,9 +1755,9 @@ function schedule(){
 
       let forecastStart=nextMoment(setupEnd);
 
-      // Bekleyen işler geçmişten planlanmaz; çalışan işte ise kalan adet son üretim
-      // kaydından sonraki gerçek referansa aittir. Çalışan OP'yi zorla "şimdi"ye çekme.
-      if(!isRunning && forecastStart<now)forecastStart=nextMoment(now);
+      // Eski günlük kayıt tarihleri gelecekteki planı geçmişe çekmez.
+      // Kalan iş her zaman BUGÜN / kuyruk başlangıcından ileri planlanır.
+      if(forecastStart<now)forecastStart=nextMoment(now);
 
       op.prodStart=localISO(forecastStart);
 
@@ -2347,15 +2315,16 @@ function planDeltaInfo(o){
   }
   if(!base)return null;
 
-  // ÖNDE / GERİDE göstergesinin TEK kaynağı imalat performansıdır:
-  // hız + ek çalışma - duruş.
-  // Eski sıra değişimleri, bekleme süreleri ve schedule() tarih kaymaları bu farka girmez.
-  const r=planReasonInfo(o);
-  const netGain=Math.round(n(r.netGain));
+  // Güncel Tahmin = iş emrinin TÜM kalan operasyonlarının güncel planına göre
+  // gerçek komple ürün bitişi. Günlük üretim kaydı / kalan adet / OP süresi
+  // değiştiğinde schedule() planEnd'leri yeniler; currentProductForecast() son kalan
+  // operasyonun bitişini verir. Böylece üstteki OP Bitiş ile bu alan karışmaz.
+  const forecast=currentProductForecast(o)||base;
 
-  // Güncel tahmin de aynı matematiği kullanır.
-  // + performans => referans bitiş erkene, - performans => referans bitiş ileriye gider.
-  const forecast=netGain ? shiftWorkingMoment(base,-netGain) : base;
+  // Önde / geride farkını da artık Başlangıç Planı ile gerçek güncel KOMPLE
+  // ürün tahmini arasında, çalışma dakikası olarak göster.
+  // forecast erkense + (önde), geçse - (geride).
+  const netGain=Math.round(workMinutesBetween(forecast,base));
 
   const abs=Math.abs(netGain);
   const hours=Math.floor(abs/60),minutes=abs%60;
@@ -2420,18 +2389,8 @@ function productUnitTimeSummary(o){
 
 const PART_RATE_PRICE_KEY='luys_profit_costs_v1';
 const PART_RATE_SELECT_KEY='luys_part_rate_selection_v1';
-function partRateJsonLoad(key,def={}){
-  if(key===PART_RATE_PRICE_KEY)return state?.laborFinance?.costs||def;
-  try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(def))}catch(e){return def}
-}
-function partRateJsonSave(key,val){
-  if(key===PART_RATE_PRICE_KEY){
-    state.laborFinance=state.laborFinance||{};state.laborFinance.costs=val||{};
-    if(window.__luysSaveState)window.__luysSaveState();
-    return;
-  }
-  try{localStorage.setItem(key,JSON.stringify(val))}catch(e){}
-}
+function partRateJsonLoad(key,def={}){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(def))}catch(e){return def}}
+function partRateJsonSave(key,val){try{localStorage.setItem(key,JSON.stringify(val))}catch(e){}}
 function partRateOrderCode(o){return String(o?.orderNo||o?.code||o?.id||'')}
 function partFamilyInfoFromName(name){
   const raw=String(name||'').trim().replace(/\s+/g,' ');
@@ -3471,20 +3430,8 @@ window.editDaily=id=>{
  const usd=n=>'$'+(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
  const tl=n=>'₺'+(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
  const ym=()=>new Date().toISOString().slice(0,7);
- const load=(k,d)=>{
-   const root=st();
-   if(k===KEY)return root?.laborFinance?.costs||d;
-   if(k===FX_KEY)return root?.laborFinance?.fx||d;
-   try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}
- };
- const save=(k,v)=>{
-   const root=st();if(!root)return;
-   root.laborFinance=root.laborFinance||{};
-   if(k===KEY)root.laborFinance.costs=v||{};
-   else if(k===FX_KEY)root.laborFinance.fx=v||{};
-   else{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){};return}
-   if(window.__luysSaveState)window.__luysSaveState();
- };
+ const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
+ const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
  const norm=x=>String(x||'').trim().toLocaleUpperCase('tr-TR');
  const info=name=>window.partFamilyInfoFromName?window.partFamilyInfoFromName(name):{base:String(name||'').trim(),monthNo:1};
  const familyKey=name=>'PART::'+norm(info(name).base);
