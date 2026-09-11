@@ -3548,7 +3548,12 @@ window.editDaily=id=>{
        return `<tr><td><b>${dateLabel}</b></td><td>${dayNameCap}</td><td><b>${usd(row.sales)}</b></td><td><b>${fx>0?tl(row.sales*fx):'-'}</b></td><td>${row.good.toLocaleString('tr-TR')} adet</td><td>${row.hours.toFixed(2)} sa</td></tr>`;
      }).join('');
      if(rows.length){
+       const workedDays=rows.length;
+       const avgDailySales=workedDays?sumSales/workedDays:0;
        daySummaryHtml+=`<tr><td colspan="2"><b>AY TOPLAMI</b></td><td><b>${usd(sumSales)}</b></td><td><b>${fx>0?tl(sumSales*fx):'-'}</b></td><td><b>${sumGood.toLocaleString('tr-TR')} adet</b></td><td><b>${sumHours.toFixed(2)} sa</b></td></tr>`;
+       daySummaryHtml+=`<tr><td colspan="2"><b>TOPLAM ÇALIŞILAN GÜN</b></td><td colspan="4"><b>${workedDays} gün</b></td></tr>`;
+       daySummaryHtml+=`<tr><td colspan="2"><b>TOPLAM ÇALIŞILAN SAAT</b></td><td colspan="4"><b>${sumHours.toFixed(2)} sa</b></td></tr>`;
+       daySummaryHtml+=`<tr><td colspan="2"><b>ORTALAMA GÜNLÜK CİRO</b></td><td><b>${usd(avgDailySales)}</b></td><td><b>${fx>0?tl(avgDailySales*fx):'-'}</b></td><td colspan="2"><b>${workedDays} çalışılan gün ortalaması</b></td></tr>`;
      }
      monthDayRows.innerHTML=daySummaryHtml||'<tr><td colspan="6">Seçilen ayda günlük üretim kaydı yok.</td></tr>';
    }
