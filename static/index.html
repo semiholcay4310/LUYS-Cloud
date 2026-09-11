@@ -3402,6 +3402,21 @@ window.editDaily=id=>{
     </table>
   </div>
 
+  <div class="profitCard" id="monthlyDailyProfitCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin:0">Aylık Günlük Ciro Özeti</h3>
+        <div style="font-size:11px;color:#718491;margin-top:5px">Seçilen rapor ayındaki günlük işçilik ciroları toplu görünür.</div>
+      </div>
+    </div>
+    <div class="tablewrap" style="margin-top:10px">
+      <table class="profitTable">
+        <thead><tr><th>Tarih</th><th>Gün</th><th>İşçilik Cirosu • USD</th><th>İşçilik Cirosu • TL</th><th>Sağlam Üretim</th><th>İşçilik Süresi</th></tr></thead>
+        <tbody id="profitMonthDayRows"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="profitCard">
     <h3>İş / Parça İşçilik Fiyatı</h3>
     <div class="profitForm">
@@ -3501,6 +3516,42 @@ window.editDaily=id=>{
    });
    profitRows.innerHTML=html||'<tr><td colspan="7">Seçilen ayda günlük üretim kaydı yok.</td></tr>';
    pkSales.textContent=usd(totalSales);pkSalesTl.textContent=fx>0?tl(totalSales*fx):'-';pkSalesTl.title=fx>0?('Kur: '+fx.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:4})+' TL/USD'):'Bu ay için USD/TL kuru girin';pkHours.textContent=totalHours.toFixed(2)+' sa';pkHourly.textContent=totalHours>0?usd(totalSales/totalHours)+'/sa':'-';
+
+   // Seçilen ayın günlük ciro özeti. Günlük kartla aynı fiyat + OP ağırlığı mantığını kullanır.
+   const monthDayMap=new Map();
+   records().filter(r=>String(r.date||'').startsWith(month)).forEach(r=>{
+     const j=orderMap.get(String(r.orderId));if(!j)return;
+     const op=(j.ops||[]).find(x=>String(x.id)===String(r.opId));if(!op)return;
+     const date=String(r.date||'').slice(0,10);if(!date)return;
+     if(!monthDayMap.has(date))monthDayMap.set(date,{sales:0,hours:0,good:0});
+     const row=monthDayMap.get(date);
+     const good=Math.max(0,Number(r.good)||0),hours=recNetHours(r);
+     const c=costForJob(j,costs),price=Math.max(0,Number(c.usd)||0);
+     let weight=0;
+     if(typeof window.opWeight==='function')weight=Math.max(0,Number(window.opWeight(j,op))||0)/100;
+     else if(typeof opWeight==='function')weight=Math.max(0,Number(opWeight(j,op))||0)/100;
+     else weight=(j.ops||[]).length?1/(j.ops||[]).length:1;
+     row.sales+=good*price*weight;
+     row.hours+=hours;
+     row.good+=good;
+   });
+   const monthDayRows=document.getElementById('profitMonthDayRows');
+   if(monthDayRows){
+     const rows=[...monthDayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+     let sumSales=0,sumHours=0,sumGood=0;
+     let daySummaryHtml=rows.map(([date,row])=>{
+       sumSales+=row.sales;sumHours+=row.hours;sumGood+=row.good;
+       const d=new Date(date+'T12:00:00');
+       const dateLabel=d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
+       const dayName=d.toLocaleDateString('tr-TR',{weekday:'long'});
+       const dayNameCap=dayName.charAt(0).toLocaleUpperCase('tr-TR')+dayName.slice(1);
+       return `<tr><td><b>${dateLabel}</b></td><td>${dayNameCap}</td><td><b>${usd(row.sales)}</b></td><td><b>${fx>0?tl(row.sales*fx):'-'}</b></td><td>${row.good.toLocaleString('tr-TR')} adet</td><td>${row.hours.toFixed(2)} sa</td></tr>`;
+     }).join('');
+     if(rows.length){
+       daySummaryHtml+=`<tr><td colspan="2"><b>AY TOPLAMI</b></td><td><b>${usd(sumSales)}</b></td><td><b>${fx>0?tl(sumSales*fx):'-'}</b></td><td><b>${sumGood.toLocaleString('tr-TR')} adet</b></td><td><b>${sumHours.toFixed(2)} sa</b></td></tr>`;
+     }
+     monthDayRows.innerHTML=daySummaryHtml||'<tr><td colspan="6">Seçilen ayda günlük üretim kaydı yok.</td></tr>';
+   }
 
    // Günlük kazanç: yalnızca sağlam adet üzerinden hesaplanır. Hurda hiçbir şekilde ciroya girmez.
    // Çok operasyonlu parçalarda aynı ürün fiyatını her OP'de tekrar saymamak için OP ağırlığı kullanılır;
