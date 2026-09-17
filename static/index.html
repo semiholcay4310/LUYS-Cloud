@@ -1252,8 +1252,8 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
     <label>Operasyon Adı<input name="name" placeholder="OP1" required></label>
     <label>Tezgâh<input id="opMachine" readonly></label>
     <label>Operasyon Adedi<input id="opQty" readonly></label>
-    <label>İşleme dk/adet<input name="cycle" type="number" step="0.1" required></label>
-    <label>Sök-Tak dk/adet<input name="handling" type="number" step="0.1" value="0"></label>
+    <label>İşleme dk/adet<input name="cycle" type="number" step="0.01" required></label>
+    <label>Sök-Tak dk/adet<input name="handling" type="number" step="0.01" value="0"></label>
     <label>Ayar (saat)<input name="setup" type="number" step="0.25" value="1"></label>
     <button class="btn full">OPERASYONU KAYDET</button>
   </form></div>
@@ -1452,7 +1452,40 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
 <div class="footer">LÜYS Cloud v0.3 • Bulut Veri</div>
 </div>
 <script>
-const $=id=>document.getElementById(id), n=v=>Number(v||0), dm=v=>{const x=Math.max(0,Number(v)||0),m=Math.floor(x+1e-9),sec=Math.round((x-m)*100);return m+Math.min(59,sec)/60}, uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const $=id=>document.getElementById(id), n=v=>Number(v||0),
+  // Operasyon süreleri LÜYS'te dk.sn biçiminde saklanır: 7.4=7 dk 40 sn, 4.3=4 dk 30 sn.
+  opMin=v=>{
+    const raw=String(v??'0').trim().replace(',','.');
+    if(!raw)return 0;
+    const parts=raw.split('.');
+    const min=Math.max(0,Number(parts[0])||0);
+    if(parts.length===1)return min;
+    const secText=parts.slice(1).join('');
+    const sec=secText.length===1?(Number(secText)||0)*10:(Number(secText)||0);
+    return min+(Math.min(59,Math.max(0,sec))/60);
+  },
+  opCodeFromMin=v=>{
+    const total=Math.max(0,Number(v)||0);
+    let min=Math.floor(total),sec=Math.round((total-min)*60);
+    if(sec>=60){min++;sec=0}
+    return Number(sec?`${min}.${String(sec).padStart(2,'0')}`:`${min}`);
+  },
+  opTimeText=v=>{
+    const total=Math.max(0,Number(v)||0);
+    let min=Math.floor(total),sec=Math.round((total-min)*60);
+    if(sec>=60){min++;sec=0}
+    return sec?`${min} dk ${sec} sn`:`${min} dk`;
+  },
+  validOpCode=v=>{
+    const raw=String(v??'').trim().replace(',','.');
+    if(!raw)return false;
+    const p=raw.split('.');
+    if(p.length===1)return Number(p[0])>=0;
+    if(p.length!==2||!/^[0-9]+$/.test(p[0])||!/^[0-9]{1,2}$/.test(p[1]))return false;
+    const sec=p[1].length===1?Number(p[1])*10:Number(p[1]);
+    return sec>=0&&sec<=59;
+  },
+  uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 let state={orders:[],daily:[],calendar:{0:{h:0,b:0,s:'08:00'},1:{h:10,b:1,s:'08:00'},2:{h:10,b:1,s:'08:00'},3:{h:10,b:1,s:'08:00'},4:{h:10,b:1,s:'08:00'},5:{h:10,b:1,s:'08:00'},6:{h:10,b:1,s:'08:00'}},accounting:{incomes:[],expenses:[]}};
 
 window.__luysGetState=()=>state;
@@ -1502,7 +1535,7 @@ function opTarget(o,op){
 function opProcessed(op){
   return n(op.done)+n(op.scrap);
 }
-function opWeight(o,op){let total=(o.ops||[]).reduce((a,x)=>a+n(o.produceQty)*(dm(x.cycle)+dm(x.handling))+n(x.setup)*60,0);let w=n(o.produceQty)*(dm(op.cycle)+dm(op.handling))+n(op.setup)*60;return total?100*w/total:0}
+function opWeight(o,op){let total=(o.ops||[]).reduce((a,x)=>a+n(o.produceQty)*(opMin(x.cycle)+opMin(x.handling))+n(x.setup)*60,0);let w=n(o.produceQty)*(opMin(op.cycle)+opMiopMin(op.handling))+n(op.setup)*60;return total?100*w/total:0}
 window.opWeight=opWeight;
 function progress(o){return Math.min(100,(o.ops||[]).reduce((a,op)=>{let ratio=op.runState==='done'?1:Math.min(1,opProcessed(op)/Math.max(1,opTarget(o,op)));return a+opWeight(o,op)*ratio},0))}
 function currentOp(o){let run=(o.ops||[]).find(x=>x.runState==='running'&&!opIsComplete(o,x));if(run)return run;return (o.ops||[]).find(x=>!opIsComplete(o,x))||null}
@@ -1763,7 +1796,7 @@ function schedule(){
 
       let end=addWork(
         forecastStart,
-        remainingQty*(dm(op.cycle)+dm(op.handling))
+        remainingQty*(opMin(op.cycle)+opMiopMin(op.handling))
       );
 
       // actualEnd ancak gerçekten tamamlanmış OP'de kullanılabilir.
@@ -1884,7 +1917,7 @@ function baselineProductEnd(o){
     const op=ops[i];
     if(i>first)cursor=addWork(cursor,n(op.setup)*60);
     const qty=Math.max(0,n(o.produceQty));
-    cursor=addWork(cursor,qty*(dm(op.cycle)+dm(op.handling)));
+    cursor=addWork(cursor,qty*(opMin(op.cycle)+opMiopMin(op.handling)));
   }
   return localISO(cursor);
 }
@@ -1910,7 +1943,7 @@ function liveReferencePlanEnd(o,op,at){
     if(remaining<=0)continue;
     // Aktif OP zaten başlatılmış kabul edilir; sonraki OP'lerin ayarı normal plana dahildir.
     if(i>idx)cursor=addWork(cursor,n(x.setup)*60);
-    cursor=addWork(cursor,remaining*(dm(x.cycle)+dm(x.handling)));
+    cursor=addWork(cursor,remaining*(opMin(x.cycle)+opMin(x.handling)));
   }
   return localISO(cursor);
 }
@@ -2007,7 +2040,7 @@ function actualMinutesPerPiece(o,op){
     return a+n(net);
   },0);
   if(processed>0&&netHours>0)return (netHours*60)/processed;
-  return Math.max(0,dm(op.cycle)+dm(op.handling));
+  return Math.max(0,opMin(op.cycle)+opMiopMin(op.handling));
 }
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
@@ -2162,7 +2195,7 @@ function calculatePlanReasonInfo(o){
 
   for(const op of (o?.ops||[])){
     const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
-    const plannedUnit=Math.max(0,dm(op.cycle)+dm(op.handling));
+    const plannedUnit=Math.max(0,opMin(op.cycle)+opMiopMin(op.handling));
 
     for(const r of recs){
       const processed=n(r.good)+n(r.scrap);
@@ -2573,7 +2606,7 @@ function renderMachines(){
 function opUnitComparison(o,op){
   const target=Math.max(1,opTarget(o,op));
   // Planlanan gerçek parça süresi: işleme + sök-tak + ayarın hedef adede dağıtılmış payı.
-  const planned=Math.max(0,dm(op.cycle)+dm(op.handling)+(n(op.setup)*60/target));
+  const planned=Math.max(0,opMin(op.cycle)+opMin(op.handling)+(n(op.setup)*60/target));
   const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id&&(n(r.good)+n(r.scrap))>0);
   let productiveMin=0,processed=0;
   for(const r of recs){
@@ -2607,7 +2640,7 @@ function totalDiffText(c){
 function opCardHTML(o,op,archived=false){
   let target=opTarget(o,op),processed=opProcessed(op),pct=Math.min(100,100*processed/Math.max(1,target)),remain=Math.max(0,target-processed),completed=opIsComplete(o,op),cls=completed?'done':op.runState==='running'?'running':op.runState==='paused'?'paused':'',iid='start_'+o.id+'_'+op.id,stateText=completed?'ÜRETİM TAMAMLANDI ✓':op.runState==='running'?'ÜRETİMDE':op.runState==='paused'?'DURDURULDU':'BEKLİYOR';
   const uc=opUnitComparison(o,op);
-  const unitCompareHtml=`<div class="unitCompare"><div><small>Planlanan • Sök-Tak + Ayar dahil</small><b>${uc.planned.toFixed(1)} dk/adet</b></div><div><small>Gerçekleşen • Günlük net</small><b>${uc.actual===null?'-':uc.actual.toFixed(1)+' dk/adet'}</b></div><div><small>Plan / Gerçek Farkı</small><b class="${uc.cls}">${unitDiffText(uc)}</b>${uc.actual===null?'':`<small>${uc.processed} işlenen parçada toplam ${totalDiffText(uc)}</small>`}</div></div>`;
+  const unitCompareHtml=`<div class="unitCompare"><div><small>Planlanan • Sök-Tak + Ayar dahil</small><b>${opTimeText(uc.planned)}/adet</b></div><div><small>Gerçekleşen • Günlük net</small><b>${uc.actual===null?'-':uc.actual.toFixed(1)+' dk/adet'}</b></div><div><small>Plan / Gerçek Farkı</small><b class="${uc.cls}">${unitDiffText(uc)}</b>${uc.actual===null?'':`<small>${uc.processed} işlenen parçada toplam ${totalDiffText(uc)}</small>`}</div></div>`;
   let controls='';
   if(canEdit()){
     if(archived)controls=`<div class="inline"><button class="btn alt" onclick="editOp('${o.id}','${op.id}')">Düzenle</button><button class="btn red" onclick="delOp('${o.id}','${op.id}')">Sil</button></div>`;
@@ -2890,7 +2923,7 @@ function renderPartTemplateInfo(base){
   const monthNo=n(f?.orderMonth?.value)||1,finalName=orderPartName(base,monthNo);
   if(!String(base||'').trim()){box.innerHTML='Parça seçildiğinde önceki iş emrindeki <b>işleme, sök-tak ve ayar süreleri</b> otomatik hazırlanır.';return}
   if(!src){box.innerHTML=`Kaydedilecek parça: <b>${esc(finalName)}</b> • Bu parça için eski iş emri bulunamadı; operasyonlar boş başlayacak.`;return}
-  const ops=(src.ops||[]).map(op=>`${esc(op.name||'OP')}: ${n(op.cycle).toFixed(1)} dk işleme + ${n(op.handling).toFixed(1)} dk sök-tak + ${n(op.setup).toFixed(2)} sa ayar`).join('<br>');
+  const ops=(src.ops||[]).map(op=>`${esc(op.name||'OP')}: ${opTimeText(opMin(op.cycle))} işleme + ${opTimeText(opMin(op.handling))} sök-tak + ${n(op.setup).toFixed(2)} sa ayar`).join('<br>');
   box.innerHTML=`Kaydedilecek parça: <b>${esc(finalName)}</b> • Şablon: <b>${esc(src.orderNo||'')}</b>${src.revision?` • Rev. ${esc(src.revision)}`:''}<br>${ops||'Operasyon kaydı yok.'}`;
 }
 function applyPartTemplate(base){
@@ -2915,7 +2948,10 @@ if($('opForm')?.name){
   $('opForm').name.addEventListener('change',()=>fillSavedOpValues(true));
   $('opForm').name.addEventListener('blur',()=>fillSavedOpValues(false));
 }
-$('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
+$('opForm').onsubmit=async e=>{e.preventDefault();if(!canEdit())return;let f=new FormData(e.target),o=order(f.get('orderId'));if(!o)return;
+let cycleRaw=f.get('cycle'),handlingRaw=f.get('handling');
+if(!validOpCode(cycleRaw)||!validOpCode(handlingRaw)){alert('Süreyi dk.sn olarak girin. Örnek: 7.4 = 7 dk 40 sn, 7.40 = 7 dk 40 sn. Saniye 59\'u geçemez; 7.7 geçersizdir.');return;}
+let id=f.get('opId'),obj={id:id||uid(),name:f.get('name'),cycle:n(f.get('cycle')),handling:n(f.get('handling')),setup:n(f.get('setup')),runState:'waiting'};let old=opBy(o,id);if(old)Object.assign(old,obj,{runState:old.runState,actualStart:old.actualStart,actualEnd:old.actualEnd,pauseReason:old.pauseReason,pausedAt:old.pausedAt});else o.ops.push(obj);if(await save()){e.target.reset();e.target.opId.value='';syncOpAuto();$('opTitle').textContent='Operasyon Ekle'}}
 window.editOp=(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id),f=$('opForm');f.orderId.value=oid;syncOpAuto();f.opId.value=id;f.name.value=op.name;f.cycle.value=op.cycle;f.handling.value=op.handling;f.setup.value=op.setup;$('opTitle').textContent='Operasyon Düzenle';document.querySelector('[data-p="ops"]').click();window.scrollTo(0,0)}
 window.delOp=async(oid,id)=>{if(!canEdit())return;if(confirm('Operasyon silinsin mi?')){let o=order(oid);o.ops=o.ops.filter(x=>x.id!==id);state.daily=state.daily.filter(r=>r.opId!==id);await save()}}
 window.startOp=async(oid,id)=>{if(!canEdit())return;let o=order(oid),op=opBy(o,id);if(!o||!op)return;let target=opTarget(o,op);if(target>0&&opProcessed(op)>=target){op.runState='done';if(!op.actualEnd)op.actualEnd=localISO(new Date());alert('Bu operasyon zaten tamamlandı.');await save();return}const wasRunning=op.runState==='running';const hadStarted=!!op.actualStart;state.orders.forEach(oo=>{if(oo.machine===o.machine)(oo.ops||[]).forEach(x=>{if(x.id!==op.id&&x.runState==='running'){if(opProcessed(x)>=opTarget(oo,x)){x.runState='done';if(!x.actualEnd)x.actualEnd=localISO(new Date())}else{x.runState='waiting'}}})});const now=localISO(new Date());op.runState='running';if(!op.actualStart)op.actualStart=now;op.pauseReason='';o.stage='production';if(!wasRunning){op.sessionStartedAt=now;op.lastResumeAt=now;op.sessionKind=hadStarted?'resume':'start'}schedule();if(!wasRunning)resetLiveReferencePlan(o,op,now);syncCompletedOps();await save()}
@@ -2989,7 +3025,7 @@ function gunlukHesap(f){
 
   const o=order(f.orderId.value);
   const op=opBy(o,f.opId.value);
-  const dakikaAdet=op ? dm(op.cycle)+dm(op.handling) : 0;
+  const dakikaAdet=op ? opMin(op.cycle)+opMin(op.handling) : 0;
   const tarih=f.date?.value||ymd(new Date());
   const planNetSaat=Math.max(0,cal(tarih).net);
 
@@ -3020,8 +3056,8 @@ function smartTimeStats(o,op){
   const count=recs.length;
   if(!processed||!eqMinutes)return {count};
   const observedTotal=eqMinutes/processed;
-  const plannedTotal=Math.max(0,dm(op.cycle)+dm(op.handling));
-  const suggestedCycle=Math.max(0,observedTotal-dm(op.handling));
+  const plannedTotal=Math.max(0,opMin(op.cycle)+opMiopMin(op.handling));
+  const suggestedCycle=Math.max(0,observedTotal-opMin(op.handling));
   const diffPct=plannedTotal>0?(observedTotal-plannedTotal)/plannedTotal*100:0;
   const confidence=count>=5?'Yüksek':count>=3?'Orta':'Düşük';
   return {count,processed,observedTotal,plannedTotal,suggestedCycle,diffPct,confidence};
@@ -3040,14 +3076,14 @@ function renderSmartTimeAnalysis(){
       <div class="finishbox"><small>Girilen toplam süre</small><br><b>${a.plannedTotal.toFixed(1)} dk/adet</b></div>
       <div class="finishbox"><small>Gerçek tempo karşılığı</small><br><b>${a.observedTotal.toFixed(1)} dk/adet</b></div>
     </div>
-    <div class="small" style="margin-top:7px"><b>${direction}</b> (${a.diffPct>0?'+':''}${a.diffPct.toFixed(1)}%). Sök-tak ${n(op.handling).toFixed(1)} dk/adet korunarak önerilen işleme süresi <b>${a.suggestedCycle.toFixed(1)} dk/adet</b>.</div>
+    <div class="small" style="margin-top:7px"><b>${direction}</b> (${a.diffPct>0?'+':''}${a.diffPct.toFixed(1)}%). Sök-tak ${opTimeText(opMin(op.handling))}/adet korunarak önerilen işleme süresi <b>${opTimeText(a.suggestedCycle)}/adet</b>.</div>
     ${canEdit()?`<button type="button" class="btn alt" style="margin-top:8px" onclick="applySmartCycle('${o.id}','${op.id}',${a.suggestedCycle.toFixed(2)})">ÖNERİLEN İŞLEME SÜRESİNİ UYGULA</button>`:''}`;
 }
 
 window.applySmartCycle=async(oid,opid,val)=>{
   if(!canEdit())return;let o=order(oid),op=opBy(o,opid);if(!op)return;
   if(!confirm(`İşleme süresi ${n(op.cycle).toFixed(1)} dk/adet → ${n(val).toFixed(1)} dk/adet olarak güncellensin mi?\nSök-tak süresi değişmeyecek.`))return;
-  op.cycle=Math.max(0,n(val));await save();renderSmartTimeAnalysis();
+  op.cycle=opCodeFromMin(Math.max(0,n(val)));await save();renderSmartTimeAnalysis();
 };
 
 function hesaplaVerim(){
@@ -3220,7 +3256,7 @@ function dailyRecordMetrics(r){
   let o=order(r.orderId),op=opBy(o,r.opId);
   let net=r.netHours;
   if(net===undefined)net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
-  let dakikaAdet=op?dm(op.cycle)+dm(op.handling):0;
+  let dakikaAdet=op?opMin(op.cycle)+opMin(op.handling):0;
   let hedef=r.targetQty;
   if(hedef===undefined)hedef=dakikaAdet>0?(net*60)/dakikaAdet:0;
   let verim=r.efficiency;
