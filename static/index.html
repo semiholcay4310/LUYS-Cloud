@@ -1535,7 +1535,7 @@ function opTarget(o,op){
 function opProcessed(op){
   return n(op.done)+n(op.scrap);
 }
-function opWeight(o,op){let total=(o.ops||[]).reduce((a,x)=>a+n(o.produceQty)*(opMin(x.cycle)+opMin(x.handling))+n(x.setup)*60,0);let w=n(o.produceQty)*(opMin(op.cycle)+opMiopMin(op.handling))+n(op.setup)*60;return total?100*w/total:0}
+function opWeight(o,op){let total=(o.ops||[]).reduce((a,x)=>a+n(o.produceQty)*(opMin(x.cycle)+opMin(x.handling))+n(x.setup)*60,0);let w=n(o.produceQty)*(opMin(op.cycle)+opMin(op.handling))+n(op.setup)*60;return total?100*w/total:0}
 window.opWeight=opWeight;
 function progress(o){return Math.min(100,(o.ops||[]).reduce((a,op)=>{let ratio=op.runState==='done'?1:Math.min(1,opProcessed(op)/Math.max(1,opTarget(o,op)));return a+opWeight(o,op)*ratio},0))}
 function currentOp(o){let run=(o.ops||[]).find(x=>x.runState==='running'&&!opIsComplete(o,x));if(run)return run;return (o.ops||[]).find(x=>!opIsComplete(o,x))||null}
@@ -1796,7 +1796,7 @@ function schedule(){
 
       let end=addWork(
         forecastStart,
-        remainingQty*(opMin(op.cycle)+opMiopMin(op.handling))
+        remainingQty*(opMin(op.cycle)+opMin(op.handling))
       );
 
       // actualEnd ancak gerçekten tamamlanmış OP'de kullanılabilir.
@@ -1917,7 +1917,7 @@ function baselineProductEnd(o){
     const op=ops[i];
     if(i>first)cursor=addWork(cursor,n(op.setup)*60);
     const qty=Math.max(0,n(o.produceQty));
-    cursor=addWork(cursor,qty*(opMin(op.cycle)+opMiopMin(op.handling)));
+    cursor=addWork(cursor,qty*(opMin(op.cycle)+opMin(op.handling)));
   }
   return localISO(cursor);
 }
@@ -2040,7 +2040,7 @@ function actualMinutesPerPiece(o,op){
     return a+n(net);
   },0);
   if(processed>0&&netHours>0)return (netHours*60)/processed;
-  return Math.max(0,opMin(op.cycle)+opMiopMin(op.handling));
+  return Math.max(0,opMin(op.cycle)+opMin(op.handling));
 }
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
@@ -2195,7 +2195,7 @@ function calculatePlanReasonInfo(o){
 
   for(const op of (o?.ops||[])){
     const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
-    const plannedUnit=Math.max(0,opMin(op.cycle)+opMiopMin(op.handling));
+    const plannedUnit=Math.max(0,opMin(op.cycle)+opMin(op.handling));
 
     for(const r of recs){
       const processed=n(r.good)+n(r.scrap);
@@ -3056,7 +3056,7 @@ function smartTimeStats(o,op){
   const count=recs.length;
   if(!processed||!eqMinutes)return {count};
   const observedTotal=eqMinutes/processed;
-  const plannedTotal=Math.max(0,opMin(op.cycle)+opMiopMin(op.handling));
+  const plannedTotal=Math.max(0,opMin(op.cycle)+opMin(op.handling));
   const suggestedCycle=Math.max(0,observedTotal-opMin(op.handling));
   const diffPct=plannedTotal>0?(observedTotal-plannedTotal)/plannedTotal*100:0;
   const confidence=count>=5?'Yüksek':count>=3?'Orta':'Düşük';
