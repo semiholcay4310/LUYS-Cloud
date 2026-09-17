@@ -1763,11 +1763,11 @@ function schedule(){
       let startBase;
 
       if(isRunning){
-        // Çalışan OP için gelecekteki plan, son BAŞLAT/YENİDEN BAŞLAT anından yürür.
-        // actualStart yalnızca ilk gerçek başlangıç geçmişidir.
-        const live=op.lastResumeAt||op.sessionStartedAt;
+        // Çalışan OP'nin kalan planı sayfa yenilendikçe "şimdi"ye itilmez.
+        // Öncelik: son günlük kayıt bitişi > son yeniden başlatma > oturum başlangıcı > gerçek başlangıç.
+        const recMoment=latestOpRecordMoment(o,op);
+        const live=recMoment||op.lastResumeAt||op.sessionStartedAt||op.actualStart;
         startBase=live?new Date(live):now;
-        if(startBase<now)startBase=new Date(now);
         startBase=nextMoment(startBase);
       }else{
         // Bekleyen/durdurulan OP geçmiş başlangıç tarihinden yürütülmez.
@@ -1788,9 +1788,9 @@ function schedule(){
 
       let forecastStart=nextMoment(setupEnd);
 
-      // Eski günlük kayıt tarihleri gelecekteki planı geçmişe çekmez.
-      // Kalan iş her zaman BUGÜN / kuyruk başlangıcından ileri planlanır.
-      if(forecastStart<now)forecastStart=nextMoment(now);
+      // Çalışan OP'de başlangıç referansı korunur; sayfa yenilemesi tahmini ileri taşımaz.
+      // Bekleyen işler yine mevcut kuyruk planından ileri yürür.
+      if(!isRunning && forecastStart<now)forecastStart=nextMoment(now);
 
       op.prodStart=localISO(forecastStart);
 
