@@ -1452,7 +1452,7 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
 <div class="footer">LÜYS Cloud v0.3 • Bulut Veri</div>
 </div>
 <script>
-const $=id=>document.getElementById(id), n=v=>Number(v||0), uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const $=id=>document.getElementById(id), n=v=>Number(v||0), dm=v=>{const x=Math.max(0,Number(v)||0),m=Math.floor(x+1e-9),sec=Math.round((x-m)*100);return m+Math.min(59,sec)/60}, uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 let state={orders:[],daily:[],calendar:{0:{h:0,b:0,s:'08:00'},1:{h:10,b:1,s:'08:00'},2:{h:10,b:1,s:'08:00'},3:{h:10,b:1,s:'08:00'},4:{h:10,b:1,s:'08:00'},5:{h:10,b:1,s:'08:00'},6:{h:10,b:1,s:'08:00'}},accounting:{incomes:[],expenses:[]}};
 
 window.__luysGetState=()=>state;
@@ -1502,7 +1502,7 @@ function opTarget(o,op){
 function opProcessed(op){
   return n(op.done)+n(op.scrap);
 }
-function opWeight(o,op){let total=(o.ops||[]).reduce((a,x)=>a+n(o.produceQty)*(n(x.cycle)+n(x.handling))+n(x.setup)*60,0);let w=n(o.produceQty)*(n(op.cycle)+n(op.handling))+n(op.setup)*60;return total?100*w/total:0}
+function opWeight(o,op){let total=(o.ops||[]).reduce((a,x)=>a+n(o.produceQty)*(dm(x.cycle)+dm(x.handling))+n(x.setup)*60,0);let w=n(o.produceQty)*(dm(op.cycle)+dm(op.handling))+n(op.setup)*60;return total?100*w/total:0}
 window.opWeight=opWeight;
 function progress(o){return Math.min(100,(o.ops||[]).reduce((a,op)=>{let ratio=op.runState==='done'?1:Math.min(1,opProcessed(op)/Math.max(1,opTarget(o,op)));return a+opWeight(o,op)*ratio},0))}
 function currentOp(o){let run=(o.ops||[]).find(x=>x.runState==='running'&&!opIsComplete(o,x));if(run)return run;return (o.ops||[]).find(x=>!opIsComplete(o,x))||null}
@@ -1763,7 +1763,7 @@ function schedule(){
 
       let end=addWork(
         forecastStart,
-        remainingQty*(n(op.cycle)+n(op.handling))
+        remainingQty*(dm(op.cycle)+dm(op.handling))
       );
 
       // actualEnd ancak gerçekten tamamlanmış OP'de kullanılabilir.
@@ -1884,7 +1884,7 @@ function baselineProductEnd(o){
     const op=ops[i];
     if(i>first)cursor=addWork(cursor,n(op.setup)*60);
     const qty=Math.max(0,n(o.produceQty));
-    cursor=addWork(cursor,qty*(n(op.cycle)+n(op.handling)));
+    cursor=addWork(cursor,qty*(dm(op.cycle)+dm(op.handling)));
   }
   return localISO(cursor);
 }
@@ -1910,7 +1910,7 @@ function liveReferencePlanEnd(o,op,at){
     if(remaining<=0)continue;
     // Aktif OP zaten başlatılmış kabul edilir; sonraki OP'lerin ayarı normal plana dahildir.
     if(i>idx)cursor=addWork(cursor,n(x.setup)*60);
-    cursor=addWork(cursor,remaining*(n(x.cycle)+n(x.handling)));
+    cursor=addWork(cursor,remaining*(dm(x.cycle)+dm(x.handling)));
   }
   return localISO(cursor);
 }
@@ -2007,7 +2007,7 @@ function actualMinutesPerPiece(o,op){
     return a+n(net);
   },0);
   if(processed>0&&netHours>0)return (netHours*60)/processed;
-  return Math.max(0,n(op.cycle)+n(op.handling));
+  return Math.max(0,dm(op.cycle)+dm(op.handling));
 }
 function currentProductForecast(o){
   if(!o||!(o.ops||[]).length)return '';
@@ -2162,7 +2162,7 @@ function calculatePlanReasonInfo(o){
 
   for(const op of (o?.ops||[])){
     const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id);
-    const plannedUnit=Math.max(0,n(op.cycle)+n(op.handling));
+    const plannedUnit=Math.max(0,dm(op.cycle)+dm(op.handling));
 
     for(const r of recs){
       const processed=n(r.good)+n(r.scrap);
@@ -2573,7 +2573,7 @@ function renderMachines(){
 function opUnitComparison(o,op){
   const target=Math.max(1,opTarget(o,op));
   // Planlanan gerçek parça süresi: işleme + sök-tak + ayarın hedef adede dağıtılmış payı.
-  const planned=Math.max(0,n(op.cycle)+n(op.handling)+(n(op.setup)*60/target));
+  const planned=Math.max(0,dm(op.cycle)+dm(op.handling)+(n(op.setup)*60/target));
   const recs=(state.daily||[]).filter(r=>r.orderId===o.id&&r.opId===op.id&&(n(r.good)+n(r.scrap))>0);
   let productiveMin=0,processed=0;
   for(const r of recs){
@@ -2989,7 +2989,7 @@ function gunlukHesap(f){
 
   const o=order(f.orderId.value);
   const op=opBy(o,f.opId.value);
-  const dakikaAdet=op ? n(op.cycle)+n(op.handling) : 0;
+  const dakikaAdet=op ? dm(op.cycle)+dm(op.handling) : 0;
   const tarih=f.date?.value||ymd(new Date());
   const planNetSaat=Math.max(0,cal(tarih).net);
 
@@ -3020,8 +3020,8 @@ function smartTimeStats(o,op){
   const count=recs.length;
   if(!processed||!eqMinutes)return {count};
   const observedTotal=eqMinutes/processed;
-  const plannedTotal=Math.max(0,n(op.cycle)+n(op.handling));
-  const suggestedCycle=Math.max(0,observedTotal-n(op.handling));
+  const plannedTotal=Math.max(0,dm(op.cycle)+dm(op.handling));
+  const suggestedCycle=Math.max(0,observedTotal-dm(op.handling));
   const diffPct=plannedTotal>0?(observedTotal-plannedTotal)/plannedTotal*100:0;
   const confidence=count>=5?'Yüksek':count>=3?'Orta':'Düşük';
   return {count,processed,observedTotal,plannedTotal,suggestedCycle,diffPct,confidence};
@@ -3220,7 +3220,7 @@ function dailyRecordMetrics(r){
   let o=order(r.orderId),op=opBy(o,r.opId);
   let net=r.netHours;
   if(net===undefined)net=Math.max(0,n(r.hours)-((n(r.breaktime)+n(r.downtime))/60));
-  let dakikaAdet=op?n(op.cycle)+n(op.handling):0;
+  let dakikaAdet=op?dm(op.cycle)+dm(op.handling):0;
   let hedef=r.targetQty;
   if(hedef===undefined)hedef=dakikaAdet>0?(net*60)/dakikaAdet:0;
   let verim=r.efficiency;
