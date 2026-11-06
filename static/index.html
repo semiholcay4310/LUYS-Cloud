@@ -1328,7 +1328,8 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
           <div class="small" style="margin-top:4px">Tarih aralığındaki cumartesi ve pazarlar burada tek tek çıkar. Yalnızca çalışacağın günü işaretle; her günün başlangıç ve brüt saatini ayrı gir.</div>
           <div id="wpWeekendDates" style="margin-top:8px"></div>
         </div>
-        <button type="button" class="btn green full" onclick="addWorkPeriod()">DÖNEM EKLE</button>
+        <button id="wpSaveBtn" type="button" class="btn green full" onclick="addWorkPeriod()">DÖNEM EKLE</button>
+        <button id="wpCancelBtn" type="button" class="btn alt full" style="display:none" onclick="cancelWorkPeriodEdit()">DÜZENLEMEYİ İPTAL ET</button>
       </div>
       <div id="workPeriodList" style="margin-top:12px"></div>
     </div>
@@ -2791,6 +2792,41 @@ window.renderWorkPeriodWeekendDates=()=>{
   }
   box.innerHTML=rows.length?rows.join(''):'<div class="small">Bu tarih aralığında cumartesi veya pazar yok.</div>';
 };
+window.__wpEditId=window.__wpEditId||'';
+function syncWorkPeriodEditButtons(){
+  const editing=!!window.__wpEditId;
+  const saveBtn=$('wpSaveBtn'),cancelBtn=$('wpCancelBtn');
+  if(saveBtn)saveBtn.textContent=editing?'DÖNEMİ GÜNCELLE':'DÖNEM EKLE';
+  if(cancelBtn)cancelBtn.style.display=editing?'':'none';
+}
+function resetWorkPeriodForm(){
+  window.__wpEditId='';
+  window.__wpWeekendDraft={};
+  if($('wpStart'))$('wpStart').value='';
+  if($('wpEnd'))$('wpEnd').value='';
+  if($('wpWeekStart'))$('wpWeekStart').value='10:30';
+  if($('wpWeekGross'))$('wpWeekGross').value='15';
+  syncWorkPeriodEditButtons();
+  renderWorkPeriodWeekendDates();
+}
+window.cancelWorkPeriodEdit=()=>resetWorkPeriodForm();
+window.editWorkPeriod=id=>{
+  if(!canEdit())return;
+  const p=(state.workPeriods||[]).find(x=>String(x.id)===String(id));
+  if(!p)return;
+  window.__wpEditId=String(p.id);
+  if($('wpStart'))$('wpStart').value=p.start||'';
+  if($('wpEnd'))$('wpEnd').value=p.end||'';
+  if($('wpWeekStart'))$('wpWeekStart').value=p.weekStart||'10:30';
+  if($('wpWeekGross'))$('wpWeekGross').value=n(p.weekGross)||15;
+  window.__wpWeekendDraft={};
+  (p.weekendDays||[]).forEach(w=>{
+    window.__wpWeekendDraft[String(w.date)]={checked:true,start:w.start||'10:30',gross:n(w.gross)||''};
+  });
+  syncWorkPeriodEditButtons();
+  renderWorkPeriodWeekendDates();
+  $('workPeriodConfig')?.scrollIntoView({behavior:'smooth',block:'start'});
+};
 function renderWorkPeriods(){
   const box=$('workPeriodList');if(!box)return;
   const list=[...(state.workPeriods||[])].sort((a,b)=>a.start.localeCompare(b.start));
@@ -2799,17 +2835,25 @@ function renderWorkPeriods(){
       const d=new Date(w.date+'T12:00:00'),dn=d.getDay()===6?'Cts':'Paz';
       return `${fmt(w.date)} ${dn} ${esc(w.start)} / ${n(w.gross)} sa`;
     }).join(' • ');
-    return `<div style="padding:10px 0;border-bottom:1px solid #dfe7ee"><b>${esc(p.start)} – ${esc(p.end)}</b><div class="small">Hafta içi ${esc(p.weekStart)} / ${n(p.weekGross)} sa</div><div class="small" style="margin-top:3px">Hafta sonu: ${weekend||'özel çalışma yok'}</div>${canEdit()?`<button class="btn red" type="button" onclick="delWorkPeriod('${p.id}')">Sil</button>`:''}</div>`;
+    const editing=String(window.__wpEditId||'')===String(p.id);
+    return `<div style="padding:10px 0;border-bottom:1px solid #dfe7ee${editing?';background:#f0f7ff':''}">
+      <b>${esc(p.start)} – ${esc(p.end)}</b>
+      <div class="small">Hafta içi ${esc(p.weekStart)} / ${n(p.weekGross)} sa</div>
+      <div class="small" style="margin-top:3px">Hafta sonu: ${weekend||'özel çalışma yok'}</div>
+      ${canEdit()?`<div class="inline" style="margin-top:7px"><button class="btn" type="button" onclick="editWorkPeriod('${p.id}')">Düzenle</button><button class="btn red" type="button" onclick="delWorkPeriod('${p.id}')">Sil</button></div>`:''}
+    </div>`;
   }).join(''):'<div class="small">Henüz dönem eklenmedi; normal haftalık takvim geçerli.</div>';
+  syncWorkPeriodEditButtons();
   renderWorkPeriodWeekendDates();
 }
 window.addWorkPeriod=async()=>{
   if(!canEdit())return;
   const start=$('wpStart').value,end=$('wpEnd').value;
   const weekStart=$('wpWeekStart').value,weekGross=n($('wpWeekGross').value);
+  const editId=String(window.__wpEditId||'');
   if(!start||!end||start>end)return alert('Geçerli bir başlangıç ve bitiş tarihi seç.');
   if(!weekStart||weekGross<=0||weekGross>24)return alert('Hafta içi başlangıç ve 0–24 saat arası brüt süre gir.');
-  if((state.workPeriods||[]).some(p=>start<=p.end&&end>=p.start))return alert('Bu dönem başka bir dönemle çakışıyor. Önce diğer dönemi sil veya tarihleri değiştir.');
+  if((state.workPeriods||[]).some(p=>String(p.id)!==editId&&start<=p.end&&end>=p.start))return alert('Bu dönem başka bir dönemle çakışıyor. Önce diğer dönemi sil veya tarihleri değiştir.');
   const weekendDays=[];
   for(const row of document.querySelectorAll('#wpWeekendDates [data-wp-weekend]')){
     const check=row.querySelector('input[data-wp-check]');if(!check?.checked)continue;
@@ -2818,15 +2862,25 @@ window.addWorkPeriod=async()=>{
     if(!startTime||gross<=0||gross>24)return alert(fmt(date)+' için geçerli başlangıç ve 0–24 saat arası brüt süre gir.');
     weekendDays.push({date,start:startTime,gross});
   }
-  state.workPeriods.push({id:'wp-'+Date.now(),start,end,weekStart,weekGross,weekendDays});
+  const obj={id:editId||('wp-'+Date.now()),start,end,weekStart,weekGross,weekendDays};
+  if(editId){
+    const idx=(state.workPeriods||[]).findIndex(p=>String(p.id)===editId);
+    if(idx<0)return alert('Düzenlenecek dönem bulunamadı.');
+    state.workPeriods[idx]=obj;
+  }else{
+    state.workPeriods.push(obj);
+  }
   state.workPeriods.sort((a,b)=>a.start.localeCompare(b.start));
-  schedule();const ok=await save();if(ok){$('wpStart').value='';$('wpEnd').value='';window.__wpWeekendDraft={};renderWorkPeriodWeekendDates()}
+  schedule();
+  const ok=await save();
+  if(ok)resetWorkPeriodForm();
 };
 window.delWorkPeriod=async id=>{
   if(!canEdit())return;
-  const p=(state.workPeriods||[]).find(x=>x.id===id);
+  const p=(state.workPeriods||[]).find(x=>String(x.id)===String(id));
   if(!p||!confirm(p.start+' – '+p.end+' dönemini silmek istiyor musun?'))return;
-  state.workPeriods=state.workPeriods.filter(x=>x.id!==id);
+  state.workPeriods=state.workPeriods.filter(x=>String(x.id)!==String(id));
+  if(String(window.__wpEditId||'')===String(id))resetWorkPeriodForm();
   schedule();await save();
 };
 function renderCal(){
