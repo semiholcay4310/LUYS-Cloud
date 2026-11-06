@@ -1315,6 +1315,24 @@ html[data-theme="dark"] .machineActiveBox > .machineMiniGrid:first-of-type .mach
     </div>
     <div class="cal" id="cal"></div>
     <div class="inline editOnly"><button class="btn" id="saveCal">TAKVİMİ KAYDET</button></div>
+    <div style="margin-top:18px;padding:12px;border:1px solid #dfe7ee;border-radius:12px">
+      <b>Dönemsel Mesai</b>
+      <p class="small">Belirlediğin tarih aralığında farklı vardiya kullan. Cumartesi ve pazar saatlerini ayrı belirle. Dönem dışındaki günler normal takvime döner.</p>
+      <div class="form editOnly">
+        <label>Başlangıç tarihi<input id="wpStart" type="date"></label>
+        <label>Bitiş tarihi<input id="wpEnd" type="date"></label>
+        <label>Hafta içi başlangıç<input id="wpWeekStart" type="time" value="10:30"></label>
+        <label>Hafta içi brüt saat<input id="wpWeekGross" type="number" min="0.5" step="0.5" value="15"></label>
+        <label>Cumartesi çalışılacak mı?<select id="wpSatEnabled" onchange="toggleWorkPeriodWeekend()"><option value="no">Hayır</option><option value="yes">Evet</option></select></label>
+        <label>Cumartesi başlangıç<input id="wpSatStart" type="time" value="10:30" disabled></label>
+        <label>Cumartesi brüt saat<input id="wpSatGross" type="number" min="0.5" step="0.5" value="8" disabled></label>
+        <label>Pazar çalışılacak mı?<select id="wpSunEnabled" onchange="toggleWorkPeriodWeekend()"><option value="no">Hayır</option><option value="yes">Evet</option></select></label>
+        <label>Pazar başlangıç<input id="wpSunStart" type="time" value="10:30" disabled></label>
+        <label>Pazar brüt saat<input id="wpSunGross" type="number" min="0.5" step="0.5" value="5" disabled></label>
+        <button type="button" class="btn green full" onclick="addWorkPeriod()">DÖNEM EKLE</button>
+      </div>
+      <div id="workPeriodList" style="margin-top:12px"></div>
+    </div>
     <p class="small">Mesai başlangıcı ve brüt saat gün bazında değişebilir. Molalar ve ek kayıplar yukarıdaki ortak saatlere göre otomatik düşülür. Vardiya aralığına denk gelmeyen pencere hesaba katılmaz. Ayar süresi OP ilk kez başlarken yalnızca bir kez eklenir; durdurup yeniden başlatmada tekrar eklenmez.</p>
   </div>
 </section>
@@ -1499,7 +1517,7 @@ function canEdit(){return me.can_edit===true}
 async function loadMe(){let r=await fetch('/api/me',{cache:'no-store'});if(!r.ok)throw new Error('Kullanıcı bilgisi alınamadı');me=await r.json();$('userbox').innerHTML=esc(me.username||'')+' • '+(canEdit()?'Yönetici':'Görüntüleme')+' • <a href="/logout">Çıkış</a>';document.querySelectorAll('.editOnly').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.viewerOnly').forEach(x=>x.style.display=canEdit()?'none':'');$('readonlyNotice').style.display=canEdit()?'none':'block';document.querySelectorAll('[data-p="accounting"],[data-p="parttimes"]').forEach(x=>x.style.display=canEdit()?'':'none');document.querySelectorAll('.autoPdfCard').forEach(x=>x.style.display=canEdit()?'':'none');let acc=$('accounting');if(acc&&!canEdit())acc.style.display='none';let pt=$('parttimes');if(pt&&!canEdit())pt.style.display='none';let pp=$('profitPanel');if(pp&&!canEdit())pp.style.display='none';if(!canEdit()&&document.querySelector('.page.active')?.id==='parttimes'){document.querySelector('[data-p="dash"]')?.click()}}
 async function load(){let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('Veri alınamadı');state=await r.json();normalize();$('sync').textContent='Bulut bağlı';render()}
 async function save(){if(!canEdit()){alert('Bu kullanıcı yalnızca görüntüleme yetkisine sahip.');return false}normalize();$('sync').textContent='Kaydediliyor…';let r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(state)});if(!r.ok){$('sync').textContent='Kayıt hatası';alert(r.status===403?'Bu kullanıcı yalnızca görüntüleme yetkisine sahip.':'Kayıt sırasında hata oluştu.');return false}$('sync').textContent='Kaydedildi';render();return true}
-function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};
+function normalize(){state.orders=state.orders||[];state.daily=state.daily||[];state.calendar=state.calendar||{};state.workPeriods=Array.isArray(state.workPeriods)?state.workPeriods:[];
 const defaultBreaks=[
   {time:'09:00',min:15,label:'Mola 1'},
   {time:'11:00',min:15,label:'Ek Kayıp 1'},
@@ -1605,11 +1623,19 @@ function commonBreaks(){
   const src=Array.isArray(state.breaks)?state.breaks:[];
   return defs.map((d,i)=>{const b=src[i]||d;return {time:/^\d{2}:\d{2}$/.test(String(b.time||''))?String(b.time):d.time,min:Math.max(0,b.min!==undefined?n(b.min):d.min),label:d.label};});
 }
+function workPeriodForDay(day){return (state.workPeriods||[]).find(p=>p.start<=day&&day<=p.end)||null}
 function shiftRaw(day){
   const dt=new Date(day+'T00:00');
-  const c=state.calendar[dt.getDay()]||{h:0,s:'08:00'};
-  const start=/^\d{2}:\d{2}$/.test(String(c.s||''))?String(c.s):'08:00';
-  const gross=Math.max(0,n(c.h));
+  const dow=dt.getDay(),c=state.calendar[dow]||{h:0,s:'08:00'};
+  let start=/^\d{2}:\d{2}$/.test(String(c.s||''))?String(c.s):'08:00';
+  let gross=Math.max(0,n(c.h));
+  const p=workPeriodForDay(day);
+  if(p){
+    if(dow>=1&&dow<=5){start=p.weekStart;gross=n(p.weekGross)}
+    else if(dow===6){if(p.satEnabled){start=p.satStart;gross=n(p.satGross)}else gross=0}
+    else if(dow===0){if(p.sunEnabled){start=p.sunStart;gross=n(p.sunGross)}else gross=0}
+  }
+  gross=Math.max(0,gross);
   const st=new Date(day+'T'+start);
   const en=new Date(st.getTime()+gross*3600000);
   return {start,gross,st,en};
@@ -2702,6 +2728,42 @@ function breakDraftValue(i,key,fallback){
   const d=window.calendarBreakDraft?.[String(i)];
   return d && Object.prototype.hasOwnProperty.call(d,key) ? d[key] : fallback;
 }
+window.toggleWorkPeriodWeekend=()=>{
+  for(const [day,key] of [['Sat','wpSatEnabled'],['Sun','wpSunEnabled']]){
+    const on=$(key)?.value==='yes';
+    if($('wp'+day+'Start'))$('wp'+day+'Start').disabled=!on;
+    if($('wp'+day+'Gross'))$('wp'+day+'Gross').disabled=!on;
+  }
+};
+function renderWorkPeriods(){
+  const box=$('workPeriodList');if(!box)return;
+  const list=[...(state.workPeriods||[])].sort((a,b)=>a.start.localeCompare(b.start));
+  box.innerHTML=list.length?list.map(p=>`<div style="padding:10px 0;border-bottom:1px solid #dfe7ee"><b>${esc(p.start)} – ${esc(p.end)}</b><div class="small">Hafta içi ${esc(p.weekStart)} / ${n(p.weekGross)} sa • Cumartesi ${p.satEnabled?esc(p.satStart)+' / '+n(p.satGross)+' sa':'Tatil'} • Pazar ${p.sunEnabled?esc(p.sunStart)+' / '+n(p.sunGross)+' sa':'Tatil'}</div>${canEdit()?`<button class="btn red" type="button" onclick="delWorkPeriod('${p.id}')">Sil</button>`:''}</div>`).join(''):'<div class="small">Henüz dönem eklenmedi; normal haftalık takvim geçerli.</div>';
+  toggleWorkPeriodWeekend();
+}
+window.addWorkPeriod=async()=>{
+  if(!canEdit())return;
+  const start=$('wpStart').value,end=$('wpEnd').value;
+  const weekStart=$('wpWeekStart').value,weekGross=n($('wpWeekGross').value);
+  const satEnabled=$('wpSatEnabled').value==='yes',sunEnabled=$('wpSunEnabled').value==='yes';
+  const satStart=$('wpSatStart').value,satGross=n($('wpSatGross').value);
+  const sunStart=$('wpSunStart').value,sunGross=n($('wpSunGross').value);
+  if(!start||!end||start>end)return alert('Geçerli bir başlangıç ve bitiş tarihi seç.');
+  if(!weekStart||weekGross<=0||weekGross>24)return alert('Hafta içi başlangıç ve 0–24 saat arası brüt süre gir.');
+  if(satEnabled&&(!satStart||satGross<=0||satGross>24))return alert('Cumartesi başlangıç ve çalışma süresini gir.');
+  if(sunEnabled&&(!sunStart||sunGross<=0||sunGross>24))return alert('Pazar başlangıç ve çalışma süresini gir.');
+  if((state.workPeriods||[]).some(p=>start<=p.end&&end>=p.start))return alert('Bu dönem başka bir dönemle çakışıyor. Önce diğer dönemi sil veya tarihleri değiştir.');
+  state.workPeriods.push({id:'wp-'+Date.now(),start,end,weekStart,weekGross,satEnabled,satStart,satGross,sunEnabled,sunStart,sunGross});
+  state.workPeriods.sort((a,b)=>a.start.localeCompare(b.start));
+  schedule();const ok=await save();if(ok){$('wpStart').value='';$('wpEnd').value=''}
+};
+window.delWorkPeriod=async id=>{
+  if(!canEdit())return;
+  const p=(state.workPeriods||[]).find(x=>x.id===id);
+  if(!p||!confirm(p.start+' – '+p.end+' dönemini silmek istiyor musun?'))return;
+  state.workPeriods=state.workPeriods.filter(x=>x.id!==id);
+  schedule();await save();
+};
 function renderCal(){
   const breaks=commonBreaks();
   const br=$('breakRows');
@@ -2727,6 +2789,7 @@ function renderCal(){
     </div>`;
   }).join('');
   document.querySelectorAll('#cal input[data-day]').forEach(refreshCalEnd);
+  renderWorkPeriods();
 }
 function fillSelects(){let active=state.orders.filter(o=>o.stage!=='done').sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));let activeOpts='<option value="">Seç</option>'+active.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=activeOpts;if([...el.options].some(x=>x.value===old))el.value=old});let cmm=$('cmmOrder');if(cmm){let old=cmm.value;cmm.innerHTML='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');if([...cmm.options].some(x=>x.value===old))cmm.value=old}fillDailyOps();syncOpAuto()}
 function fillDailyOps(){let el=$('dailyOp');if(!el)return;let old=el.value;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''));if([...el.options].some(x=>x.value===old))el.value=old}
