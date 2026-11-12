@@ -2921,7 +2921,39 @@ function renderCal(){
   document.querySelectorAll('#cal input[data-day]').forEach(refreshCalEnd);
   renderWorkPeriods();
 }
-function fillSelects(){let active=state.orders.filter(o=>o.stage!=='done').sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));let activeOpts='<option value="">Seç</option>'+active.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');['opOrder','dailyOrder'].forEach(id=>{let el=$(id);if(!el)return;let old=el.value;el.innerHTML=activeOpts;if([...el.options].some(x=>x.value===old))el.value=old});let cmm=$('cmmOrder');if(cmm){let old=cmm.value;cmm.innerHTML='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');if([...cmm.options].some(x=>x.value===old))cmm.value=old}fillDailyOps();syncOpAuto()}
+function fillSelects(){
+  const active=state.orders.filter(o=>o.stage!=='done');
+
+  // Operasyon ekranı mevcut tezgâh/sıra düzenini korur.
+  const opActive=[...active].sort((a,b)=>String(a.machine||'').localeCompare(String(b.machine||''))||n(a.queue)-n(b.queue));
+  const opOpts='<option value="">Seç</option>'+opActive.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');
+  const opSel=$('opOrder');
+  if(opSel){const old=opSel.value;opSel.innerHTML=opOpts;if([...opSel.options].some(x=>x.value===old))opSel.value=old}
+
+  // Günlük Üretim: önce 850'de çalışan, sonra 1000'de çalışan iş;
+  // ardından 850 ve 1000'in bekleyen işleri kendi kuyruk sırasıyla gelir.
+  const running=o=>(o.ops||[]).some(op=>op.runState==='running'&&!opIsComplete(o,op));
+  const machineRank=o=>{
+    const m=String(o.machine||'');
+    if(running(o)&&m.includes('850'))return 0;
+    if(running(o)&&m.includes('1000'))return 1;
+    if(m.includes('850'))return 2;
+    if(m.includes('1000'))return 3;
+    return 4;
+  };
+  const dailyActive=[...active].sort((a,b)=>machineRank(a)-machineRank(b)||n(a.queue)-n(b.queue)||String(a.orderNo||'').localeCompare(String(b.orderNo||'')));
+  const dailyOpts='<option value="">Seç</option>'+dailyActive.map(o=>{
+    const m=String(o.machine||'').includes('850')?'850':String(o.machine||'').includes('1000')?'1000':String(o.machine||'');
+    const tag=running(o)?'🟢 ÜRETİMDE':'Sıra '+n(o.queue);
+    return `<option value="${o.id}">${tag} • ${esc(m)} • ${esc(o.orderNo)} - ${esc(o.part)}</option>`;
+  }).join('');
+  const dailySel=$('dailyOrder');
+  if(dailySel){const old=dailySel.value;dailySel.innerHTML=dailyOpts;if([...dailySel.options].some(x=>x.value===old))dailySel.value=old}
+
+  const cmm=$('cmmOrder');
+  if(cmm){let old=cmm.value;cmm.innerHTML='<option value="">Seç</option>'+state.orders.map(o=>`<option value="${o.id}">${esc(o.orderNo)} - ${esc(o.part)}</option>`).join('');if([...cmm.options].some(x=>x.value===old))cmm.value=old}
+  fillDailyOps();syncOpAuto()
+}
 function fillDailyOps(){let el=$('dailyOp');if(!el)return;let old=el.value;let o=order($('dailyOrder')?.value);el.innerHTML='<option value="">Seç</option>'+((o?.ops||[]).map(op=>`<option value="${op.id}">${esc(op.name)}</option>`).join(''));if([...el.options].some(x=>x.value===old))el.value=old}
 function opNameKey(v){return String(v||'').trim().replace(/\s+/g,'').toLocaleUpperCase('tr-TR')}
 function previousSavedOp(o,opName=''){
