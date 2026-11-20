@@ -1648,6 +1648,11 @@ function productionFinishedAt(o){
 }
 function cmmSent(o){return !!(o?.cmm?.sentDate||o?.cmm?.sent==='yes')}
 function cmmReturned(o){return !!(o?.cmm?.returned||o?.cmm?.status==='Onay'||o?.cmm?.status==='Geldi')}
+function cmmCurrentComplete(o){
+  // Eski sistemde yalnızca "Onay" yazılmış ama hiç gönderim kaydı olmayan
+  // işler tamamlanmış CMM sayılmaz. Yeni akışta önce gerçek gönderim kaydı gerekir.
+  return cmmSent(o)&&cmmReturned(o);
+}
 function cmmTrackingEligible(o){
   const finished=productionFinishedAt(o);
   if(!finished)return false;
@@ -1657,9 +1662,10 @@ function cmmFlowState(o){
   if(!o||o.cmmRequired!=='yes')return 'none';
   if(!productionFinished(o))return 'production';
   if(!cmmTrackingEligible(o))return 'none';
-  if(cmmReturned(o))return 'done';
+  if(cmmCurrentComplete(o))return 'done';
   // 01.11.2026 ve sonrasında üretimi bitmiş eski arşiv işleri de
-  // CMM akışına alınır; stage/completedAt eski kaydı onları gizlemez.
+  // CMM akışına alınır. Eski "Onay" etiketi, gerçek gönderim kaydı yoksa
+  // işi gizlemez; CMM'ye gönderilecek olarak gösterilir.
   return cmmSent(o)?'waiting':'tosend';
 }
 function cmmFlowLabel(o){
@@ -1717,7 +1723,7 @@ function syncCompletedOps(){
 
     // 01.11.2026 ve sonrasında üretimi biten CMM gerekli işler,
     // daha önce arşive kapanmış olsalar bile yeni CMM akışına geri alınır.
-    const reopenForCmm=productionFinished(o)&&o.cmmRequired==='yes'&&cmmTrackingEligible(o)&&!cmmReturned(o);
+    const reopenForCmm=productionFinished(o)&&o.cmmRequired==='yes'&&cmmTrackingEligible(o)&&!cmmCurrentComplete(o);
     const completionLocked=(o.stage==='done'||!!o.completedAt)&&!reopenForCmm;
     if(completionLocked){
       if(o.stage!=='done'){o.stage='done';changed=true}
@@ -1742,7 +1748,7 @@ function syncCompletedOps(){
     let running=ops.some(op=>op.runState==='running'&&!opIsComplete(o,op));
     let paused=ops.some(op=>op.runState==='paused'&&!opIsComplete(o,op));
     let allDone=ops.length>0&&ops.every(op=>opIsComplete(o,op));
-    const mustWaitCmm=allDone&&o.cmmRequired==='yes'&&cmmTrackingEligible(o)&&!cmmReturned(o);
+    const mustWaitCmm=allDone&&o.cmmRequired==='yes'&&cmmTrackingEligible(o)&&!cmmCurrentComplete(o);
     let wanted=mustWaitCmm?'cmm':allDone?'done':paused?'paused':running?'production':'planned';
 
     if(o.stage!==wanted){o.stage=wanted;changed=true}
