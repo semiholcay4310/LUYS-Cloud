@@ -3008,8 +3008,8 @@ function renderCmmQuick(){
 // İlk sevkiyat kayıtlarını doğru iş emirleriyle eşleştir; miktar ve sevk geçmişini koru.
 const INITIAL_SHIPMENT_ORDERS=[
  {part:'RULMAN YATAĞI-5',code:'LUK-2610-015',period:5,qty:52},
- {part:'SOKET TAŞIYICI-5',code:'LUK-2610-011',period:5,qty:130},
- {part:'NEGATİF PLAKA-6',code:'LUK-2610-016',period:6,qty:100}
+ {part:'SOKET TAŞIYICI-5',code:'LUK-2610-004',period:5,qty:130},
+ {part:'NEGATİF PLAKA-6',code:'LUK-2610-013',period:6,qty:100}
 ];
 function repairInitialShipmentNames(){
  let changed=false;
@@ -3063,8 +3063,8 @@ function renderShipments(){
  const box=$('shipmentList');if(!box)return;
  const items=(state.shipments||[]).filter(x=>shipmentRemaining(x)>0).sort((a,b)=>(n(a.period)||999)-(n(b.period)||999)||String(a.part).localeCompare(String(b.part),'tr'));
  $('shipmentCount').textContent=items.length+' kalem';
- const reviews=(state.orders||[]).filter(o=>cmmReturnedQty(o)>0&&!initialShipmentForOrder(o));
- const reviewHtml=reviews.map(o=>{const x=shipmentForOrder(o);return `<div class="cmmQuickItem"><div class="cmmQuickItemName"><b>${esc(o.orderNo)} • ${esc(o.part)}</b><small>CMM'den dönen: ${cmmReturnedQty(o)} ad • ${x?'Sevkiyat onayı verildi':'RAPOR İNCELEMESİ BEKLİYOR'}</small></div>${canEdit()?`<div class="cmmQuickActions"><button class="btn alt" onclick="approveCmmForShipment('${o.id}')">${x?'ONAYI DÜZENLE':'SEVKİYATA ONAYLA'}</button>${x?`<button class="btn alt" onclick="undoCmmShipmentApproval('${o.id}')">ONAYI GERİ AL</button>`:''}</div>`:''}</div>`}).join('');
+ const reviews=(state.orders||[]).filter(o=>cmmReturnedQty(o)>0&&o.cmm?.shipmentReviewActive===true&&!initialShipmentForOrder(o));
+ const reviewHtml=reviews.map(o=>{const x=shipmentForOrder(o);return `<div class="cmmQuickItem"><div class="cmmQuickItemName"><b>${esc(o.orderNo)} • ${esc(o.part)}</b><small>CMM'den dönen: ${cmmReturnedQty(o)} ad • ${x?'Sevkiyat onayı verildi':'RAPOR İNCELEMESİ BEKLİYOR'}</small></div>${canEdit()?`<div class="cmmQuickActions"><button class="btn alt" onclick="approveCmmForShipment('${o.id}')">${x?'ONAYI DÜZENLE':'SEVKİYATA ONAYLA'}</button>${x?`<button class="btn alt" onclick="undoCmmShipmentApproval('${o.id}')">ONAYI GERİ AL</button>`:''}<button class="btn alt" onclick="undoCmmReturn('${o.id}')">CMM GELDİYİ GERİ AL</button></div>`:''}</div>`}).join('');
  box.innerHTML=(reviewHtml?'<div class="small" style="font-weight:700;margin-bottom:8px">CMM RAPOR / SEVKİYAT ONAYI</div>'+reviewHtml+'<hr>':'')+(items.length?items.map(x=>`<div class="cmmQuickItem" style="align-items:center"><div class="cmmQuickItemName"><b>${esc(x.orderNo?x.orderNo+' • ':'')}${esc(x.part)}</b><small>${x.period?x.period+'. Sevk': 'İş emri sevk dönemi'} • Bekleyen: <b>${shipmentRemaining(x)} ad</b></small></div>${canEdit()?`<div class="cmmQuickActions"><button class="btn green" onclick="shipPieces('${x.id}')">SEVK ET</button><button class="btn alt" onclick="editShipment('${x.id}')">DÜZELT</button></div>`:''}</div>`).join(''):'<div class="emptyDash">Sevkiyat bekleyen parça yok.</div>');
  $('shipmentTotal').textContent='Toplam: '+items.reduce((t,x)=>t+shipmentRemaining(x),0)+' adet';
  const hist=(state.shipments||[]).flatMap(x=>(x.events||[]).filter(e=>e.qty>0).map(e=>({x,e}))).sort((a,b)=>String(b.e.date).localeCompare(String(a.e.date)));
@@ -3099,7 +3099,7 @@ window.undoCmmSending=async id=>{
   if(shipmentForOrder(o)&&n(shipmentForOrder(o).shipped)>0)return alert('Önce bu işe ait sevkiyat kayıtlarını geri al.');
   if(!confirm('CMM gönderimi ve buna bağlı dönüşler geri alınsın mı? İş gönderilecekler listesine döner.'))return;
   const before={...(o.cmm||{})};
-  o.cmm={...before,sent:'no',sentDate:'',sentQty:0,returnedQty:0,lastReturnDate:'',returned:'',status:''};
+  o.cmm={...before,sent:'no',sentDate:'',sentQty:0,returnedQty:0,lastReturnDate:'',returned:'',status:'',shipmentReviewActive:false};
   o.stage='cmm';o.completedAt='';
   cmmAudit(o,'Gönderim geri alındı',before);state.shipments=state.shipments.filter(x=>x.manual||x.orderId!==o.id);syncShipmentFromCmm(o);
   compactQueues(o.machine);await save();
@@ -3110,7 +3110,7 @@ window.undoCmmReturn=async id=>{
   if(shipmentForOrder(o)&&n(shipmentForOrder(o).shipped)>0)return alert('Önce bu işe ait sevkiyat kayıtlarını geri al.');
   if(!confirm('CMM dönüşü geri alınsın mı? Gönderim korunacak, dönen adet sıfırlanacak.'))return;
   const before={...(o.cmm||{})};
-  o.cmm={...before,returnedQty:0,lastReturnDate:'',returned:'',status:'Ölçümde'};
+  o.cmm={...before,returnedQty:0,lastReturnDate:'',returned:'',status:'Ölçümde',shipmentReviewActive:false};
   o.stage='cmm';o.completedAt='';
   cmmAudit(o,'Dönüş geri alındı',before);state.shipments=state.shipments.filter(x=>x.manual||x.orderId!==o.id);syncShipmentFromCmm(o);
   compactQueues(o.machine);await save();
@@ -3156,7 +3156,7 @@ window.sendOrderToCmm=async id=>{
   if(sentDate===null)return;
   if(sentDate>today)return alert('Gönderim tarihi gelecekte olamaz.');
   const before={...(o.cmm||{})};
-  o.cmm={...(o.cmm||{}),sent:'yes',sentDate,sentQty:qty,returnedQty:0,returned:'',status:'Ölçümde'};
+  o.cmm={...(o.cmm||{}),sent:'yes',sentDate,sentQty:qty,returnedQty:0,returned:'',status:'Ölçümde',shipmentReviewActive:false};
   o.stage='cmm';o.completedAt='';
   cmmAudit(o,'CMM gönderildi',before);
   compactQueues(o.machine);
@@ -3183,7 +3183,8 @@ window.receiveOrderFromCmm=async id=>{
     returnedQty,
     lastReturnDate:today,
     returned:allReturned?today:'',
-    status:allReturned?'Onay':'Ölçümde'
+    status:allReturned?'Onay':'Ölçümde',
+    shipmentReviewActive:true
   };
   if(allReturned){
     o.stage='done';o.completedAt=localISO(new Date());
@@ -3247,7 +3248,8 @@ window.editCmmRecord=async id=>{
     returnedQty,
     lastReturnDate:returnDate,
     returned:allReturned?returnDate:'',
-    status:allReturned?'Onay':'Ölçümde'
+    status:allReturned?'Onay':'Ölçümde',
+    shipmentReviewActive:true
   };
 
   if(allReturned){
